@@ -1,0 +1,17 @@
+<html>
+    <header>
+        <title>All sources<</title>
+    </header>
+    <body>
+        <h2 class="heading">All sources</h2>
+        <ul class="ul-sources">
+            {% for source in sources %}
+                <li class="li-source">
+                    <span class="li-source-id">{{ source.id }}</span>
+                    <a class="li-source-title" href="{{ source.url }}">{{ source.title }}</a>
+                    <a class="li-source-url" href="{{ source.url }}">{{ source.url }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </body>
+</html>
