@@ -1,0 +1,4 @@
+[darglint]
+docstring_style=google
+strictness=long
+message_template=* {path}:{line}  ***  {msg_id} - {msg}
