@@ -6,7 +6,7 @@ services:
     image: ghcr.io/martokk/tubecast:latest
     restart: unless-stopped
     volumes:
-      # - /home/ubuntu/volumes/youtube_rss/data:/youtube_rss/data
+      # - /home/ubuntu/volumes/tubecast/data:/tubecast/data
       - ./tubecast:/tubecast
     ports:
       - "5000:5000"

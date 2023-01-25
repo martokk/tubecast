@@ -1,38 +1,50 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session
 
-from tubecast import crud
-from tubecast.api.deps import get_db
+from tubecast import crud, settings
+from tubecast.api import deps
 
 router = APIRouter()
 templates = Jinja2Templates(directory="tubecast/views/templates")
 
 
 @router.get(
-    "/sources", summary="Returns HTML Response with the source", response_class=HTMLResponse
+    "/u/{username}", summary="Returns HTML Response with list of feeds", response_class=HTMLResponse
 )
-async def html_view_sources(request: Request, db: Session = Depends(get_db)) -> Response:
+async def html_view_users_sources(
+    request: Request, username: str, db: Session = Depends(deps.get_db)
+) -> Response:
     """
-    Returns HTML response with list of sources.
+    Server root. Returns html response of all sources.
 
     Args:
         request(Request): The request object
+        username: The username to display
         db(Session): The database session.
 
     Returns:
-        Response: HTML page with the sources
+        Response: HTML page with list of sources
 
+    Raises:
+        HTTPException: User not found
     """
-    sources = await crud.source.get_all(db=db)
+    try:
+        user = await crud.user.get(username=username, db=db)
+    except crud.RecordNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from e
+    # sources = await source_crud.get_many(created_by=user.id)
     sources_context = [
         {
-            "id": source.id,
-            "title": source.title,
+            "name": source.name,
             "url": source.url,
+            "pktc_subscription_url": f"pktc://subscribe/{settings.BASE_DOMAIN}{source.feed_url}",
         }
-        for source in sources
+        for source in user.sources
     ]
-    context = {"request": request, "sources": sources_context}
-    return templates.TemplateResponse("view_sources.html", context)
+    context = {"request": request, "sources": sources_context, "username": username}
+    return templates.TemplateResponse("view_users_sources.html", context)

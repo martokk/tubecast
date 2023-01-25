@@ -4,3 +4,4 @@ from .settings import *
 from .source import *
 from .tokens import *
 from .user import *
+from .video import *

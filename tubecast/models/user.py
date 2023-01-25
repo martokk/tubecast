@@ -6,7 +6,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from tubecast.core.uuid import generate_uuid_from_string
 
 if TYPE_CHECKING:
-    from tubecast.models.source import source  # pragma: no cover
+    from tubecast.models.source import Source  # pragma: no cover
 
 
 class UserBase(SQLModel):
@@ -25,8 +25,8 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     hashed_password: str = Field(nullable=False)
-    sources: list["source"] = Relationship(
-        back_populates="owner",
+    sources: list["Source"] = Relationship(
+        back_populates="created_user",
         sa_relationship_kwargs={
             "cascade": "all, delete",
         },
@@ -37,6 +37,7 @@ class UserCreate(UserBase):
     hashed_password: str = Field(nullable=False)
 
     @root_validator(pre=True)
+    @classmethod
     def set_pre_validation_defaults(cls, values: dict[str, Any]) -> dict[str, Any]:
         values["id"] = values.get("id", generate_uuid_from_string(string=values["username"]))
         return values
