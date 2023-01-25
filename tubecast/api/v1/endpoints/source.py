@@ -5,7 +5,7 @@ from tubecast import crud, models
 from tubecast.api import deps
 
 router = APIRouter()
-ModelClass = models.source
+ModelClass = models.Source
 ModelReadClass = models.SourceRead
 ModelCreateClass = models.SourceCreate
 ModelUpdateClass = models.SourceUpdate
@@ -13,11 +13,11 @@ model_crud = crud.source
 
 
 @router.post("/", response_model=ModelReadClass, status_code=status.HTTP_201_CREATED)
-async def create_with_uploader_id(
+async def create_source_from_url(
     *,
     db: Session = Depends(deps.get_db),
     in_obj: ModelCreateClass,
-    current_active_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(deps.get_current_active_user),
 ) -> ModelClass:
     """
     Create a new item.
@@ -25,7 +25,7 @@ async def create_with_uploader_id(
     Args:
         in_obj (ModelCreateClass): object to be created.
         db (Session): database session.
-        current_active_user (models.User): Current active user.
+        current_user (Any): authenticated user.
 
     Returns:
         ModelClass: Created object.
@@ -34,11 +34,11 @@ async def create_with_uploader_id(
         HTTPException: if object already exists.
     """
     try:
-        return await model_crud.create_with_owner_id(
-            db=db, in_obj=in_obj, owner_id=current_active_user.id
+        return await crud.source.create_source_from_url(
+            url=in_obj.url, user_id=current_user.id, db=db
         )
     except crud.RecordAlreadyExistsError as exc:
-        raise HTTPException(status_code=status.HTTP_200_OK, detail="source already exists") from exc
+        raise HTTPException(status_code=status.HTTP_200_OK, detail="Source already exists") from exc
 
 
 @router.get("/{id}", response_model=ModelReadClass)
@@ -66,9 +66,9 @@ async def get(
     source = await model_crud.get_or_none(id=id, db=db)
     if not source:
         if crud.user.is_superuser(user_=current_user):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="source not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
     else:
-        if crud.user.is_superuser(user_=current_user) or source.owner_id == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
             return source
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
@@ -97,9 +97,7 @@ async def get_multi(
     if crud.user.is_superuser(user_=current_user):
         items = await model_crud.get_multi(db=db, skip=skip, limit=limit)
     else:
-        items = await model_crud.get_multi_by_owner_id(
-            db=db, owner_id=current_user.id, skip=skip, limit=limit
-        )
+        items = await model_crud.get_multi(db=db, owner_id=current_user.id, skip=skip, limit=limit)
     return items
 
 
@@ -129,9 +127,9 @@ async def update(
     source = await model_crud.get_or_none(id=id, db=db)
     if not source:
         if crud.user.is_superuser(user_=current_user):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="source not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
     else:
-        if crud.user.is_superuser(user_=current_user) or source.owner_id == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
             return await model_crud.update(db=db, in_obj=in_obj, id=id)
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
@@ -162,9 +160,55 @@ async def delete(
     source = await model_crud.get_or_none(id=id, db=db)
     if not source:
         if crud.user.is_superuser(user_=current_user):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="source not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
     else:
-        if crud.user.is_superuser(user_=current_user) or source.owner_id == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
             return await model_crud.remove(id=id, db=db)
 
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+
+@router.put("/{source_id}/fetch", response_model=models.SourceRead)
+async def fetch_source(
+    source_id: str,
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> models.Source:
+    """
+    Fetches new data from yt-dlp and updates a source on the server.
+
+    Args:
+        source_id: The ID of the source to update.
+        db(Session): The database session
+        _: The current superuser.
+
+    Returns:
+        The updated source.
+
+    Raises:
+        HTTPException: If the source was not found.
+    """
+    try:
+        return await crud.source.fetch_source(source_id=source_id, db=db)
+    except crud.RecordNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Source Not Found"
+        ) from exc
+
+
+@router.put("/fetch", response_model=list[ModelReadClass], status_code=status.HTTP_200_OK)
+async def fetch_all(
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> list[ModelClass] | None:
+    """
+    Fetches new data from yt-dlp for all sources on the server.
+
+    Args:
+        db(Session): The database session
+        _: The current superuser.
+
+    Returns:
+        The updated sources.
+    """
+    return await crud.source.fetch_all_sources(db=db)
