@@ -25,7 +25,9 @@ async def get_source_info_dict(
             a unique ID will be generated from the URL.
         url (str): The URL of the Source
         extract_flat (bool): Whether to extract a flat list of videos in the playlist.
-
+        playlistreverse (bool): Whether to reverse the playlist.
+        playlistend (int): The index of the last video to extract.
+        dateafter (str): The date after which to extract videos.
 
     Returns:
         dict: The info dictionary for the Source

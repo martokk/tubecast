@@ -165,7 +165,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db.refresh(db_obj)
         return db_obj
 
-    async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
+    async def remove(self, *args: BinaryExpression[Any], db: Session, **kwargs: Any) -> None:
         """
         Delete a record.
 
