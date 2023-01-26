@@ -97,7 +97,9 @@ async def get_multi(
     if crud.user.is_superuser(user_=current_user):
         items = await model_crud.get_multi(db=db, skip=skip, limit=limit)
     else:
-        items = await model_crud.get_multi(db=db, owner_id=current_user.id, skip=skip, limit=limit)
+        items = await model_crud.get_multi(
+            db=db, created_by=current_user.id, skip=skip, limit=limit
+        )
     return items
 
 
@@ -140,7 +142,7 @@ async def delete(
     *,
     db: Session = Depends(deps.get_db),
     id: str,
-    current_user: models.User = Depends(deps.get_current_active_user),
+    current_user: models.User = Depends(deps.get_current_active_superuser),
 ) -> None:
     """
     Delete an item.

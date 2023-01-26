@@ -42,7 +42,7 @@ async def get_source_info_dict(
     handler = get_handler_from_url(url=url)
     ydl_opts = handler.get_source_ydl_opts(
         extract_flat=extract_flat,
-        playlistreverse=playlistend,
+        playlistreverse=playlistreverse,
         playlistend=playlistend,
         dateafter=dateafter,
     )
@@ -97,7 +97,12 @@ async def get_source_videos_from_source_info_dict(
     """
     handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
     entries = source_info_dict["entries"]
-    playlists = entries if entries[0].get("entries") else [source_info_dict]
+
+    if len(entries) > 0 and entries[0].get("entries"):
+        playlists = entries
+    else:
+        playlists = [source_info_dict]
+
     video_dicts = [
         handler.map_source_info_dict_entity_to_video_dict(
             source_id=source_info_dict["source_id"], entry_info_dict=entry_info_dict
