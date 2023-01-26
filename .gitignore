@@ -658,3 +658,5 @@ dist_win/
 tubecast/data/database.sqlite3
 
 tubecast/data/feed/
+
+*.old

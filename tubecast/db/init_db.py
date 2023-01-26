@@ -31,8 +31,9 @@ async def create_all(engine: Engine = _engine, sqlmodel_create_all: bool = False
 async def init_initial_data(db: Session, **kwargs: Any) -> None:
     await create_all(**kwargs)
 
-    user = await crud.user.get_or_none(db=db, username=settings.FIRST_SUPERUSER_USERNAME)
-    if not user:
+    user_email = await crud.user.get_or_none(db=db, email=settings.FIRST_SUPERUSER_EMAIL)
+    user_username = await crud.user.get_or_none(db=db, username=settings.FIRST_SUPERUSER_USERNAME)
+    if not user_email and not user_username:
         user_create = models.UserCreateWithPassword(
             username=settings.FIRST_SUPERUSER_USERNAME,
             email=settings.FIRST_SUPERUSER_EMAIL,

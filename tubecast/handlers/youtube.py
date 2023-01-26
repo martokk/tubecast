@@ -75,9 +75,9 @@ class YoutubeHandler(ServiceHandler):
             **YDL_OPTS_BASE,
             "playlistreverse": True,
             "extract_flat": extract_flat,
-            "playlistend": playlistreverse,
-            "dateafter": playlistend,
-            "allowed_extractors": dateafter,
+            "playlistend": playlistend,
+            "dateafter": dateafter,
+            "allowed_extractors": self.YDL_OPT_ALLOWED_EXTRACTORS,
         }
 
     def map_source_info_dict_to_source_dict(
