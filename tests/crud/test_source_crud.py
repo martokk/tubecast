@@ -3,82 +3,105 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlmodel import Session
 
+from tests.mock_objects import MOCKED_SOURCE_1
 from tubecast import crud, models
+
+
+async def create_source(db: Session) -> models.Source:
+    """
+    Create a source in the database.
+    """
+    source = await crud.source.create(db=db, in_obj=models.SourceCreate(**MOCKED_SOURCE_1))
+    assert source.name == MOCKED_SOURCE_1["name"]
+    assert source.url == MOCKED_SOURCE_1["url"]
+    assert source.description == MOCKED_SOURCE_1["description"]
+    return source
 
 
 async def test_create_item(db_with_user: Session) -> None:
     """
-    Test creating a new item with an owner.
+    Test creating a new item.
+    """
+    source = await create_source(db=db_with_user)
+    assert source.name == MOCKED_SOURCE_1["name"]
+    assert source.url == MOCKED_SOURCE_1["url"]
+    assert source.description == MOCKED_SOURCE_1["description"]
+
+
+async def test_create_item_from_url(db_with_user: Session) -> None:
+    """
+    Test creating a new item from a url.
     """
     owner = await crud.user.get(db=db_with_user, username="test_user")
-    source_create = models.SourceCreate(
-        id="12345678",
-        uploader="test",
-        uploader_id="test_uploader_id",
-        title="Example source AAA",
-        description="This is example source AAA.",
-        duration=417,
-        thumbnail="https://sp.rmbl.ws/s8d/R/0_FRh.oq1b.jpg",
-        url="https://rumble.com/AAA/test.html",
-    )
-    source = await crud.source.create_with_owner_id(
-        db=db_with_user, in_obj=source_create, owner_id=owner.id
-    )
-    assert source.title == "Example source AAA"
-    assert source.description == "This is example source AAA."
-    assert source.owner_id == owner.id
+    url = MOCKED_SOURCE_1["url"]
+    source = await crud.source.create_source_from_url(db=db_with_user, url=url, user_id=owner.id)
+    assert source.name == MOCKED_SOURCE_1["name"]
+    assert source.url == MOCKED_SOURCE_1["url"]
+    assert source.description == MOCKED_SOURCE_1["description"]
 
 
-async def test_get_item(db_with_sources: Session) -> None:
+async def test_get_item(db: Session) -> None:
     """
     Test getting an item by id.
     """
-    db_source = await crud.source.get(db=db_with_sources, id="00000000")
+    # Create a new item
+    source = await create_source(db=db)
+
+    # Get the item by id
+    db_source = await crud.source.get(db=db, id=source.id)
     assert db_source
-    assert db_source.id == "00000000"
-    assert db_source.title == "Example source 0"
-    assert db_source.description == "This is example source 0."
-    assert db_source.owner_id == "ZbFPeSXW"
+    assert db_source.id == source.id
+    assert db_source.name == source.name
+    assert db_source.description == source.description
 
 
-async def test_update_item(db_with_sources: Session) -> None:
+async def test_update_item(db: Session) -> None:
     """
     Test updating an item.
     """
-    db_source = await crud.source.get(db=db_with_sources, id="00000000")
+    # Create a new item
+    source = await create_source(db=db)
+
+    # Update the item
+    db_source = await crud.source.get(db=db, id=source.id)
     db_source_update = models.SourceUpdate(description="New Description")
-    updated_source = await crud.source.update(
-        db=db_with_sources, id="00000000", in_obj=db_source_update
-    )
+    updated_source = await crud.source.update(db=db, id=source.id, in_obj=db_source_update)
     assert db_source.id == updated_source.id
-    assert db_source.title == updated_source.title
+    assert db_source.name == updated_source.name
     assert updated_source.description == "New Description"
-    assert db_source.owner_id == updated_source.owner_id
 
 
-async def test_update_item_without_filter(db_with_sources: Session) -> None:
+async def test_update_item_without_filter(db: Session) -> None:
     """
     Test updating an item without a filter.
     """
-    await crud.source.get(db=db_with_sources, id="00000000")
+    # Create a new item
+    source = await create_source(db=db)
+
+    # Attempt Update the item without a filter
+    await crud.source.get(db=db, id=source.id)
     db_source_update = models.SourceUpdate(description="New Description")
     with pytest.raises(ValueError):
-        await crud.source.update(db=db_with_sources, in_obj=db_source_update)
+        await crud.source.update(db=db, in_obj=db_source_update)
 
 
-async def test_delete_item(db_with_sources: Session) -> None:
+async def test_delete_item(db: Session) -> None:
     """
     Test deleting an item.
     """
-    await crud.source.remove(db=db_with_sources, id="00000000")
+    # Create a new item
+    source = await create_source(db=db)
+
+    # Delete the item
+    await crud.source.remove(db=db, id=source.id)
     with pytest.raises(crud.RecordNotFoundError):
-        await crud.source.get(db=db_with_sources, id="00000000")
+        await crud.source.get(db=db, id=source.id)
 
 
-async def test_delete_item_delete_error(db_with_sources: Session, mocker: MagicMock) -> None:
+async def test_delete_item_delete_error(db: Session, mocker: MagicMock) -> None:
     """
     Test deleting an item with a delete error.
     """
     mocker.patch("tubecast.crud.source.get", return_value=None)
     with pytest.raises(crud.DeleteError):
-        await crud.source.remove(db=db_with_sources, id="00000001")
+        await crud.source.remove(db=db, id="00000001")

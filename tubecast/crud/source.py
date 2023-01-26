@@ -18,14 +18,14 @@ from .base import BaseCRUD
 
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):
-    async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
+    async def remove(self, *args: BinaryExpression[Any], db: Session, **kwargs: Any) -> None:
         source_id = kwargs.get("id")
         if source_id:
             try:
                 await delete_rss_file(source_id=source_id)
             except FileNotFoundError as e:
                 logger.warning(e)
-        return await super().remove(db=db, *args, **kwargs)
+        return await super().remove(*args, db=db, **kwargs)
 
     async def create_source_from_url(self, db: Session, url: str, user_id: str) -> models.Source:
         """

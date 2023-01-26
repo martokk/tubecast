@@ -17,7 +17,7 @@ async def html_view_users_sources(
     request: Request, username: str, db: Session = Depends(deps.get_db)
 ) -> Response:
     """
-    Server root. Returns html response of all sources.
+    Returns HTML Response with list of feeds for the given user.
 
     Args:
         request(Request): The request object

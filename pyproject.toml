@@ -91,6 +91,7 @@ exclude = '''
     | build
     | dist
     | env
+    | migrations
     | venv
     | typings
 )/
