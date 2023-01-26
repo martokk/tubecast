@@ -173,7 +173,7 @@ def test_create_user_by_normal_user(
         headers=normal_user_token_headers,
         json=data,
     )
-    assert r.status_code == 400
+    assert r.status_code == 403
 
 
 def test_retrieve_users(

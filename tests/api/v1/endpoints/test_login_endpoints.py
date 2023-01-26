@@ -207,7 +207,7 @@ async def test_get_current_active_user_inactive_user(
             f"{settings.API_V1_PREFIX}/user/me",
             headers=normal_user_token_headers,
         )
-    assert r.status_code == 400
+    assert r.status_code == 403
     assert r.json() == {"detail": "Inactive user"}
 
 
