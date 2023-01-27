@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlmodel import Session
 
-from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1
+from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
 from tubecast import crud, models
 
 
@@ -105,3 +105,25 @@ async def test_delete_item_delete_error(db: Session, mocker: MagicMock) -> None:
     mocker.patch("tubecast.crud.source.get", return_value=None)
     with pytest.raises(crud.DeleteError):
         await crud.source.remove(db=db, id="00000001")
+
+
+async def test_fetch_all_sources(db_with_user: Session) -> None:
+    """
+    Test fetching all sources.
+    """
+    # Create 2 sources
+    user = await crud.user.get(db=db_with_user, username="test_user")
+    await crud.source.create_source_from_url(
+        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
+    )
+    await crud.source.create_source_from_url(
+        db=db_with_user, url=MOCKED_YOUTUBE_SOURCE_1["url"], user_id=user.id
+    )
+
+    # Fetch all sources
+    fetched_sources = await crud.source.fetch_all_sources(db=db_with_user)
+
+    # Assert the results
+    assert len(fetched_sources) == 2
+    assert fetched_sources[0].name == MOCKED_RUMBLE_SOURCE_1["name"]
+    assert fetched_sources[1].name == MOCKED_YOUTUBE_SOURCE_1["name"]
