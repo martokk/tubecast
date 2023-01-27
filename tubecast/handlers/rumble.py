@@ -141,7 +141,7 @@ class RumbleHandler(ServiceHandler):
             "url": url,
             "added_at": datetime.datetime.now(tz=datetime.timezone.utc),
             "title": entry_info_dict["title"],
-            "description": entry_info_dict["title"],
+            "description": entry_info_dict["description"],
             "duration": entry_info_dict["duration"],
             "thumbnail": entry_info_dict["thumbnail"],
             "released_at": released_at,
