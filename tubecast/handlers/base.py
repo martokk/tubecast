@@ -56,6 +56,7 @@ class ServiceHandler:
         """
         return self.sanitize_url(url=url)
 
+    @abstractmethod
     def get_source_ydl_opts(
         self, *, extract_flat: bool, playlistreverse: bool, playlistend: int, dateafter: str
     ) -> dict[str, Any]:
@@ -71,7 +72,6 @@ class ServiceHandler:
         Returns:
             dict: The yt-dlp options for the source.
         """
-        return YDL_OPTS_BASE
 
     def get_video_ydl_opts(self) -> dict[str, Any]:
         """

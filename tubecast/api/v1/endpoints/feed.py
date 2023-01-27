@@ -23,10 +23,7 @@ async def build_rss(
     except crud.RecordNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
 
-    try:
-        rss_file = await build_rss_file(source=source)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+    rss_file = await build_rss_file(source=source)
 
     # Serve RSS File as a Response
     content = rss_file.read_text()
