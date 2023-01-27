@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -327,4 +329,130 @@ def test_normal_user_delete_source_forbidden(
     )
     assert response.status_code == 403
     content = response.json()
-    assert content["detail"] == "The user doesn't have enough privileges"
+    assert content["detail"] == "Not enough permissions"
+
+
+def test_normal_user_get_videos_from_source_forbidden(
+    db_with_user: Session,
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that a normal user cannot get videos from an source that they didn't create.
+    """
+    # Create source as a superuser
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    created_source = response.json()
+
+    # Get videos from source
+    response = client.get(
+        f"{settings.API_V1_PREFIX}/source/{created_source['id']}/videos",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 403
+    content = response.json()
+    assert content["detail"] == "Not enough permissions"
+
+
+def test_normal_user_delete_source_forbidden(
+    db_with_user: Session,
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that a normal user cannot get videos from an source that they didn't create.
+    """
+    # Create source as a superuser
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    created_source = response.json()
+
+    # Attempt to delete source as normal user
+    response = client.delete(
+        f"{settings.API_V1_PREFIX}/source/{created_source['id']}",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 403
+    content = response.json()
+    assert content["detail"] == "Not enough permissions"
+
+    # Attempt to delete a source that doesn't exist
+    response = client.delete(
+        f"{settings.API_V1_PREFIX}/source/99999999",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 403
+    content = response.json()
+    assert content["detail"] == "Not enough permissions"
+
+
+def test_fetch_source(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+    """
+    Test that a superuser can fetch an source.
+    """
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    created_source = response.json()
+
+    # Fetch Source
+    with patch("tubecast.crud.source.fetch_source") as mocked_fetch_source:
+        mocked_fetch_source.return_value = MOCKED_YOUTUBE_SOURCE_1
+        response = client.put(
+            f"{settings.API_V1_PREFIX}/source/{created_source['id']}/fetch",
+            headers=superuser_token_headers,
+        )
+    assert response.status_code == 200
+    fetched_source = response.json()
+    assert fetched_source["id"] == created_source["id"]
+
+    # Fetch wrong source
+    response = client.put(
+        f"{settings.API_V1_PREFIX}/source/99999/fetch",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+
+
+def test_fetch_all_sources(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+    """
+    Test that a superuser can fetch all sources.
+    """
+    # Create sources
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_RUMBLE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+
+    # Fetch All Sources
+    with patch("tubecast.crud.source.fetch_all_sources") as mocked_fetch_source:
+        mocked_fetch_source.return_value = [MOCKED_YOUTUBE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1]
+        response = client.put(
+            f"{settings.API_V1_PREFIX}/source/fetch",
+            headers=superuser_token_headers,
+        )
+        mocked_fetch_source.assert_called_once()
+
+    assert response.status_code == 200
