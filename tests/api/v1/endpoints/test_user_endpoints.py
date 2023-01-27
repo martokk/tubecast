@@ -82,7 +82,7 @@ def test_get_users_not_superuser(
     """
     r = client.get(f"{settings.API_V1_PREFIX}/user/2", headers=normal_user_token_headers)
     assert r.status_code == 403
-    assert r.json()["detail"] == "The user doesn't have enough privileges"
+    assert r.json()["detail"] == "Not enough permissions"
 
 
 async def test_get_user_not_superuser(
@@ -96,7 +96,7 @@ async def test_get_user_not_superuser(
         f"{settings.API_V1_PREFIX}/user/{test_user.id}", headers=normal_user_token_headers
     )
     assert r.status_code == 403
-    assert r.json()["detail"] == "The user doesn't have enough privileges"
+    assert r.json()["detail"] == "Not enough permissions"
 
 
 async def test_get_existing_user(

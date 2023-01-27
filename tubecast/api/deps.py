@@ -59,5 +59,5 @@ def get_current_active_superuser(
     current_user: models.User = Depends(get_current_user),
 ) -> models.User:
     if not crud.user.is_superuser(user_=current_user):
-        raise HTTPException(status_code=403, detail="The user doesn't have enough privileges")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
     return current_user
