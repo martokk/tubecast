@@ -166,25 +166,5 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
 
         return fetched
 
-    async def fetch_source_videos(self, source_id: str, db: Session) -> models.Source:
-        """Fetch new data from yt-dlp for each video in the source.
-
-        Args:
-            source_id: The ID of the source to fetch videos for.
-            db (Session): The database session.
-
-        Returns:
-            The source with the updated videos.
-        """
-        # Get the source from the database
-        _source = await self.get(id=source_id, db=db)
-
-        # Fetch new data for each video in the source
-        for video in _source.videos:
-            await crud.video.fetch_video(video_id=video.id, db=db)
-
-        # Return the updated source
-        return await self.get(id=source_id, db=db)
-
 
 source = SourceCRUD(models.Source)
