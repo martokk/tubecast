@@ -140,9 +140,9 @@ MOCKED_YOUTUBE_SOURCE_1 = {
 }
 
 MOCKED_SOURCES: list[dict[str, Any]] = [
+    MOCKED_YOUTUBE_SOURCE_1,
     MOCKED_RUMBLE_SOURCE_1,
     MOCKED_RUMBLE_SOURCE_2,
-    MOCKED_YOUTUBE_SOURCE_1,
 ]
 
 
@@ -157,6 +157,7 @@ async def get_mocked_source_info_dict(*args: Any, **kwargs: Any) -> dict[str, An
                 "thumbnail": mocked_source["logo"],
                 "description": mocked_source["description"],
                 "extractor_key": mocked_source["extractor"],
+                "thumbnails": [{"url": mocked_source["logo"]}, {}, {"url": mocked_source["logo"]}],
                 "metadata": {
                     "url": mocked_source["url"],
                 },
@@ -191,9 +192,11 @@ async def get_mocked_video_info_dict(*args: Any, **kwargs: Any) -> dict[str, Any
                 "timestamp": datetime.strptime(
                     mocked_video["released_at"], "%Y-%m-%dT%H:%M:%S"
                 ).timestamp(),
+                "upload_date": mocked_video["released_at"].split("T")[0].replace("-", ""),
                 "duration": mocked_video["duration"],
                 "thumbnail": mocked_video["thumbnail"],
                 "uploader": mocked_video["uploader"],
+                "uploader_id": mocked_video["uploader_id"],
                 "channel": mocked_video["uploader"],
                 "channel_id": mocked_video["uploader_id"],
                 "format_id": "mp4",

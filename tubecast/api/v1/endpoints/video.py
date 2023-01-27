@@ -37,7 +37,7 @@ async def get(
     video = await model_crud.get_or_none(id=id, db=db)
     if not video:
         if crud.user.is_superuser(user_=current_user):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="video not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
     else:
         if crud.user.is_superuser(user_=current_user):
             return video
@@ -169,7 +169,7 @@ async def fetch_all(
 #     video = await model_crud.get_or_none(id=id, db=db)
 #     if not video:
 #         if crud.user.is_superuser(user_=current_user):
-#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="video not found")
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
 #     else:
 #         if crud.user.is_superuser(user_=current_user):
 #             return await model_crud.update(db=db, in_obj=in_obj, id=id)
@@ -202,7 +202,7 @@ async def fetch_all(
 #     video = await model_crud.get_or_none(id=id, db=db)
 #     if not video:
 #         if crud.user.is_superuser(user_=current_user):
-#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="video not found")
+#             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
 #     else:
 #         if crud.user.is_superuser(user_=current_user):
 #             return await model_crud.remove(id=id, db=db)

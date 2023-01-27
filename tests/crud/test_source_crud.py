@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlmodel import Session
 
-from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1
+from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1
 from tubecast import crud, models
 
 
@@ -11,10 +11,10 @@ async def create_source(db: Session) -> models.Source:
     """
     Create a source in the database.
     """
-    source = await crud.source.create(db=db, in_obj=models.SourceCreate(**MOCKED_RUMBLE_SOURCE_1))
-    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
-    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
-    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
+    source = await crud.source.create(db=db, in_obj=models.SourceCreate(**MOCKED_YOUTUBE_SOURCE_1))
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
     return source
 
 
@@ -23,9 +23,9 @@ async def test_create_item(db_with_user: Session) -> None:
     Test creating a new item.
     """
     source = await create_source(db=db_with_user)
-    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
-    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
-    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
 
 
 async def test_create_item_from_url(db_with_user: Session) -> None:
@@ -33,11 +33,11 @@ async def test_create_item_from_url(db_with_user: Session) -> None:
     Test creating a new item from a url.
     """
     owner = await crud.user.get(db=db_with_user, username="test_user")
-    url = MOCKED_RUMBLE_SOURCE_1["url"]
+    url = MOCKED_YOUTUBE_SOURCE_1["url"]
     source = await crud.source.create_source_from_url(db=db_with_user, url=url, user_id=owner.id)
-    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
-    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
-    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
 
 
 async def test_get_item(db: Session) -> None:

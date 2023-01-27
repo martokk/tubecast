@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_RUMBLE_SOURCE_2
+from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
 from tubecast import settings
 from tubecast.views.endpoints.sources import html_view_users_sources
 
@@ -22,13 +22,13 @@ async def test_html_view_users_sources(
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=normal_user_token_headers,
-        json={"url": MOCKED_RUMBLE_SOURCE_1["url"]},
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
     )
     assert response.status_code == 201
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=normal_user_token_headers,
-        json={"url": MOCKED_RUMBLE_SOURCE_2["url"]},
+        json={"url": MOCKED_RUMBLE_SOURCE_1["url"]},
     )
     assert response.status_code == 201
 
