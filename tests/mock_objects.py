@@ -166,11 +166,26 @@ async def get_mocked_source_info_dict(*args: Any, **kwargs: Any) -> dict[str, An
                         "title": video["title"],
                         "description": video["description"],
                         "url": video["url"],
+                        "webpage_url": video["url"],
+                        "original_url": video["url"],
                         "timestamp": datetime.strptime(
                             video["released_at"], "%Y-%m-%dT%H:%M:%S"
                         ).timestamp(),
+                        "upload_date": video["released_at"].split("T")[0].replace("-", ""),
                         "duration": video["duration"],
                         "thumbnail": video["thumbnail"],
+                        "uploader": video["uploader"],
+                        "uploader_id": video["uploader_id"],
+                        "channel": video["uploader"],
+                        "channel_id": video["uploader_id"],
+                        "format_id": "0",
+                        "formats": [
+                            {
+                                "format_id": "0",
+                                "url": video["feed_media_url"],
+                                "filesize": video["media_filesize"],
+                            }
+                        ],
                     }
                     for video in mocked_source["videos"]
                 ],
