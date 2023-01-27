@@ -12,7 +12,7 @@ from tubecast.services.source import (
     get_source_info_dict,
     get_source_videos_from_source_info_dict,
 )
-from tubecast.services.videos import refresh_videos
+from tubecast.services.video import refresh_videos
 
 from .base import BaseCRUD
 

@@ -10,7 +10,7 @@ from tubecast.core import notify
 from tubecast.db.init_db import init_initial_data
 from tubecast.paths import FEEDS_PATH
 from tubecast.services.source import refresh_all_sources
-from tubecast.services.videos import refresh_all_videos
+from tubecast.services.video import refresh_all_videos
 from tubecast.views.router import views_router
 
 # Initialize FastAPI App

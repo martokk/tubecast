@@ -2,7 +2,7 @@ from sqlmodel import Session
 
 from tubecast import crud, logger, models
 from tubecast.models.video import generate_video_id_from_url
-from tubecast.services.videos import get_video_from_video_info_dict, get_video_info_dict
+from tubecast.services.video import get_video_from_video_info_dict, get_video_info_dict
 
 from .base import BaseCRUD
 
