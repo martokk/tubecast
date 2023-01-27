@@ -191,13 +191,9 @@ async def delete(
 
     source = await model_crud.get_or_none(id=id, db=db)
     if not source:
-        if crud.user.is_superuser(user_=current_user):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
     else:
-        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
-            return await model_crud.remove(id=id, db=db)
-
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+        return await model_crud.remove(id=id, db=db)
 
 
 @router.put("/{source_id}/fetch", response_model=models.SourceRead)
