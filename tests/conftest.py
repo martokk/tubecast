@@ -1,7 +1,8 @@
 from typing import Any
 
 from collections.abc import AsyncGenerator, Generator
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 import sqlalchemy as sa
@@ -47,8 +48,18 @@ def do_begin(conn: Any) -> None:
     conn.exec_driver_sql("BEGIN")
 
 
+@pytest.fixture(name="init")
+def fixture_init(mocker: MagicMock, tmp_path: Path):
+    mocker.patch("tubecast.paths.FEEDS_PATH", return_value=tmp_path)
+    mocker.patch("tubecast.services.feed.build_rss_file", None)
+
+
 @pytest.fixture(name="db")
-async def fixture_db() -> AsyncGenerator[Session, None]:
+async def fixture_db(
+    init: Any,
+    tmp_path: Path,
+    mocker: MagicMock,
+) -> AsyncGenerator[Session, None]:
     connection = engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
@@ -65,15 +76,20 @@ async def fixture_db() -> AsyncGenerator[Session, None]:
         if not nested.is_active:
             nested = connection.begin_nested()
 
-    with patch(
-        "tubecast.services.source.get_info_dict",
-        get_mocked_source_info_dict,
-    ):
-        with patch(
+    mocker.patch("tubecast.services.feed.FEEDS_PATH", tmp_path)
+    with (
+        patch(
+            "tubecast.services.source.get_info_dict",
+            get_mocked_source_info_dict,
+        ),
+        patch(
             "tubecast.services.video.get_info_dict",
             get_mocked_video_info_dict,
-        ):
-            yield session
+        ),
+        patch("tubecast.services.feed.build_rss_file", return_value=None),
+        patch("tubecast.services.feed.SourceFeedGenerator.save", return_value=None),
+    ):
+        yield session
 
     # Rollback the overall transaction, restoring the state before the test ran.
     session.close()
