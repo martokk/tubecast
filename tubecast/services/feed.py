@@ -8,6 +8,27 @@ from tubecast.models.source import Source
 from tubecast.paths import FEEDS_PATH
 
 
+def get_published_date(
+    created_at: datetime.datetime, released_at: datetime.datetime | None
+) -> datetime.datetime:
+    """
+    Returns an estimated published date.
+
+    Args:
+        created_at: The date the video was added to the database.
+        released_at: The date the video was released on YouTube.
+
+    Returns:
+        The latest date between `released_at` and `created_at`.
+    """
+    if not released_at:
+        return created_at
+    if released_at.date() == created_at.date():
+        if released_at.time() == datetime.time(0, 0, 0):
+            return created_at
+    return released_at
+
+
 class SourceFeedGenerator(FeedGenerator):
     def __init__(self, source: Source):
         """
@@ -48,7 +69,7 @@ class SourceFeedGenerator(FeedGenerator):
         # Generate Feed Posts
         for video in source.videos:
 
-            published_at = self._get_published_date(
+            published_at = get_published_date(
                 created_at=video.created_at, released_at=video.released_at
             )
 
@@ -71,26 +92,6 @@ class SourceFeedGenerator(FeedGenerator):
             post.podcast.itunes_image(  # type: ignore # pylint: disable=no-member
                 itunes_image=f"{video.thumbnail}?=.jpg"
             )  # type: ignore # pylint: disable=no-member
-
-    def _get_published_date(
-        self, created_at: datetime.datetime, released_at: datetime.datetime | None
-    ) -> datetime.datetime:
-        """
-        Returns an estimated published date.
-
-        Args:
-            created_at: The date the video was added to the database.
-            released_at: The date the video was released on YouTube.
-
-        Returns:
-            The latest date between `released_at` and `created_at`.
-        """
-        if not released_at:
-            return created_at
-        if released_at.date() == created_at.date():
-            if released_at.time() == datetime.time(0, 0, 0):
-                return created_at
-        return released_at
 
     async def save(self) -> Path:
         """
