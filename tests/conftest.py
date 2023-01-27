@@ -49,7 +49,7 @@ def do_begin(conn: Any) -> None:
 
 
 @pytest.fixture(name="init")
-def fixture_init(mocker: MagicMock, tmp_path: Path):
+def fixture_init(mocker: MagicMock, tmp_path: Path) -> None:
     mocker.patch("tubecast.paths.FEEDS_PATH", return_value=tmp_path)
     mocker.patch("tubecast.services.feed.build_rss_file", None)
 

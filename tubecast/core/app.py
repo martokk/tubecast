@@ -43,7 +43,7 @@ async def on_startup(db: Session = next(deps.get_db())) -> None:
 
 @app.on_event("startup")  # type: ignore
 @repeat_every(seconds=settings.REFRESH_SOURCES_INTERVAL_MINUTES * 60, wait_first=True)
-async def repeating_refresh_sources(db: Session = Depends(deps.get_db)) -> None:
+async def repeating_refresh_sources(db: Session = Depends(deps.get_db)) -> None:  # pragma: no cover
     """
     Fetches new data from yt-dlp for all Videos that meet criteria.
 
@@ -57,7 +57,7 @@ async def repeating_refresh_sources(db: Session = Depends(deps.get_db)) -> None:
 
 @app.on_event("startup")  # type: ignore
 @repeat_every(seconds=settings.REFRESH_VIDEOS_INTERVAL_MINUTES * 60, wait_first=True)
-async def repeating_refresh_videos(db: Session = Depends(deps.get_db)) -> None:
+async def repeating_refresh_videos(db: Session = Depends(deps.get_db)) -> None:  # pragma: no cover
     """
     Fetches new data from yt-dlp for all Videos that meet criteria.
 

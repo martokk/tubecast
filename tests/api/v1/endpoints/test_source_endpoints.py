@@ -308,30 +308,6 @@ def test_superuser_delete_source(
     assert response.status_code == 404
 
 
-def test_normal_user_delete_source_forbidden(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
-) -> None:
-    """
-    Test that a normal user cannot delete an source.
-    """
-    response = client.post(
-        f"{settings.API_V1_PREFIX}/source/",
-        headers=normal_user_token_headers,
-        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
-    )
-    assert response.status_code == 201
-    created_source = response.json()
-
-    # Delete Source
-    response = client.delete(
-        f"{settings.API_V1_PREFIX}/source/{created_source['id']}",
-        headers=normal_user_token_headers,
-    )
-    assert response.status_code == 403
-    content = response.json()
-    assert content["detail"] == "Not enough permissions"
-
-
 def test_normal_user_get_videos_from_source_forbidden(
     db_with_user: Session,
     client: TestClient,

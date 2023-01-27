@@ -24,12 +24,10 @@ def test_get_published_date() -> None:
     assert get_published_date(created_at=created_at, released_at=released_at) == released_at
 
     created_at = datetime.datetime(2021, 1, 1, 0, 0, 0)
-    released_at = None
-    assert get_published_date(created_at=created_at, released_at=released_at) == created_at
+    assert get_published_date(created_at=created_at, released_at=None) == created_at
 
     created_at = datetime.datetime(2021, 1, 1, 0, 0, 1)
-    released_at = None
-    assert get_published_date(created_at=created_at, released_at=released_at) == created_at
+    assert get_published_date(created_at=created_at, released_at=None) == created_at
 
     created_at = datetime.datetime(2021, 1, 1, 0, 0, 0)
     released_at = datetime.datetime(2021, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)

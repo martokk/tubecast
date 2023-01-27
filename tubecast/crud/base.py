@@ -134,20 +134,20 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db: Session,
         *args: BinaryExpression[Any],
         in_obj: ModelUpdateType,
-        exclude_none=True,
-        exclude_unset=True,
+        exclude_none: bool = True,
+        exclude_unset: bool = True,
         **kwargs: Any,
     ) -> ModelType:
         """
         Update an existing record.
 
         Args:
-            in_obj: The updated object.
-            args: Binary expressions to filter by.
+            in_obj (ModelUpdateType): The updated object.
+            args (BinaryExpression): Binary expressions to filter by.
             db (Session): The database session.
-            exclude_none: Whether to exclude None values from the update.
-            exclude_unset: Whether to exclude unset values from the update.
-            kwargs: Keyword arguments to filter by.
+            exclude_none (bool): Whether to exclude None values from the update.
+            exclude_unset (bool): Whether to exclude unset values from the update.
+            kwargs (Any): Keyword arguments to filter by.
 
         Returns:
             The updated object.

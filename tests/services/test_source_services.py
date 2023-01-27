@@ -1,6 +1,3 @@
-from typing import Any
-
-from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from tests.mock_objects import (
@@ -9,7 +6,7 @@ from tests.mock_objects import (
     MOCKED_RUMBLE_VIDEO_3,
     get_mocked_source_info_dict,
 )
-from tubecast import crud, settings
+from tubecast import crud
 from tubecast.services.source import (
     delete_orphaned_source_videos,
     get_source_videos_from_source_info_dict,
