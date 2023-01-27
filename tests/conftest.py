@@ -1,7 +1,7 @@
 from typing import Any
 
 from collections.abc import AsyncGenerator, Generator
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 import sqlalchemy as sa
@@ -9,16 +9,15 @@ from fastapi import Request
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel, create_engine
-from yt_dlp import YoutubeDL
 
-from tests.mock_objects import MOCKED_SOURCE_INFO_DICT, get_mocked_source_info_dict
+from tests.mock_objects import get_mocked_source_info_dict, get_mocked_video_info_dict
 from tubecast import crud, models, settings
 from tubecast.api.deps import get_db
 from tubecast.core import security
 from tubecast.core.app import app
 from tubecast.db.init_db import init_initial_data
 
-# Set up the databsase
+# Set up the database
 db_url = "sqlite:///:memory:"
 engine = create_engine(
     db_url,
@@ -66,8 +65,15 @@ async def fixture_db() -> AsyncGenerator[Session, None]:
         if not nested.is_active:
             nested = connection.begin_nested()
 
-    with patch("yt_dlp.YoutubeDL.extract_info", get_mocked_source_info_dict):
-        yield session
+    with patch(
+        "tubecast.services.source.get_info_dict",
+        get_mocked_source_info_dict,
+    ):
+        with patch(
+            "tubecast.services.video.get_info_dict",
+            get_mocked_video_info_dict,
+        ):
+            yield session
 
     # Rollback the overall transaction, restoring the state before the test ran.
     session.close()
