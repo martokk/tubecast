@@ -134,6 +134,8 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db: Session,
         *args: BinaryExpression[Any],
         in_obj: ModelUpdateType,
+        exclude_none=True,
+        exclude_unset=True,
         **kwargs: Any,
     ) -> ModelType:
         """
@@ -143,6 +145,8 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
             in_obj: The updated object.
             args: Binary expressions to filter by.
             db (Session): The database session.
+            exclude_none: Whether to exclude None values from the update.
+            exclude_unset: Whether to exclude unset values from the update.
             kwargs: Keyword arguments to filter by.
 
         Returns:
@@ -155,7 +159,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
             raise ValueError("crud.base.update() Must provide at least one filter")
         db_obj = await self.get(db=db, *args, **kwargs)
 
-        in_obj_values = in_obj.dict(exclude_unset=True, exclude_none=True)
+        in_obj_values = in_obj.dict(exclude_unset=exclude_unset, exclude_none=exclude_none)
         db_obj_values = db_obj.dict()
         for in_obj_key, in_obj_value in in_obj_values.items():
             if in_obj_value != db_obj_values[in_obj_key]:
