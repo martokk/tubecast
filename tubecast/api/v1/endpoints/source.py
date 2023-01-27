@@ -103,6 +103,36 @@ async def get_multi(
     return items
 
 
+@router.get("/{id}/videos", response_model=list[models.VideoRead])
+async def get_videos_from_source(
+    id: str,
+    db: Session = Depends(deps.get_db),
+    skip: int = 0,
+    limit: int = 100,
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> list[models.Video]:
+    """
+    Retrieve videos from a source.
+
+    Args:
+        id (str): id of the source.
+        db (Session): database session.
+        skip (int): Number of items to skip. Defaults to 0.
+        limit (int): Number of items to return. Defaults to 100.
+        current_user (models.User): Current active user.
+
+    Returns:
+        list[ModelClass]: List of objects.
+
+    Raises:
+        HTTPException: if user is not superuser and object does not belong to user.
+    """
+    source = await crud.source.get(db=db, id=id)
+    if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
+        return await crud.video.get_multi(db=db, source_id=id, skip=skip, limit=limit)
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+
 @router.patch("/{id}", response_model=ModelReadClass)
 async def update(
     *,
