@@ -2,7 +2,7 @@ from typing import Any
 
 from datetime import datetime
 
-MOCKED_RUMBLE_VIDEO_1 = {
+MOCKED_RUMBLE_VIDEO_1: dict[str, Any] = {
     "id": "DthvvHVw",
     "source_id": "7hyhcvzT",
     "handler": "RumbleHandler",
@@ -19,7 +19,7 @@ MOCKED_RUMBLE_VIDEO_1 = {
     "released_at": "2023-01-23T12:09:29",
 }
 
-MOCKED_RUMBLE_VIDEO_2 = {
+MOCKED_RUMBLE_VIDEO_2: dict[str, Any] = {
     "created_at": "2023-01-26T22:51:02.046597",
     "updated_at": "2023-01-26T22:51:02.046587",
     "id": "VCyJgqtb",
@@ -38,7 +38,7 @@ MOCKED_RUMBLE_VIDEO_2 = {
     "released_at": "2023-01-24T09:32:45",
 }
 
-MOCKED_RUMBLE_VIDEO_3 = {
+MOCKED_RUMBLE_VIDEO_3: dict[str, Any] = {
     "id": "C7fSjqud",
     "source_id": "mLC5c5NH",
     "handler": "RumbleHandler",
@@ -55,7 +55,7 @@ MOCKED_RUMBLE_VIDEO_3 = {
     "released_at": "2023-01-20T20:38:29",
 }
 
-MOCKED_YOUTUBE_VIDEO_1 = {
+MOCKED_YOUTUBE_VIDEO_1: dict[str, Any] = {
     "id": "YgsZwKRt",
     "source_id": "iQEQPfeQ",
     "handler": "YoutubeHandler",
@@ -71,7 +71,7 @@ MOCKED_YOUTUBE_VIDEO_1 = {
     "media_filesize": 1012372,
     "released_at": "2022-02-04T00:00:00",
 }
-MOCKED_YOUTUBE_VIDEO_2 = {
+MOCKED_YOUTUBE_VIDEO_2: dict[str, Any] = {
     "id": "BKsPQaDh",
     "source_id": "iQEQPfeQ",
     "handler": "YoutubeHandler",
@@ -89,7 +89,7 @@ MOCKED_YOUTUBE_VIDEO_2 = {
 }
 
 
-MOCKED_RUMBLE_SOURCE_1 = {
+MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
     "id": "7hyhcvzT",
     "url": "https://rumble.com/c/Styxhexenhammer666",
     "name": "Styxhexenhammer666",
@@ -107,7 +107,7 @@ MOCKED_RUMBLE_SOURCE_1 = {
     ],
 }
 
-MOCKED_RUMBLE_SOURCE_2 = {
+MOCKED_RUMBLE_SOURCE_2: dict[str, Any] = {
     "id": "mLC5c5NH",
     "url": "https://rumble.com/c/KimIversen",
     "name": "Kim Iversen",
@@ -124,7 +124,7 @@ MOCKED_RUMBLE_SOURCE_2 = {
     ],
 }
 
-MOCKED_YOUTUBE_SOURCE_1 = {
+MOCKED_YOUTUBE_SOURCE_1: dict[str, Any] = {
     "id": "iQEQPfeQ",
     "url": "https://www.youtube.com/@breakingpoints",
     "name": "Breaking Points",

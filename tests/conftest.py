@@ -86,8 +86,6 @@ async def fixture_db(
             "tubecast.services.video.get_info_dict",
             get_mocked_video_info_dict,
         ),
-        patch("tubecast.services.feed.build_rss_file", return_value=None),
-        patch("tubecast.services.feed.SourceFeedGenerator.save", return_value=None),
     ):
         yield session
 
