@@ -53,9 +53,19 @@ def test_start_server() -> None:
         assert mock_run.call_args[1]["app_dir"] == ""
 
 
-def test_health_check(client: TestClient) -> None:
+def test_health_checks(client: TestClient) -> None:
     """Test that the health check endpoint returns a 200 status code."""
+    # Test Views health check
     response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {
+        "name": settings.PROJECT_NAME,
+        "version": get_version(),
+        "description": settings.PROJECT_DESCRIPTION,
+    }
+
+    # Check API health check
+    response = client.get(f"{settings.API_V1_PREFIX}/")
     assert response.status_code == 200
     assert response.json() == {
         "name": settings.PROJECT_NAME,

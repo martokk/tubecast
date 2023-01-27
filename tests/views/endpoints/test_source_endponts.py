@@ -46,3 +46,26 @@ async def test_html_view_users_sources(
         response_context = mock_template_response.call_args[0][1]
         assert response_context["request"] == test_request
         assert len(response_context["sources"]) == 2
+
+
+def test_html_view_user_sources(
+    db_with_user: Session,
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that the html_view_users_sources function returns a response with the correct status code.
+    """
+    # Test valid username
+    response = client.get(
+        "/u/test_user",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 200
+
+    # Test invalid username
+    response = client.get(
+        "/u/invalid_username",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 404
