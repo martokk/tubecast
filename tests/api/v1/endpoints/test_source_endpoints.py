@@ -387,14 +387,11 @@ def test_fetch_source(client: TestClient, superuser_token_headers: dict[str, str
 
     # Fetch Source
     with patch("tubecast.crud.source.fetch_source") as mocked_fetch_source:
-        mocked_fetch_source.return_value = MOCKED_YOUTUBE_SOURCE_1
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/{created_source['id']}/fetch",
             headers=superuser_token_headers,
         )
-    assert response.status_code == 200
-    fetched_source = response.json()
-    assert fetched_source["id"] == created_source["id"]
+    assert response.status_code == 202
 
     # Fetch wrong source
     response = client.put(
@@ -424,11 +421,10 @@ def test_fetch_all_sources(client: TestClient, superuser_token_headers: dict[str
 
     # Fetch All Sources
     with patch("tubecast.crud.source.fetch_all_sources") as mocked_fetch_source:
-        mocked_fetch_source.return_value = [MOCKED_YOUTUBE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1]
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/fetch",
             headers=superuser_token_headers,
         )
         mocked_fetch_source.assert_called_once()
 
-    assert response.status_code == 200
+    assert response.status_code == 202

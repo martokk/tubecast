@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlmodel import Session
 
 from tubecast import crud, models
@@ -17,6 +17,7 @@ async def create_source_from_url(
     *,
     db: Session = Depends(deps.get_db),
     in_obj: ModelCreateClass,
+    background_tasks: BackgroundTasks,
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> ModelClass:
     """
@@ -25,6 +26,7 @@ async def create_source_from_url(
     Args:
         in_obj (ModelCreateClass): object to be created.
         db (Session): database session.
+        background_tasks (BackgroundTasks): background tasks.
         current_user (Any): authenticated user.
 
     Returns:
@@ -34,11 +36,19 @@ async def create_source_from_url(
         HTTPException: if object already exists.
     """
     try:
-        return await crud.source.create_source_from_url(
+        source = await crud.source.create_source_from_url(
             url=in_obj.url, user_id=current_user.id, db=db
         )
     except crud.RecordAlreadyExistsError as exc:
         raise HTTPException(status_code=status.HTTP_200_OK, detail="Source already exists") from exc
+
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_source,
+        id=source.id,
+        db=db,
+    )
+    return source
 
 
 @router.get("/{id}", response_model=ModelReadClass)
@@ -196,47 +206,58 @@ async def delete(
         return await model_crud.remove(id=id, db=db)
 
 
-@router.put("/{source_id}/fetch", response_model=models.SourceRead)
+@router.put("/{id}/fetch", status_code=status.HTTP_202_ACCEPTED)
 async def fetch_source(
-    source_id: str,
+    id: str,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
-) -> models.Source:
+) -> None:
     """
     Fetches new data from yt-dlp and updates a source on the server.
 
     Args:
-        source_id: The ID of the source to update.
+        id: The ID of the source to update.
         db(Session): The database session
+        background_tasks: The background tasks to run.
         _: The current superuser.
-
-    Returns:
-        The updated source.
 
     Raises:
         HTTPException: If the source was not found.
     """
+
     try:
-        return await crud.source.fetch_source(source_id=source_id, db=db)
+        source = await crud.source.get(id=id, db=db)
     except crud.RecordNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Source Not Found"
         ) from exc
 
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_source,
+        id=source.id,
+        db=db,
+    )
 
-@router.put("/fetch", response_model=list[ModelReadClass], status_code=status.HTTP_200_OK)
+
+@router.put("/fetch", status_code=status.HTTP_202_ACCEPTED)
 async def fetch_all(
+    background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
-) -> list[ModelClass] | None:
+) -> None:
     """
     Fetches new data from yt-dlp for all sources on the server.
 
     Args:
+        background_tasks: The background tasks to run.
         db(Session): The database session
         _: The current superuser.
 
-    Returns:
-        The updated sources.
     """
-    return await crud.source.fetch_all_sources(db=db)
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_all_sources,
+        db=db,
+    )
