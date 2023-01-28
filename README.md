@@ -27,6 +27,7 @@ A python project.
 
 ## Usage
 
+`python3 -m tubecast`
 
 ## 📈 Releases
 
