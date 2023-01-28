@@ -6,6 +6,7 @@ from loguru import logger as _logger
 
 from tubecast.models.settings import Settings as _Settings
 from tubecast.paths import ENV_FILE as _ENV_FILE
+from tubecast.paths import FETCH_LOG_FILE as _FETCH_LOG_FILE
 from tubecast.paths import LOG_FILE as _LOG_FILE
 
 
@@ -24,7 +25,10 @@ _load_dotenv(dotenv_path=_env_file)
 version: str = get_version()
 settings = _Settings(VERSION=version)  # type: ignore
 
-# Configure logger
-_logger.add(_LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")
-_logger.info(f"Log level set by .env to '{settings.LOG_LEVEL}'")
-logger = _logger
+# Main Logger
+logger = _logger.bind(name="logger")
+logger.add(_LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")
+
+# Fetch Logger
+fetch_logger = _logger.bind(name="fetch_logger")
+fetch_logger.add(_FETCH_LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")

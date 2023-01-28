@@ -50,7 +50,7 @@ async def repeating_refresh_sources(db: Session = Depends(deps.get_db)) -> None:
     Args:
         db (Session): Database session.
     """
-    logger.debug("Refreshing Sources...")
+    logger.debug("Repeating refresh of Sources...")
     refreshed_videos = await refresh_all_sources(db=db)
     logger.success(f"Completed refreshing {len(refreshed_videos)} Sources from yt-dlp.")
 
@@ -64,8 +64,8 @@ async def repeating_refresh_videos(db: Session = Depends(deps.get_db)) -> None: 
     Args:
         db (Session): Database session.
     """
-    logger.debug("Refreshing Videos...")
-    refreshed_videos = await refresh_all_videos(older_than_hours=8, db=db)
+    logger.debug("Repeating refresh of Videos...")
+    refreshed_videos = await refresh_all_videos(older_than_hours=settings.MAX_VIDEO_AGE_HOURS, db=db)
     logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")
 
 

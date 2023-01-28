@@ -3,7 +3,7 @@ from typing import Any
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
-from tubecast import crud, logger, models, settings
+from tubecast import crud, fetch_logger, logger, models, settings
 from tubecast.models.source import generate_source_id_from_url
 from tubecast.services.feed import build_rss_file, delete_rss_file
 from tubecast.services.source import (
@@ -82,7 +82,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
     #     in_obj.owner_id = owner_id
     #     return await self.create(db, in_obj=in_obj)
 
-    async def fetch_source(self, db: Session, id: str) -> models.Source:
+    async def fetch_source(self, db: Session, id: str) -> models.FetchResults:
         """
         Fetch new data from yt-dlp for the source and update the source in the database.
 
@@ -93,9 +93,12 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             db (Session): The database session.
 
         Returns:
-            The updated source.
+            models.FetchResult: The result of the fetch.
         """
+
         db_source = await self.get(id=id, db=db)
+        logger.debug(f"Fetching Source(id='{db_source.id}, name='{db_source.name}')")
+        fetch_logger.debug(f"Fetching Source(id='{db_source.id}, name='{db_source.name}')")
 
         # Fetch source information from yt-dlp and create the source object
         source_info_dict = await get_source_info_dict(
@@ -140,10 +143,21 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             f"Deleted {len(deleted_videos)} orphaned videos. "
             f"Refreshed {len(refreshed_videos)} videos."
         )
+        fetch_logger.success(
+            f"Completed fetching Source(id='{db_source.id}'). "
+            f"[{len(added_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
+            f"Added {len(added_videos)} new videos. "
+            f"Deleted {len(deleted_videos)} orphaned videos. "
+            f"Refreshed {len(refreshed_videos)} videos."
+        )
 
-        return await self.get(id=id, db=db)
+        return models.FetchResults(
+            added_videos=len(added_videos),
+            deleted_videos=len(deleted_videos),
+            refreshed_videos=len(refreshed_videos),
+        )
 
-    async def fetch_all_sources(self, db: Session) -> list[models.Source]:
+    async def fetch_all_sources(self, db: Session) -> models.FetchResults:
         """
         Fetch all sources.
 
@@ -151,15 +165,34 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             db (Session): The database session.
 
         Returns:
-            List[Source]: List of fetched sources
+            models.FetchResults: The results of the fetch.
         """
-        logger.warning("Fetching ALL Sources...")
+        logger.debug("Fetching ALL Sources...")
+        fetch_logger.debug("Fetching ALL Sources...")
         sources = await self.get_all(db=db) or []
-        fetched = []
-        for _source in sources:
-            fetched.append(await self.fetch_source(id=_source.id, db=db))
+        fetched_sources_count = 0
+        fetched_results = models.FetchResults()
 
-        return fetched
+        for _source in sources:
+            source_fetch_results = await self.fetch_source(id=_source.id, db=db)
+            fetched_sources_count += 1
+            fetched_results += source_fetch_results
+
+        logger.success(
+            f"Completed fetching All ({fetched_sources_count}) Sources. "
+            f"[{fetched_results.added_videos}/{fetched_results.deleted_videos}/{fetched_results.refreshed_videos}] "
+            f"Added {fetched_results.added_videos} new videos. "
+            f"Deleted {fetched_results.deleted_videos} orphaned videos. "
+            f"Refreshed {fetched_results.refreshed_videos} videos."
+        )
+        fetch_logger.success(
+            f"Completed fetching All ({fetched_sources_count}) Sources. "
+            f"[{fetched_results.added_videos}/{fetched_results.deleted_videos}/{fetched_results.refreshed_videos}] "
+            f"Added {fetched_results.added_videos} new videos. "
+            f"Deleted {fetched_results.deleted_videos} orphaned videos. "
+            f"Refreshed {fetched_results.refreshed_videos} videos."
+        )
+        return fetched_results
 
 
 source = SourceCRUD(models.Source)
