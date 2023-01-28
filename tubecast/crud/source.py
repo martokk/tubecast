@@ -24,7 +24,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             try:
                 await delete_rss_file(source_id=source_id)
             except FileNotFoundError as e:
-                logger.warning(e)
+                logger.error(e)
         return await super().remove(*args, db=db, **kwargs)
 
     async def create_source_from_url(self, db: Session, url: str, user_id: str) -> models.Source:
@@ -63,7 +63,9 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         )
 
         # Save the source to the database
-        return await self.create(in_obj=_source, db=db)
+        db_source = await self.create(in_obj=_source, db=db)
+        logger.success(f"Created source {_source.id} from url {url}")
+        return db_source
 
     # async def create_with_owner_id(
     #     self, db: Session, *, in_obj: models.SourceCreate, owner_id: str
@@ -114,23 +116,25 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         )
         db_source = await self.update(in_obj=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
-        # Update Source Videos from Fetched Videos
-        # db_source = await self.get(id=source_id)
+        # Use the source information to fetch the videos
         fetched_videos = await get_source_videos_from_source_info_dict(
             source_info_dict=source_info_dict
         )
 
-        added_videos = await add_new_source_videos_from_fetched_videos(
+        # Add new videos to database
+        new_videos = await add_new_source_videos_from_fetched_videos(
             fetched_videos=fetched_videos, db_source=db_source, db=db
         )
 
+        # Delete orphaned videos from database
+        deleted_videos: list[models.Video] = []
         # NOTE: Enable if db grows too large. Otherwise best not to delete any videos
         # from database as podcast app will still reference the video's feed_media_url
         # deleted_videos = await delete_orphaned_source_videos(
         #     fetched_videos=fetched_videos, db_source=db_source
         # )
-        deleted_videos: list[models.Video] = []
 
+        # Refresh existing videos in database
         refreshed_videos = await refresh_videos(videos=db_source.videos, db=db)
 
         # Build RSS File
@@ -138,21 +142,22 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
 
         logger.success(
             f"Completed fetching Source(id='{db_source.id}'). "
-            f"[{len(added_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
-            f"Added {len(added_videos)} new videos. "
+            f"[{len(new_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
+            f"Added {len(new_videos)} new videos. "
             f"Deleted {len(deleted_videos)} orphaned videos. "
             f"Refreshed {len(refreshed_videos)} videos."
         )
         fetch_logger.success(
             f"Completed fetching Source(id='{db_source.id}'). "
-            f"[{len(added_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
-            f"Added {len(added_videos)} new videos. "
+            f"[{len(new_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
+            f"Added {len(new_videos)} new videos. "
             f"Deleted {len(deleted_videos)} orphaned videos. "
             f"Refreshed {len(refreshed_videos)} videos."
         )
 
         return models.FetchResults(
-            added_videos=len(added_videos),
+            sources=1,
+            added_videos=len(new_videos),
             deleted_videos=len(deleted_videos),
             refreshed_videos=len(refreshed_videos),
         )
@@ -170,23 +175,21 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         logger.debug("Fetching ALL Sources...")
         fetch_logger.debug("Fetching ALL Sources...")
         sources = await self.get_all(db=db) or []
-        fetched_sources_count = 0
         fetched_results = models.FetchResults()
 
         for _source in sources:
             source_fetch_results = await self.fetch_source(id=_source.id, db=db)
-            fetched_sources_count += 1
             fetched_results += source_fetch_results
 
         logger.success(
-            f"Completed fetching All ({fetched_sources_count}) Sources. "
+            f"Completed fetching All ({fetched_results.sources}) Sources. "
             f"[{fetched_results.added_videos}/{fetched_results.deleted_videos}/{fetched_results.refreshed_videos}] "
             f"Added {fetched_results.added_videos} new videos. "
             f"Deleted {fetched_results.deleted_videos} orphaned videos. "
             f"Refreshed {fetched_results.refreshed_videos} videos."
         )
         fetch_logger.success(
-            f"Completed fetching All ({fetched_sources_count}) Sources. "
+            f"Completed fetching All ({fetched_results.sources}) Sources. "
             f"[{fetched_results.added_videos}/{fetched_results.deleted_videos}/{fetched_results.refreshed_videos}] "
             f"Added {fetched_results.added_videos} new videos. "
             f"Deleted {fetched_results.deleted_videos} orphaned videos. "

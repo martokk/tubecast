@@ -4,6 +4,7 @@ from sqlmodel import SQLModel
 
 
 class FetchResults(SQLModel):
+    sources: int = 0
     added_videos: int = 0
     deleted_videos: int = 0
     refreshed_videos: int = 0
@@ -15,6 +16,7 @@ class FetchResults(SQLModel):
         if not isinstance(other, FetchResults):
             raise TypeError(f"can't add FetchResult and {type(other)}")
         return FetchResults(
+            sources=self.sources + other.sources,
             added_videos=self.added_videos + other.added_videos,
             deleted_videos=self.deleted_videos + other.deleted_videos,
             refreshed_videos=self.refreshed_videos + other.refreshed_videos,

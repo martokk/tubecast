@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer
 from passlib.context import CryptContext
 
-from tubecast import settings
+from tubecast import logger, settings
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -81,7 +81,9 @@ def decode_token(
     try:
         payload: dict[str, str] = jwt.decode(jwt=token, key=key, algorithms=[settings.ALGORITHM])
     except jwt.ExpiredSignatureError as e:
+        logger.warning("Expired Token")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Expired Token") from e
     except jwt.InvalidTokenError as e:
+        logger.warning("Invalid Token")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Token") from e
     return payload["sub"]
