@@ -1,19 +1,21 @@
 # import itertools
 import re
 
-from yt_dlp.compat import compat_HTTPError
+from yt_dlp.compat import compat_HTTPError, compat_str
 from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.extractor.rumble import RumbleChannelIE, RumbleEmbedIE
 from yt_dlp.utils import (
     ExtractorError,
     UnsupportedError,
     clean_html,
+    determine_ext,
     get_element_by_class,
     int_or_none,
     parse_count,
     parse_duration,
     parse_iso8601,
     traverse_obj,
+    try_get,
     unescapeHTML,
 )
 
@@ -121,13 +123,10 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                 "formats": [
                     {
                         "ext": "mp4",
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.baa.1.mp4",
                         "format_id": "mp4-360p",
                         "height": 360,
-                        "fps": 29.97,
+                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.baa.1.mp4",
                         "tbr": 631,
-                        "filesize": 18488017,
-                        "width": 640,
                         "protocol": "https",
                         "video_ext": "mp4",
                         "audio_ext": "none",
@@ -136,13 +135,10 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     },
                     {
                         "ext": "webm",
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.daa.1.webm",
                         "format_id": "webm-480p",
                         "height": 480,
-                        "fps": 29.97,
+                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.daa.1.webm",
                         "tbr": 809,
-                        "filesize": 23682748,
-                        "width": 854,
                         "protocol": "https",
                         "video_ext": "webm",
                         "audio_ext": "none",
@@ -151,13 +147,10 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     },
                     {
                         "ext": "mp4",
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.caa.2.mp4",
                         "format_id": "mp4-480p",
                         "height": 480,
-                        "fps": 29.97,
+                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.caa.2.mp4",
                         "tbr": 810,
-                        "filesize": 23720936,
-                        "width": 854,
                         "protocol": "https",
                         "video_ext": "mp4",
                         "audio_ext": "none",
@@ -166,13 +159,10 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     },
                     {
                         "ext": "mp4",
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.gaa.1.mp4",
                         "format_id": "mp4-720p",
                         "height": 720,
-                        "fps": 29.97,
+                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.gaa.1.mp4",
                         "tbr": 1957,
-                        "filesize": 57283801,
-                        "width": 1280,
                         "protocol": "https",
                         "video_ext": "mp4",
                         "audio_ext": "none",
@@ -250,12 +240,14 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
 
     def _real_extract(self, url):  # pragma: no cover
         video_id = self._match_id(url)
+        # video = self._download_json(
+        #     "https://rumble.com/embedJS/u3/",
+        #     video_id,
+        #     query={"request": "video", "ver": 2, "v": video_id},
+        # )
         video = self._download_json(
-            "https://rumble.com/embedJS/u3/",
-            video_id,
-            query={"request": "video", "ver": 2, "v": video_id},
+            "https://rumble.com/embedJS/", video_id, query={"request": "video", "v": video_id}
         )
-
         sys_msg = traverse_obj(video, ("sys", "msg"))
         if sys_msg:
             self.report_warning(sys_msg, video_id=video_id)
@@ -270,44 +262,21 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
             live_status = None
 
         formats = []
-        for ext, ext_info in (video.get("ua") or {}).items():
-            for height, video_info in (ext_info or {}).items():
-                meta = video_info.get("meta") or {}
-                if not video_info.get("url"):
-                    continue
-                if ext == "hls":
-                    if meta.get("live") is True and video.get("live") == 1:
-                        live_status = "post_live"
-                    formats.extend(
-                        self._extract_m3u8_formats(
-                            video_info["url"],
-                            video_id,
-                            ext="mp4",
-                            m3u8_id="hls",
-                            fatal=False,
-                            live=live_status == "is_live",
-                        )
-                    )
-                    continue
-                formats.append(
-                    {
+        for height, ua in (video.get("ua") or {}).items():
+            for i in range(2):
+                f_url = try_get(ua, lambda x: x[i], compat_str)
+                if f_url:
+                    ext = determine_ext(f_url)
+                    f = {
                         "ext": ext,
-                        "url": video_info["url"],
                         "format_id": "%s-%sp" % (ext, height),
                         "height": int_or_none(height),
-                        "fps": video.get("fps"),
-                        **traverse_obj(
-                            meta,
-                            {
-                                "tbr": "bitrate",
-                                "filesize": "size",
-                                "width": "w",
-                                "height": "h",
-                            },
-                            default={},
-                        ),
+                        "url": f_url,
                     }
-                )
+                    bitrate = try_get(ua, lambda x: x[i + 2]["bitrate"])
+                    if bitrate:
+                        f["tbr"] = int_or_none(bitrate)
+                    formats.append(f)
         self._sort_formats(formats)
 
         subtitles = {
