@@ -85,24 +85,24 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
     #     in_obj.owner_id = owner_id
     #     return await self.create(db, in_obj=in_obj)
 
-    async def fetch_source(self, db: Session, source_id: str) -> models.Source:
+    async def fetch_source(self, db: Session, id: str) -> models.Source:
         """
         Fetch new data from yt-dlp for the source and update the source in the database.
 
         This function will also delete any videos that are no longer associated with the source.
 
         Args:
-            source_id: The id of the source to fetch and update.
+            id: The id of the source to fetch and update.
             db (Session): The database session.
 
         Returns:
             The updated source.
         """
-        db_source = await self.get(id=source_id, db=db)
+        db_source = await self.get(id=id, db=db)
 
         # Fetch source information from yt-dlp and create the source object
         source_info_dict = await get_source_info_dict(
-            source_id=source_id,
+            source_id=id,
             url=db_source.url,
             extract_flat=True,
             playlistreverse=True,
@@ -112,9 +112,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         _source = await get_source_from_source_info_dict(
             source_info_dict=source_info_dict, user_id=db_source.created_by
         )
-        db_source = await self.update(
-            in_obj=models.SourceUpdate(**_source.dict()), id=source_id, db=db
-        )
+        db_source = await self.update(in_obj=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
         # Update Source Videos from Fetched Videos
         # db_source = await self.get(id=source_id)
@@ -146,7 +144,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             f"Refreshed {len(refreshed_videos)} videos."
         )
 
-        return await self.get(id=source_id, db=db)
+        return await self.get(id=id, db=db)
 
     async def fetch_all_sources(self, db: Session) -> list[models.Source]:
         """
@@ -162,7 +160,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         sources = await self.get_all(db=db) or []
         fetched = []
         for _source in sources:
-            fetched.append(await self.fetch_source(source_id=_source.id, db=db))
+            fetched.append(await self.fetch_source(id=_source.id, db=db))
 
         return fetched
 

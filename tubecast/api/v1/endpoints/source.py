@@ -198,7 +198,7 @@ async def delete(
 
 @router.put("/{source_id}/fetch", response_model=models.SourceRead)
 async def fetch_source(
-    source_id: str,
+    id: str,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
 ) -> models.Source:
