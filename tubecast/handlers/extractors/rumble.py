@@ -317,6 +317,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
 
 class CustomRumbleChannelIE(RumbleChannelIE):
     _VALID_URL = r"(?P<url>https?://(?:www\.)?rumble\.com/(?:c|user)/(?P<id>[^&?#$/]+))"
+    # _VALID_URL = r"(?P<url>https?:\/\/(?:www\.)?rumble\.com\/(?:c|user)\/(?P<id>[a-zA-Z0-9_]+))"
 
     _TESTS = [
         {
@@ -338,20 +339,20 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             },
         },
         {
-            "url": "https://rumble.com/user/goldenpoodleharleyeuna",
+            "url": "https://rumble.com/user/ProjectVeritas",
             "playlist_mincount": 4,
             "info_dict": {
-                "url": "https://rumble.com/user/goldenpoodleharleyeuna",
-                "thumbnail": "https://sp.rmbl.ws/z0/V/N/R/Y/VNRYc.asF-rvy7j-qzsad1.jpeg",
-                "description": "goldenpoodleharleyeuna's Rumble Channel",
-                "title": "goldenpoodleharleyeuna",
-                "channel": "goldenpoodleharleyeuna",
-                "channel_id": "goldenpoodleharleyeuna",
-                "channel_url": "https://rumble.com/c/goldenpoodleharleyeuna",
-                "uploader": "goldenpoodleharleyeuna",
-                "uploader_id": "goldenpoodleharleyeuna",
-                "uploader_url": "https://rumble.com/c/goldenpoodleharleyeuna",
-                "id": "goldenpoodleharleyeuna",
+                "url": "https://rumble.com/user/ProjectVeritas",
+                "thumbnail": "https://sp.rmbl.ws/z0/N/U/W/w/NUWwb.asF-ProjectVeritas-qnx1cq.jpeg",
+                "description": "ProjectVeritas's Rumble Channel",
+                "title": "ProjectVeritas",
+                "channel": "ProjectVeritas",
+                "channel_id": "ProjectVeritas",
+                "channel_url": "https://rumble.com/c/ProjectVeritas",
+                "uploader": "ProjectVeritas",
+                "uploader_id": "ProjectVeritas",
+                "uploader_url": "https://rumble.com/c/ProjectVeritas",
+                "id": "ProjectVeritas",
                 "_type": "playlist",
             },
         },

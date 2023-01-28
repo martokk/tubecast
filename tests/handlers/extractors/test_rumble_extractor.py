@@ -10,8 +10,8 @@ from tubecast.handlers.extractors.rumble import (
 def test_CustomRumbleChannelIE() -> None:
     with YoutubeDL() as ydl:
         ie = CustomRumbleChannelIE(ydl)
-
-        for test_case in CustomRumbleChannelIE._TESTS:
+        test_cases = CustomRumbleChannelIE._TESTS  # type: ignore # pylint: disable=protected-access
+        for test_case in test_cases:  # type: ignore # pylint: disable=protected-access
             url = test_case["url"]
             expected_output = test_case["info_dict"]
 
@@ -24,8 +24,8 @@ def test_CustomRumbleChannelIE() -> None:
 def test_CustomRumbleEmbedIE() -> None:
     with YoutubeDL() as ydl:
         ie = CustomRumbleEmbedIE(ydl)
-
-        for test_case in CustomRumbleEmbedIE._TESTS:
+        test_cases = CustomRumbleEmbedIE._TESTS  # type: ignore # pylint: disable=protected-access
+        for test_case in test_cases:
             url = test_case["url"]
             expected_output = test_case["info_dict"]
 
@@ -37,8 +37,8 @@ def test_CustomRumbleEmbedIE() -> None:
 def test_CustomRumbleIE() -> None:
     with YoutubeDL() as ydl:
         ie = CustomRumbleIE(ydl)
-
-        for test_case in CustomRumbleIE._TESTS:
+        test_cases = CustomRumbleIE._TESTS  # type: ignore # pylint: disable=protected-access
+        for test_case in test_cases:  # type: ignore # pylint: disable=protected-access
             url = test_case["url"]
             expected_output = test_case["info_dict"]
 
