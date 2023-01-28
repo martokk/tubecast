@@ -16,9 +16,11 @@ EMAIL_TEMPLATES_DIR = VIEWS_PATH / "email-templates" / "build"
 # Data Folder
 LOGS_PATH = DATA_PATH / "logs"
 CACHE_PATH = DATA_PATH / "cache"
+FEEDS_PATH = DATA_PATH / "feed"
 
 # Cache Folders
-# VIDEO_INFO_CACHE_PATH = CACHE_PATH / "source_info"
+SOURCE_INFO_CACHE_PATH = CACHE_PATH / "source_info"
+VIDEO_INFO_CACHE_PATH = CACHE_PATH / "video_info"
 
 # Files
 ENV_FILE = DATA_PATH / ".env"

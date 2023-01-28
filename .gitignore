@@ -656,3 +656,10 @@ build_win/
 dist_linux/
 dist_win/
 tubecast/data/database.sqlite3
+
+tubecast/data/feed/
+
+*.old
+
+*/.env
+*.env

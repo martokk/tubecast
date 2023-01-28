@@ -1,8 +1,8 @@
 from typing import Any
 
-import datetime
-import sqlite3
 from collections.abc import AsyncGenerator, Generator
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 import sqlalchemy as sa
@@ -11,13 +11,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel, create_engine
 
+from tests.mock_objects import get_mocked_source_info_dict, get_mocked_video_info_dict
 from tubecast import crud, models, settings
 from tubecast.api.deps import get_db
 from tubecast.core import security
 from tubecast.core.app import app
 from tubecast.db.init_db import init_initial_data
 
-# Set up the databsase
+# Set up the database
 db_url = "sqlite:///:memory:"
 engine = create_engine(
     db_url,
@@ -47,8 +48,18 @@ def do_begin(conn: Any) -> None:
     conn.exec_driver_sql("BEGIN")
 
 
+@pytest.fixture(name="init")
+def fixture_init(mocker: MagicMock, tmp_path: Path) -> None:
+    mocker.patch("tubecast.paths.FEEDS_PATH", return_value=tmp_path)
+    mocker.patch("tubecast.services.feed.build_rss_file", None)
+
+
 @pytest.fixture(name="db")
-async def fixture_db() -> AsyncGenerator[Session, None]:
+async def fixture_db(
+    init: Any,
+    tmp_path: Path,
+    mocker: MagicMock,
+) -> AsyncGenerator[Session, None]:
     connection = engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
@@ -65,7 +76,18 @@ async def fixture_db() -> AsyncGenerator[Session, None]:
         if not nested.is_active:
             nested = connection.begin_nested()
 
-    yield session
+    mocker.patch("tubecast.services.feed.FEEDS_PATH", tmp_path)
+    with (
+        patch(
+            "tubecast.services.source.get_info_dict",
+            get_mocked_source_info_dict,
+        ),
+        patch(
+            "tubecast.services.video.get_info_dict",
+            get_mocked_video_info_dict,
+        ),
+    ):
+        yield session
 
     # Rollback the overall transaction, restoring the state before the test ran.
     session.close()
@@ -84,10 +106,14 @@ async def fixture_client(db: Session) -> AsyncGenerator[TestClient, None]:
     Yields:
         TestClient: test client with database session override.
     """
+    # YoutubeDL.extract_info = MagicMock(
+    #     return_value=get_source_info_dict(url=YoutubeDL.extract_info.call_args_list)
+    # )
 
     def override_get_db() -> Generator[Session, None, None]:
         yield db
 
+    # with patch("yt_dlp.YoutubeDL.extract_info", get_mocked_source_info_dict):
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     del app.dependency_overrides[get_db]
@@ -110,44 +136,6 @@ async def fixture_db_with_user(db: Session) -> Session:
     )
     await crud.user.create(in_obj=user_create, db=db)
     return db
-
-
-@pytest.fixture(name="db_with_sources")
-async def fixture_db_with_sources(db_with_user: Session) -> Session:
-    """
-    Fixture that creates example sources for the example source in the test database.
-
-    Args:
-        db_with_user (Session): database session.
-
-    Returns:
-        Session: database session with example sources.
-
-    Returns the following source_ids:
-        - 5kwf8hFn
-        - R6iBBN3J
-        - fEpPZMry
-    """
-    owner = await crud.user.get(db=db_with_user, username="test_user")
-    sources = []
-    for i in range(3):
-        source_create = models.SourceCreate(
-            id=f"{i}{i}{i}{i}{i}{i}{i}{i}",
-            uploader="test",
-            uploader_id="test_uploader_id",
-            title=f"Example source {i}",
-            description=f"This is example source {i}.",
-            duration=417,
-            thumbnail="https://sp.rmbl.ws/s8d/R/0_FRh.oq1b.jpg",
-            url=f"https://rumble.com/{i}{i}{i}{i}/test.html",
-            added_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
-        )
-        source = await crud.source.create_with_owner_id(
-            in_obj=source_create, db=db_with_user, owner_id=owner.id
-        )
-        sources.append(source)
-    return db_with_user
 
 
 @pytest.fixture(name="superuser_token_headers")

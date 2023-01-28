@@ -134,16 +134,20 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db: Session,
         *args: BinaryExpression[Any],
         in_obj: ModelUpdateType,
+        exclude_none: bool = True,
+        exclude_unset: bool = True,
         **kwargs: Any,
     ) -> ModelType:
         """
         Update an existing record.
 
         Args:
-            in_obj: The updated object.
-            args: Binary expressions to filter by.
+            in_obj (ModelUpdateType): The updated object.
+            args (BinaryExpression): Binary expressions to filter by.
             db (Session): The database session.
-            kwargs: Keyword arguments to filter by.
+            exclude_none (bool): Whether to exclude None values from the update.
+            exclude_unset (bool): Whether to exclude unset values from the update.
+            kwargs (Any): Keyword arguments to filter by.
 
         Returns:
             The updated object.
@@ -155,7 +159,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
             raise ValueError("crud.base.update() Must provide at least one filter")
         db_obj = await self.get(db=db, *args, **kwargs)
 
-        in_obj_values = in_obj.dict(exclude_unset=True, exclude_none=True)
+        in_obj_values = in_obj.dict(exclude_unset=exclude_unset, exclude_none=exclude_none)
         db_obj_values = db_obj.dict()
         for in_obj_key, in_obj_value in in_obj_values.items():
             if in_obj_value != db_obj_values[in_obj_key]:
@@ -165,7 +169,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db.refresh(db_obj)
         return db_obj
 
-    async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
+    async def remove(self, *args: BinaryExpression[Any], db: Session, **kwargs: Any) -> None:
         """
         Delete a record.
 

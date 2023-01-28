@@ -81,13 +81,11 @@ async def get_by_id(
         if not is_superuser:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="The user doesn't have enough privileges",
+                detail="Not enough permissions",
             )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if not is_superuser and user != current_user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="The user doesn't have enough privileges"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
     return user
 
 
