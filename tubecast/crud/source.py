@@ -63,10 +63,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         )
 
         # Save the source to the database
-        db_source = await self.create(in_obj=_source, db=db)
-
-        # Fetch video information from yt-dlp for new videos
-        return await self.fetch_source(source_id=source_id, db=db)
+        return await self.create(in_obj=_source, db=db)
 
     # async def create_with_owner_id(
     #     self, db: Session, *, in_obj: models.SourceCreate, owner_id: str

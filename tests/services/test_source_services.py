@@ -99,9 +99,12 @@ async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
     """
     # Create fetched_source
     user = await crud.user.get(db=db_with_user, username="test_user")
-    fetched_source = await crud.source.create_source_from_url(
+    created_source = await crud.source.create_source_from_url(
         db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
     )
+    await crud.source.fetch_source(db=db_with_user, id=created_source.id)
+
+    fetched_source = await crud.source.get(db=db_with_user, id=created_source.id)
     assert len(fetched_source.videos) == 2
     fetched_videos = [video for video in fetched_source.videos]
 
