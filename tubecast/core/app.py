@@ -27,7 +27,7 @@ app.mount("/feed", StaticFiles(directory=FEEDS_PATH), name="feed")
 
 
 @app.on_event("startup")  # type: ignore
-async def on_startup(db: Session = next(deps.get_db())) -> None:
+async def on_startup() -> None:
     """
     Event handler that gets called when the application starts.
     Logs application start and creates database and tables if they do not exist.
@@ -35,35 +35,30 @@ async def on_startup(db: Session = next(deps.get_db())) -> None:
     if settings.NOTIFY_ON_START:
         await notify.notify(text=f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started.")
 
+    db: Session = next(deps.get_db())
     await init_initial_data(db=db)
 
 
 @app.on_event("startup")  # type: ignore
 @repeat_every(seconds=settings.REFRESH_SOURCES_INTERVAL_MINUTES * 60, wait_first=True)
-async def repeating_fetch_all_sources(
-    db: Session = Depends(deps.get_db),
-) -> None:  # pragma: no cover
+async def repeating_fetch_all_sources() -> None:  # pragma: no cover
     """
     Fetches all Sources from yt-dlp.
-
-    Args:
-        db (Session): Database session.
     """
     logger.debug("Repeating fetch of All Sources...")
+    db: Session = next(deps.get_db())
     fetch_results = await crud.source.fetch_all_sources(db=db)
     logger.success(f"Completed refreshing {fetch_results.sources} Sources from yt-dlp.")
 
 
 @app.on_event("startup")  # type: ignore
 @repeat_every(seconds=settings.REFRESH_VIDEOS_INTERVAL_MINUTES * 60, wait_first=True)
-async def repeating_refresh_videos(db: Session = Depends(deps.get_db)) -> None:  # pragma: no cover
+async def repeating_refresh_videos() -> None:  # pragma: no cover
     """
     Refreshes all Videos that meet criteria with updated data from yt-dlp.
-
-    Args:
-        db (Session): Database session.
     """
     logger.debug("Repeating refresh of Videos...")
+    db: Session = next(deps.get_db())
     refreshed_videos = await refresh_all_videos(
         older_than_hours=settings.MAX_VIDEO_AGE_HOURS, db=db
     )
