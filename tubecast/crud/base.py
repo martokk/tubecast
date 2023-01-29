@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session, SQLModel, select
 
+from tubecast import logger
 from tubecast.crud import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
 
 ModelType = TypeVar("ModelType", bound=SQLModel)

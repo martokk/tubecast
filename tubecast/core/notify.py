@@ -113,7 +113,6 @@ def send_email(
 
     # Send the email
     response = message.send(to=email_to, render=environment, smtp=smtp_options)
-    logger.info(f"send email result: {response}")
     return response
 
 

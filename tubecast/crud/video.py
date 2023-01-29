@@ -71,7 +71,7 @@ class VideoCRUD(BaseCRUD[models.Video, models.VideoCreate, models.VideoUpdate]):
         Returns:
             List[Video]: List of fetched videos
         """
-        logger.warning("Fetching ALL Videos...")
+        logger.debug("Fetching ALL Videos...")
         videos = await self.get_all(db=db) or []
         fetched = []
         for _video in videos:

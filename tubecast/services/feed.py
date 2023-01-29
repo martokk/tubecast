@@ -118,7 +118,7 @@ async def get_rss_file(source_id: str) -> Path:
     # Validate RSS File exists
     if not rss_file.exists():
         err_msg = f"RSS file ({source_id}.rss) does not exist for ({source_id=})"
-        logger.warning(err_msg)
+        logger.error(err_msg)
         raise FileNotFoundError(err_msg)
     return rss_file
 

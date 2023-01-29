@@ -7,7 +7,7 @@ def start_server() -> None:
     """
     Start Uvicorn server using the configuration from settings.
     """
-    logger.debug("Starting uvicorn server...")
+    logger.debug("Starting Uvicorn server...")
     uvicorn.run(
         settings.UVICORN_ENTRYPOINT,
         host=settings.SERVER_HOST,

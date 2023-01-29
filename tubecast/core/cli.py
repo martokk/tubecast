@@ -54,5 +54,4 @@ def main(
     """
 
     # Start Uvicorn
-    logger.info("Starting Server...")
     start_server()
