@@ -43,7 +43,9 @@ COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
 # Copying in our app
 COPY /tubecast /tubecast
+COPY /migrations /migrations
 COPY /start.sh /start.sh
+COPY /alembic.ini /alembic.ini
 RUN chmod +x /start.sh
 
 # venv already has runtime deps installed we get a quicker install
@@ -79,7 +81,9 @@ COPY --from=builder-base $VENV_PATH $VENV_PATH
 
 # Copying in our app
 COPY /tubecast /tubecast
+COPY /migrations /migrations
 COPY /start.sh /start.sh
+COPY /alembic.ini /alembic.ini
 RUN chmod +x /start.sh
 
 WORKDIR /
