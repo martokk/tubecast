@@ -19,8 +19,7 @@ from .base import BaseCRUD
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):
     async def remove(self, *args: BinaryExpression[Any], db: Session, **kwargs: Any) -> None:
-        source_id = kwargs.get("id")
-        if source_id:
+        if source_id := kwargs.get("id"):
             try:
                 await delete_rss_file(source_id=source_id)
             except FileNotFoundError as e:
@@ -175,27 +174,27 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         logger.debug("Fetching ALL Sources...")
         fetch_logger.debug("Fetching ALL Sources...")
         sources = await self.get_all(db=db) or []
-        fetched_results = models.FetchResults()
+        results = models.FetchResults()
 
         for _source in sources:
             source_fetch_results = await self.fetch_source(id=_source.id, db=db)
-            fetched_results += source_fetch_results
+            results += source_fetch_results
 
         logger.success(
-            f"Completed fetching All ({fetched_results.sources}) Sources. "
-            f"[{fetched_results.added_videos}/{fetched_results.deleted_videos}/{fetched_results.refreshed_videos}] "
-            f"Added {fetched_results.added_videos} new videos. "
-            f"Deleted {fetched_results.deleted_videos} orphaned videos. "
-            f"Refreshed {fetched_results.refreshed_videos} videos."
+            f"Completed fetching All ({results.sources}) Sources. "
+            f"[{results.added_videos}/{results.deleted_videos}/{results.refreshed_videos}]"
+            f"Added {results.added_videos} new videos. "
+            f"Deleted {results.deleted_videos} orphaned videos. "
+            f"Refreshed {results.refreshed_videos} videos."
         )
         fetch_logger.success(
-            f"Completed fetching All ({fetched_results.sources}) Sources. "
-            f"[{fetched_results.added_videos}/{fetched_results.deleted_videos}/{fetched_results.refreshed_videos}] "
-            f"Added {fetched_results.added_videos} new videos. "
-            f"Deleted {fetched_results.deleted_videos} orphaned videos. "
-            f"Refreshed {fetched_results.refreshed_videos} videos."
+            f"Completed fetching All ({results.sources}) Sources. "
+            f"[{results.added_videos}/{results.deleted_videos}/{results.refreshed_videos}]"
+            f"Added {results.added_videos} new videos. "
+            f"Deleted {results.deleted_videos} orphaned videos. "
+            f"Refreshed {results.refreshed_videos} videos."
         )
-        return fetched_results
+        return results
 
 
 source = SourceCRUD(models.Source)

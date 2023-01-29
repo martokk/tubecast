@@ -2,7 +2,6 @@ from sqlmodel import Session
 
 from tests.mock_objects import (
     MOCKED_RUMBLE_SOURCE_1,
-    MOCKED_RUMBLE_SOURCE_2,
     MOCKED_RUMBLE_VIDEO_3,
     get_mocked_source_info_dict,
 )
@@ -106,7 +105,7 @@ async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
 
     fetched_source = await crud.source.get(db=db_with_user, id=created_source.id)
     assert len(fetched_source.videos) == 2
-    fetched_videos = [video for video in fetched_source.videos]
+    fetched_videos = list(fetched_source.videos)
 
     # Add video to db_source
     await crud.video.create_video_from_url(

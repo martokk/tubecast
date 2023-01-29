@@ -34,9 +34,12 @@ SQLModel.metadata.create_all(bind=engine)
 # These two event listeners are only needed for sqlite for proper
 # SAVEPOINT / nested transaction support. Other databases like postgres
 # don't need them.
-# From: https://docs.sqlalchemy.org/en/14/dialects/sqlite.html#serializable-isolation-savepoints-transactional-ddl
+# From: https://docs.sqlalchemy.org/en/14/dialects/sqlite.html
+# #serializable-isolation-savepoints-transactional-ddl
 @sa.event.listens_for(engine, "connect")  # type: ignore
-def do_connect(dbapi_connection: Any, connection_record: Any) -> None:
+def do_connect(
+    dbapi_connection: Any, connection_record: Any  # pylint: disable=unused-argument
+) -> None:
     # disable pysqlite's emitting of the BEGIN statement entirely.
     # also stops it from emitting COMMIT before any DDL.
     dbapi_connection.isolation_level = None
@@ -51,14 +54,13 @@ def do_begin(conn: Any) -> None:
 @pytest.fixture(name="init")
 def fixture_init(mocker: MagicMock, tmp_path: Path) -> None:
     mocker.patch("tubecast.paths.FEEDS_PATH", return_value=tmp_path)
+    mocker.patch("tubecast.paths.LOG_FILE", return_value=tmp_path / "test.log")
     mocker.patch("tubecast.services.feed.build_rss_file", None)
 
 
 @pytest.fixture(name="db")
 async def fixture_db(
-    init: Any,
-    tmp_path: Path,
-    mocker: MagicMock,
+    init: Any, tmp_path: Path, mocker: MagicMock  # pylint: disable=unused-argument
 ) -> AsyncGenerator[Session, None]:
     connection = engine.connect()
     transaction = connection.begin()
@@ -71,7 +73,9 @@ async def fixture_db(
     # If the application code calls session.commit, it will end the nested
     # transaction. Need to start a new one when that happens.
     @sa.event.listens_for(session, "after_transaction_end")  # type: ignore
-    def end_savepoint(session: Any, transaction: Any) -> None:  # type: ignore
+    def end_savepoint(  # type: ignore
+        session: Any, transaction: Any  # pylint: disable=unused-argument
+    ) -> None:
         nonlocal nested
         if not nested.is_active:
             nested = connection.begin_nested()
@@ -139,7 +143,9 @@ async def fixture_db_with_user(db: Session) -> Session:
 
 
 @pytest.fixture(name="superuser_token_headers")
-def superuser_token_headers(db_with_user: Session, client: TestClient) -> dict[str, str]:
+def superuser_token_headers(
+    db_with_user: Session, client: TestClient  # pylint: disable=unused-argument
+) -> dict[str, str]:
     """
     Fixture that returns the headers for a superuser.
 
@@ -157,8 +163,7 @@ def superuser_token_headers(db_with_user: Session, client: TestClient) -> dict[s
     r = client.post(f"{settings.API_V1_PREFIX}/login/access-token", data=login_data)
     tokens = r.json()
     a_token = tokens["access_token"]
-    headers = {"Authorization": f"Bearer {a_token}"}
-    return headers
+    return {"Authorization": f"Bearer {a_token}"}
 
 
 @pytest.fixture(name="normal_user_token_headers")
@@ -179,8 +184,7 @@ def normal_user_token_headers(client: TestClient) -> dict[str, str]:
     r = client.post(f"{settings.API_V1_PREFIX}/login/access-token", data=login_data)
     tokens = r.json()
     a_token = tokens["access_token"]
-    headers = {"Authorization": f"Bearer {a_token}"}
-    return headers
+    return {"Authorization": f"Bearer {a_token}"}
 
 
 @pytest.fixture(name="test_request")
