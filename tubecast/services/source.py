@@ -112,36 +112,7 @@ async def get_source_videos_from_source_info_dict(
         for playlist in playlists
         for entry_info_dict in playlist.get("entries", [])
     ]
-    videos = [VideoCreate(**video_dict) for video_dict in video_dicts]
-    return videos
-
-
-async def refresh_all_sources(db: Session) -> list[Source]:
-    """
-    Fetches new data from yt-dlp for all Sources.
-
-    Args:
-        db (Session): The database session.
-
-    Returns:
-        The list of refreshed Sources.
-    """
-    sources = await crud.source.get_all(db=db) or []
-    return await refresh_sources(sources=sources, db=db)
-
-
-async def refresh_sources(sources: list[Source], db: Session) -> list[Source]:
-    """
-    Fetches new data from yt-dlp for each Source.
-
-    Args:
-        sources: The list of sources to refresh.
-        db (Session): The database session.
-
-    Returns:
-        The list of refreshed Sources.
-    """
-    return [await crud.source.fetch_source(id=source.id, db=db) for source in sources]
+    return [VideoCreate(**video_dict) for video_dict in video_dicts]
 
 
 async def add_new_source_videos_from_fetched_videos(

@@ -1,7 +1,7 @@
 import typer
 from rich.console import Console
 
-from tubecast import logger, settings, version
+from tubecast import settings, version
 from tubecast.core.server import start_server
 
 # from tubecast.core.app import app
@@ -54,5 +54,4 @@ def main(
     """
 
     # Start Uvicorn
-    logger.info("Starting Server...")
     start_server()

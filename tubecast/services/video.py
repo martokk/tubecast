@@ -12,7 +12,7 @@ from tubecast.services.ytdlp import get_info_dict
 
 async def get_video_info_dict(
     url: str,
-) -> dict[str, Any]:
+) -> dict[str, Any]:  # sourcery skip: inline-immediately-returned-variable
     """
     Retrieve the info_dict for a Video.
 

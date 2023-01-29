@@ -2,7 +2,6 @@ from sqlmodel import Session
 
 from tests.mock_objects import (
     MOCKED_RUMBLE_SOURCE_1,
-    MOCKED_RUMBLE_SOURCE_2,
     MOCKED_RUMBLE_VIDEO_3,
     get_mocked_source_info_dict,
 )
@@ -10,8 +9,6 @@ from tubecast import crud
 from tubecast.services.source import (
     delete_orphaned_source_videos,
     get_source_videos_from_source_info_dict,
-    refresh_all_sources,
-    refresh_sources,
 )
 
 
@@ -58,41 +55,6 @@ async def test_get_nested_source_videos_from_source_info_dict() -> None:
     assert result_video.source_id == mocked_video["source_id"]
 
 
-async def test_refresh_source(db_with_user: Session) -> None:
-    """
-    Tests 'refresh_sources', fetching new data from yt-dlp for a Source.
-    """
-    # Create source
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    source = await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-
-    # Refresh source
-    refreshed_sources = await refresh_sources(sources=[source], db=db_with_user)
-
-    assert len(refreshed_sources) == 1
-
-
-async def test_refresh_all_source(db_with_user: Session) -> None:
-    """
-    Tests 'refresh_all_sources', fetching new data from yt-dlp for a Source.
-    """
-    # Create source
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-    await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_2["url"], user_id=user.id
-    )
-
-    # Refresh all sources
-    refreshed_sources = await refresh_all_sources(db=db_with_user)
-
-    assert len(refreshed_sources) == 2
-
-
 async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
     """
     Tests 'delete_orphaned_source_videos', deleting videos that are no longer in the source.
@@ -106,7 +68,7 @@ async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
 
     fetched_source = await crud.source.get(db=db_with_user, id=created_source.id)
     assert len(fetched_source.videos) == 2
-    fetched_videos = [video for video in fetched_source.videos]
+    fetched_videos = list(fetched_source.videos)
 
     # Add video to db_source
     await crud.video.create_video_from_url(

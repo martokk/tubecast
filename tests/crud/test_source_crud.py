@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from sqlmodel import Session
@@ -121,9 +121,10 @@ async def test_fetch_all_sources(db_with_user: Session) -> None:
     )
 
     # Fetch all sources
-    fetched_sources = await crud.source.fetch_all_sources(db=db_with_user)
+    fetch_results: models.FetchResults = await crud.source.fetch_all_sources(db=db_with_user)
 
     # Assert the results
-    assert len(fetched_sources) == 2
-    assert fetched_sources[0].name == MOCKED_RUMBLE_SOURCE_1["name"]
-    assert fetched_sources[1].name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert fetch_results.sources == 2
+    assert fetch_results.added_videos == 4
+    assert fetch_results.refreshed_videos == 4
+    assert fetch_results.deleted_videos == 0
