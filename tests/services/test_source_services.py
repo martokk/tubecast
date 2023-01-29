@@ -9,8 +9,6 @@ from tubecast import crud
 from tubecast.services.source import (
     delete_orphaned_source_videos,
     get_source_videos_from_source_info_dict,
-    refresh_all_sources,
-    refresh_sources,
 )
 
 
@@ -55,41 +53,6 @@ async def test_get_nested_source_videos_from_source_info_dict() -> None:
     assert result_video.thumbnail == mocked_video["thumbnail"]
     assert result_video.url == mocked_video["url"]
     assert result_video.source_id == mocked_video["source_id"]
-
-
-async def test_refresh_source(db_with_user: Session) -> None:
-    """
-    Tests 'refresh_sources', fetching new data from yt-dlp for a Source.
-    """
-    # Create source
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    source = await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-
-    # Refresh source
-    refreshed_sources = await refresh_sources(sources=[source], db=db_with_user)
-
-    assert len(refreshed_sources) == 1
-
-
-async def test_refresh_all_source(db_with_user: Session) -> None:
-    """
-    Tests 'refresh_all_sources', fetching new data from yt-dlp for a Source.
-    """
-    # Create source
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-    await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_2["url"], user_id=user.id
-    )
-
-    # Refresh all sources
-    refreshed_sources = await refresh_all_sources(db=db_with_user)
-
-    assert len(refreshed_sources) == 2
 
 
 async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:

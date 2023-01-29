@@ -3,13 +3,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from tubecast import logger, models, settings, version
+from tubecast import crud, logger, models, settings, version
 from tubecast.api import deps
 from tubecast.api.v1.api import api_router
 from tubecast.core import notify
 from tubecast.db.init_db import init_initial_data
 from tubecast.paths import FEEDS_PATH
-from tubecast.services.source import refresh_all_sources
 from tubecast.services.video import refresh_all_videos
 from tubecast.views.router import views_router
 
@@ -41,29 +40,33 @@ async def on_startup(db: Session = next(deps.get_db())) -> None:
 
 @app.on_event("startup")  # type: ignore
 @repeat_every(seconds=settings.REFRESH_SOURCES_INTERVAL_MINUTES * 60, wait_first=True)
-async def repeating_refresh_sources(db: Session = Depends(deps.get_db)) -> None:  # pragma: no cover
+async def repeating_fetch_all_sources(
+    db: Session = Depends(deps.get_db),
+) -> None:  # pragma: no cover
     """
-    Fetches new data from yt-dlp for all Videos that meet criteria.
+    Fetches all Sources from yt-dlp.
 
     Args:
         db (Session): Database session.
     """
-    logger.debug("Repeating refresh of Sources...")
-    refreshed_videos = await refresh_all_sources(db=db)
-    logger.success(f"Completed refreshing {len(refreshed_videos)} Sources from yt-dlp.")
+    logger.debug("Repeating fetch of All Sources...")
+    fetch_results = await crud.source.fetch_all_sources(db=db)
+    logger.success(f"Completed refreshing {fetch_results.sources} Sources from yt-dlp.")
 
 
 @app.on_event("startup")  # type: ignore
 @repeat_every(seconds=settings.REFRESH_VIDEOS_INTERVAL_MINUTES * 60, wait_first=True)
 async def repeating_refresh_videos(db: Session = Depends(deps.get_db)) -> None:  # pragma: no cover
     """
-    Fetches new data from yt-dlp for all Videos that meet criteria.
+    Refreshes all Videos that meet criteria with updated data from yt-dlp.
 
     Args:
         db (Session): Database session.
     """
     logger.debug("Repeating refresh of Videos...")
-    refreshed_videos = await refresh_all_videos(older_than_hours=settings.MAX_VIDEO_AGE_HOURS, db=db)
+    refreshed_videos = await refresh_all_videos(
+        older_than_hours=settings.MAX_VIDEO_AGE_HOURS, db=db
+    )
     logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")
 
 
