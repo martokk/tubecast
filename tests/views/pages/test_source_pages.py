@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
-from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
+from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES
 from tubecast import crud, models, settings
 
 
@@ -16,9 +16,8 @@ async def fixture_source_1(db_with_user: Session) -> models.Source:
     Create an source for testing.
     """
     user = await crud.user.get(db=db_with_user, username="test_user")
-    source_create = models.SourceCreate(**MOCKED_ITEM_1)
-    return await crud.source.create_with_owner_id(
-        db=db_with_user, obj_in=source_create, owner_id=user.id
+    return await crud.source.create_source_from_url(
+        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
     )
 
 
@@ -30,20 +29,18 @@ async def fixture_sources(db_with_user: Session) -> list[models.Source]:
     # Create 1 as a superuser
     user = await crud.user.get(db=db_with_user, username=settings.FIRST_SUPERUSER_USERNAME)
     sources = []
-    source_create = models.SourceCreate(**MOCKED_ITEM_1)
     sources.append(
-        await crud.source.create_with_owner_id(
-            db=db_with_user, obj_in=source_create, owner_id=user.id
+        await crud.source.create_source_from_url(
+            db=db_with_user, url=MOCKED_SOURCES[0]["url"], user_id=user.id
         )
     )
 
     # Create 2 as a normal user
     user = await crud.user.get(db=db_with_user, username="test_user")
-    for mocked_source in [MOCKED_ITEMS[1], MOCKED_ITEMS[2]]:
-        source_create = models.SourceCreate(**mocked_source)
+    for mocked_source in [MOCKED_SOURCES[1], MOCKED_SOURCES[2]]:
         sources.append(
-            await crud.source.create_with_owner_id(
-                db=db_with_user, obj_in=source_create, owner_id=user.id
+            await crud.source.create_source_from_url(
+                db=db_with_user, url=mocked_source["url"], user_id=user.id
             )
         )
     return sources
@@ -74,7 +71,7 @@ def test_handle_create_source(
     client.cookies = normal_user_cookies
     response = client.post(
         "/sources/create",
-        data=MOCKED_ITEM_1,
+        data=MOCKED_RUMBLE_SOURCE_1,
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "source/list.html"  # type: ignore
@@ -91,11 +88,13 @@ def test_create_duplicate_source(
     Test a duplicate source cannot be created.
     """
     # Try to create a duplicate source
-    with pytest.raises(Exception):
-        response = client.post(
-            "/sources/create",
-            data=MOCKED_ITEM_1,
-        )
+    response = client.post(
+        "/sources/create",
+        data=MOCKED_RUMBLE_SOURCE_1,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.template.name == "source/create.html"  # type: ignore
+    assert response.context["alerts"].danger[0] == "Source already exists"  # type: ignore
 
 
 def test_read_source(
@@ -225,7 +224,7 @@ def test_update_source(
     # Update the source
     response = client.post(
         f"/source/{source_1.id}/edit",  # type: ignore
-        data=MOCKED_ITEMS[1],
+        data=MOCKED_SOURCES[1],
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "source/edit.html"  # type: ignore
@@ -236,14 +235,14 @@ def test_update_source(
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "source/view.html"  # type: ignore
-    assert response.context["source"].title == MOCKED_ITEMS[1]["title"]  # type: ignore
-    assert response.context["source"].description == MOCKED_ITEMS[1]["description"]  # type: ignore
-    assert response.context["source"].url == MOCKED_ITEMS[1]["url"]  # type: ignore
+    assert response.context["source"].name == MOCKED_SOURCES[1]["name"]  # type: ignore
+    assert response.context["source"].description == MOCKED_SOURCES[1]["description"]  # type: ignore
+    assert response.context["source"].url == MOCKED_SOURCES[1]["url"]  # type: ignore
 
     # Test invalid source id
     response = client.post(
         f"/source/invalid_user_id/edit",  # type: ignore
-        data=MOCKED_ITEMS[1],
+        data=MOCKED_SOURCES[1],
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER

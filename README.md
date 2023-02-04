@@ -1,4 +1,4 @@
-# TubeCast
+# tubecast
 
 ---
 
@@ -15,27 +15,19 @@
 [![License](https://img.shields.io/github/license/martokk/tubecast)](https://github.com/martokk/tubecast/blob/master/LICENSE)
 
 
-A project template stack for FastAPI projects.
+A python project.
 
 </div>
 
 ---
 
 ## Features
-- FastApi, SQLModel, Pydantic, Alembic
-- JWT Authentication
-- CRUD
-- Notify
-- Proxy
-- CLI
-
 
 ## Installation
 
 ## Usage
-<!-- TODO: Update with Cookiecutter Template -->
-See [cookiecutter_tubecast]() page.
 
+`python3 -m tubecast`
 
 ## 📈 Releases
 

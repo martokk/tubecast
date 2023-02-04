@@ -9,7 +9,7 @@
     <table class="table table-hover table-sm">
         <thead>
             <tr>
-                <th scope="col" class="w-75">Title</th>
+                <th scope="col" class="w-75">Name</th>
                 <th scope="col" class="d-none d-md-table-cell w-25">Description</th>
                 <th scope="col" class="w-auto"></th>
             </tr>
@@ -19,7 +19,7 @@
             {% for source in sources %}
             <tr>
                 <td class="">
-                    <a href="/source/{{ source.id }}" class="">{{ source.title }}</a>
+                    <a href="/source/{{ source.id }}" class="">{{ source.name }}</a>
                 </td>
 
                 <td class="">{{ source.description }}</td>

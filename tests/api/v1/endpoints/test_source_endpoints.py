@@ -1,26 +1,39 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
+from tests.mock_objects import MOCKED_SOURCES, MOCKED_YOUTUBE_SOURCE_1
 from tubecast import settings
 
 
-def test_create_source(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_create_source_from_url(
+    client: TestClient,
+    db_with_user: Session,
+    normal_user_token_headers: dict[str, str],
+) -> None:
     """
-    Test that a superuser can create a new source.
+    Test that a normal user can create a source from a URL.
     """
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
-        headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        headers=normal_user_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
     )
     assert response.status_code == 201
     source = response.json()
-    assert source["title"] == MOCKED_ITEM_1["title"]
-    assert source["description"] == MOCKED_ITEM_1["description"]
-    assert source["url"] == MOCKED_ITEM_1["url"]
-    assert source["owner_id"] is not None
-    assert source["id"] is not None
+    assert source["created_by"] == MOCKED_YOUTUBE_SOURCE_1["created_by"]
+    assert source["url"] == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source["name"] == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source["logo"] == MOCKED_YOUTUBE_SOURCE_1["logo"]
+    assert source["ordered_by"] == MOCKED_YOUTUBE_SOURCE_1["ordered_by"]
+    assert source["feed_url"] == MOCKED_YOUTUBE_SOURCE_1["feed_url"]
+    assert source["handler"] == MOCKED_YOUTUBE_SOURCE_1["handler"]
+    assert source["author"] == MOCKED_YOUTUBE_SOURCE_1["author"]
+    assert source["description"] == MOCKED_YOUTUBE_SOURCE_1["description"]
+    assert source["extractor"] == MOCKED_YOUTUBE_SOURCE_1["extractor"]
+    assert source["created_at"] is not None
+    assert source["updated_at"] is not None
 
 
 def test_create_duplicate_source(
@@ -32,7 +45,7 @@ def test_create_duplicate_source(
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == 201
 
@@ -40,7 +53,7 @@ def test_create_duplicate_source(
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == 200
     duplicate = response.json()
@@ -54,7 +67,7 @@ def test_read_source(client: TestClient, superuser_token_headers: dict[str, str]
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == 201
     created_source = response.json()
@@ -67,11 +80,18 @@ def test_read_source(client: TestClient, superuser_token_headers: dict[str, str]
     assert response.status_code == 200
     read_source = response.json()
 
-    assert read_source["title"] == MOCKED_ITEM_1["title"]
-    assert read_source["description"] == MOCKED_ITEM_1["description"]
-    assert read_source["url"] == MOCKED_ITEM_1["url"]
-    assert read_source["owner_id"] is not None
-    assert read_source["id"] is not None
+    assert read_source["url"] == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert read_source["name"] == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert read_source["logo"] == MOCKED_YOUTUBE_SOURCE_1["logo"]
+    assert read_source["ordered_by"] == MOCKED_YOUTUBE_SOURCE_1["ordered_by"]
+    assert read_source["feed_url"] == MOCKED_YOUTUBE_SOURCE_1["feed_url"]
+    assert read_source["handler"] == MOCKED_YOUTUBE_SOURCE_1["handler"]
+    assert read_source["author"] == MOCKED_YOUTUBE_SOURCE_1["author"]
+    assert read_source["description"] == MOCKED_YOUTUBE_SOURCE_1["description"]
+    assert read_source["extractor"] == MOCKED_YOUTUBE_SOURCE_1["extractor"]
+    assert read_source["created_by"] is not None
+    assert read_source["created_at"] is not None
+    assert read_source["updated_at"] is not None
 
 
 def test_get_source_not_found(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
@@ -112,7 +132,7 @@ def test_superuser_get_all_sources(
     """
 
     # Create 3 sources
-    for source in MOCKED_ITEMS:
+    for source in MOCKED_SOURCES:
         response = client.post(
             f"{settings.API_V1_PREFIX}/source/",
             headers=superuser_token_headers,
@@ -143,13 +163,13 @@ def test_normal_user_get_all_sources(
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=normal_user_token_headers,
-        json=MOCKED_VIDEOS[0],
+        json=MOCKED_SOURCES[0],
     )
     assert response.status_code == 201
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=normal_user_token_headers,
-        json=MOCKED_VIDEOS[1],
+        json=MOCKED_SOURCES[1],
     )
     assert response.status_code == 201
 
@@ -157,7 +177,7 @@ def test_normal_user_get_all_sources(
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEOS[2],
+        json=MOCKED_SOURCES[2],
     )
     assert response.status_code == 201
 
@@ -178,14 +198,14 @@ def test_update_source(client: TestClient, superuser_token_headers: dict[str, st
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == 201
     created_source = response.json()
 
     # Update Source
-    update_data = MOCKED_ITEM_1.copy()
-    update_data["title"] = "Updated Title"
+    update_data = MOCKED_YOUTUBE_SOURCE_1.copy()
+    update_data["name"] = "Updated Name"
     response = client.patch(
         f"{settings.API_V1_PREFIX}/source/{created_source['id']}",
         headers=superuser_token_headers,
@@ -193,7 +213,7 @@ def test_update_source(client: TestClient, superuser_token_headers: dict[str, st
     )
     assert response.status_code == 200
     updated_source = response.json()
-    assert updated_source["title"] == update_data["title"]
+    assert updated_source["name"] == update_data["name"]
 
     # Update wrong source
     response = client.patch(
@@ -213,7 +233,7 @@ def test_update_source_forbidden(
     response = client.patch(
         f"{settings.API_V1_PREFIX}/source/5kwf8hFn",
         headers=normal_user_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == 403
     content = response.json()
@@ -227,7 +247,7 @@ def test_delete_source(client: TestClient, superuser_token_headers: dict[str, st
     response = client.post(
         f"{settings.API_V1_PREFIX}/source/",
         headers=superuser_token_headers,
-        json=MOCKED_VIDEO_1,
+        json=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == 201
     created_source = response.json()
@@ -247,6 +267,34 @@ def test_delete_source(client: TestClient, superuser_token_headers: dict[str, st
     assert response.status_code == 404
 
 
+def test_normal_user_get_videos_from_source_forbidden(
+    db_with_user: Session,
+    client: TestClient,
+    normal_user_token_headers: dict[str, str],
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that a normal user cannot get videos from an source that they didn't create.
+    """
+    # Create source as a superuser
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    created_source = response.json()
+
+    # Get videos from source
+    response = client.get(
+        f"{settings.API_V1_PREFIX}/source/{created_source['id']}/videos",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == 403
+    content = response.json()
+    assert content["detail"] == "Not enough permissions"
+
+
 def test_delete_source_forbidden(
     db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
@@ -260,3 +308,60 @@ def test_delete_source_forbidden(
     assert response.status_code == 403
     content = response.json()
     assert content["detail"] == "Not enough permissions"
+
+
+def test_fetch_source(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+    """
+    Test that a superuser can fetch an source.
+    """
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    created_source = response.json()
+
+    # Fetch Source
+    with patch("tubecast.crud.source.fetch_source") as mocked_fetch_source:
+        response = client.put(
+            f"{settings.API_V1_PREFIX}/source/{created_source['id']}/fetch",
+            headers=superuser_token_headers,
+        )
+    assert response.status_code == 202
+
+    # Fetch wrong source
+    response = client.put(
+        f"{settings.API_V1_PREFIX}/source/99999/fetch",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+
+
+def test_fetch_all_sources(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+    """
+    Test that a superuser can fetch all sources.
+    """
+    # Create sources
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_SOURCES[0]["url"]},
+    )
+    assert response.status_code == 201
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_SOURCES[1]["url"]},
+    )
+    assert response.status_code == 201
+
+    # Fetch All Sources
+    with patch("tubecast.crud.source.fetch_all_sources") as mocked_fetch_source:
+        response = client.put(
+            f"{settings.API_V1_PREFIX}/source/fetch",
+            headers=superuser_token_headers,
+        )
+        mocked_fetch_source.assert_called_once()
+
+    assert response.status_code == 202

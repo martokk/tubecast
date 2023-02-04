@@ -203,7 +203,7 @@ async def create_user_open(
 
     # Sends email
     if settings.EMAILS_ENABLED and user_in.email:
-        background_tasks.add_task(
+        background_tasks.add_task(  # pragma: no cover
             notify.send_new_account_email,
             email_to=user_in.email,
             username=user_in.username,

@@ -1,4 +1,5 @@
 from .alerts import *
+from .fetch import *
 from .msg import *
 from .server import *
 from .settings import *

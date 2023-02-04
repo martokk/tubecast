@@ -31,7 +31,7 @@ async def list_sources(
     # Get alerts dict from cookies
     alerts = models.Alerts().from_cookies(request.cookies)
 
-    sources = await crud.source.get_multi(db=db, owner_id=current_user.id)
+    sources = await crud.source.get_multi(db=db, created_by=current_user.id)
     return templates.TemplateResponse(
         "source/list.html",
         {"request": request, "sources": sources, "current_user": current_user, "alerts": alerts},
@@ -130,8 +130,6 @@ async def create_source(
 
 @router.post("/sources/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
 async def handle_create_source(
-    title: str = Form(...),
-    description: str = Form(...),
     url: str = Form(...),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
@@ -142,8 +140,6 @@ async def handle_create_source(
     Handles the creation of a new source.
 
     Args:
-        title(str): The title of the source
-        description(str): The description of the source
         url(str): The url of the source
         db(Session): The database session.
         current_user(User): The authenticated user.
@@ -152,11 +148,8 @@ async def handle_create_source(
         Response: List of sources view
     """
     alerts = models.Alerts()
-    source_create = models.SourceCreate(
-        title=title, description=description, url=url, owner_id=current_user.id
-    )
     try:
-        await crud.source.create(db=db, obj_in=source_create)
+        await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Source already exists")
         response = RedirectResponse("/sources/create", status_code=status.HTTP_302_FOUND)
@@ -209,9 +202,10 @@ async def edit_source(
 async def handle_edit_source(
     request: Request,
     source_id: str,
-    title: str = Form(...),
+    name: str = Form(...),
+    author: str = Form(...),
+    logo: str = Form(...),
     description: str = Form(...),
-    url: str = Form(...),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
@@ -223,9 +217,10 @@ async def handle_edit_source(
     Args:
         request(Request): The request object
         source_id(str): The source id
-        title(str): The title of the source
+        name(str): The name of the source
+        author(str): The author of the source
+        logo(str): The logo of the source
         description(str): The description of the source
-        url(str): The url of the source
         db(Session): The database session.
         current_user(User): The authenticated user.
 
@@ -233,7 +228,9 @@ async def handle_edit_source(
         Response: View of the newly created source
     """
     alerts = models.Alerts()
-    source_update = models.SourceUpdate(title=title, description=description, url=url)
+    source_update = models.SourceUpdate(
+        name=name, author=author, logo=logo, description=description
+    )
 
     try:
         new_source = await crud.source.update(db=db, obj_in=source_update, id=source_id)

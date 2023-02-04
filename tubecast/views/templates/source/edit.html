@@ -14,30 +14,64 @@
         <div class="card-body p-4">
             <form method="POST">
                 <div class="form-group">
-                    <label for="idInput">Id:</label>
-                    <input type="text" class="form-control mb-3" id="idInput" name="id" value="{{ source.id }}" disabled>
+                    <label for="id">Id:</label>
+                    <input type="text" class="form-control mb-3" id="id" name="id" value="{{ source.id }}" disabled>
                 </div>
 
                 <div class="form-group">
-                    <label for="titleInput">Title:</label>
-                    <input type="text" class="form-control mb-3" id="titleInput" name="title" value="{{ source.title }}">
+                    <label for="name">Name:</label>
+                    <input type="text" class="form-control mb-3" id="name" name="name" value="{{ source.name }}">
                 </div>
 
                 <div class="form-group">
-                    <label for="descriptionInput">Description:</label>
-                    <textarea class="form-control mb-3" id="descriptionInput" rows="3"
+                    <label for="author">Author:</label>
+                    <input type="text" class="form-control mb-3" id="author" name="author" value="{{ source.author }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="url">URL:</label>
+                    <input type="text" class="form-control mb-3" id="url" name="url" value="{{ source.url }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="logo">Logo:</label>
+                    <input type="text" class="form-control mb-3" id="logo" name="logo" value="{{ source.logo }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea class="form-control mb-3" id="description" rows="3"
                         name="description">{{ source.description }}</textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="urlInput">URL:</label>
-                    <input type="text" class="form-control mb-3" id="urlInput" name="url" value="{{ source.url }}">
+                    <label for="ordered_by">Ordered By:</label>
+                    <input type="text" class="form-control mb-3" id="ordered_by" name="ordered_by"
+                        value="{{ source.ordered_by }}" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="feed_url">Feed URL:</label>
+                    <input type="text" class="form-control mb-3" id="feed_url" name="feed_url"
+                        value="{{ source.feed_url }}" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="extractor">Extractor:</label>
+                    <input type="text" class="form-control mb-3" id="extractor" name="extractor"
+                        value="{{ source.extractor }}" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="handler">Handler:</label>
+                    <input type="text" class="form-control mb-3" id="handler" name="handler"
+                        value="{{ source.handler }}" disabled>
                 </div>
 
                 <div class="form-group">
                     <label for="ownerInput">Owner Id:</label>
-                    <input type="text" class="form-control mb-3" id="ownerInput" name="owner_id"
-                        value="{{ source.owner_id }}" disabled>
+                    <input type="text" class="form-control mb-3" id="ownerInput" name="created_by"
+                        value="{{ source.created_by }}" disabled>
                 </div>
 
                 <div class="d-flex justify-content-end mt-3">

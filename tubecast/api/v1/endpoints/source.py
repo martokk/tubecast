@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlmodel import Session
 
 from tubecast import crud, models
@@ -13,19 +13,21 @@ model_crud = crud.source
 
 
 @router.post("/", response_model=ModelReadClass, status_code=status.HTTP_201_CREATED)
-async def create_with_uploader_id(
+async def create_source_from_url(
     *,
     db: Session = Depends(deps.get_db),
     obj_in: ModelCreateClass,
+    background_tasks: BackgroundTasks,
     current_active_user: models.User = Depends(deps.get_current_active_user),
 ) -> ModelClass:
     """
     Create a new source.
 
     Args:
-        obj_in (ModelCreateClass): object to be created.
         db (Session): database session.
-        current_active_user (models.User): Current active user.
+        obj_in (ModelCreateClass): object to create.
+        background_tasks (BackgroundTasks): background tasks.
+        current_active_user (models.User): current active user.
 
     Returns:
         ModelClass: Created object.
@@ -34,11 +36,19 @@ async def create_with_uploader_id(
         HTTPException: if object already exists.
     """
     try:
-        return await model_crud.create_with_owner_id(
-            db=db, obj_in=obj_in, owner_id=current_active_user.id
+        source = await crud.source.create_source_from_url(
+            url=obj_in.url, user_id=current_active_user.id, db=db
         )
     except crud.RecordAlreadyExistsError as exc:
         raise HTTPException(status_code=status.HTTP_200_OK, detail="Source already exists") from exc
+
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_source,
+        id=source.id,
+        db=db,
+    )
+    return source
 
 
 @router.get("/{id}", response_model=ModelReadClass)
@@ -65,7 +75,7 @@ async def get(
     """
     source = await model_crud.get_or_none(id=id, db=db)
     if source:
-        if crud.user.is_superuser(user_=current_user) or source.owner_id == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
             return source
 
     elif crud.user.is_superuser(user_=current_user):
@@ -96,10 +106,38 @@ async def get_multi(
     return (
         await model_crud.get_multi(db=db, skip=skip, limit=limit)
         if crud.user.is_superuser(user_=current_user)
-        else await model_crud.get_multi_by_owner_id(
-            db=db, owner_id=current_user.id, skip=skip, limit=limit
-        )
+        else await model_crud.get_multi(db=db, created_by=current_user.id, skip=skip, limit=limit)
     )
+
+
+@router.get("/{id}/videos", response_model=list[models.VideoRead])
+async def get_videos_from_source(
+    id: str,
+    db: Session = Depends(deps.get_db),
+    skip: int = 0,
+    limit: int = 100,
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> list[models.Video]:
+    """
+    Retrieve videos from a source.
+
+    Args:
+        id (str): id of the source.
+        db (Session): database session.
+        skip (int): Number of items to skip. Defaults to 0.
+        limit (int): Number of items to return. Defaults to 100.
+        current_user (models.User): Current active user.
+
+    Returns:
+        list[ModelClass]: List of objects.
+
+    Raises:
+        HTTPException: if user is not superuser and object does not belong to user.
+    """
+    source = await crud.source.get(db=db, id=id)
+    if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
+        return await crud.video.get_multi(db=db, source_id=id, skip=skip, limit=limit)
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
 @router.patch("/{id}", response_model=ModelReadClass)
@@ -127,7 +165,7 @@ async def update(
     """
     source = await model_crud.get_or_none(id=id, db=db)
     if source:
-        if crud.user.is_superuser(user_=current_user) or source.owner_id == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
             return await model_crud.update(db=db, obj_in=obj_in, id=id)
 
     elif crud.user.is_superuser(user_=current_user):
@@ -159,9 +197,66 @@ async def delete(
 
     source = await model_crud.get_or_none(id=id, db=db)
     if source:
-        if crud.user.is_superuser(user_=current_user) or source.owner_id == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
             return await model_crud.remove(id=id, db=db)
 
     elif crud.user.is_superuser(user_=current_user):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+
+@router.put("/{id}/fetch", status_code=status.HTTP_202_ACCEPTED)
+async def fetch_source(
+    id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> None:
+    """
+    Fetches new data from yt-dlp and updates a source on the server.
+
+    Args:
+        id: The ID of the source to update.
+        db(Session): The database session
+        background_tasks: The background tasks to run.
+        _: The current superuser.
+
+    Raises:
+        HTTPException: If the source was not found.
+    """
+
+    try:
+        source = await crud.source.get(id=id, db=db)
+    except crud.RecordNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Source Not Found"
+        ) from exc
+
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_source,
+        id=source.id,
+        db=db,
+    )
+
+
+@router.put("/fetch", status_code=status.HTTP_202_ACCEPTED)
+async def fetch_all(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> None:
+    """
+    Fetches new data from yt-dlp for all sources on the server.
+
+    Args:
+        background_tasks: The background tasks to run.
+        db(Session): The database session
+        _: The current superuser.
+
+    """
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_all_sources,
+        db=db,
+    )

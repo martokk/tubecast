@@ -1,113 +1,130 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from sqlmodel import Session
 
-from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
+from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
 from tubecast import crud, models
 
 
-async def get_mocked_source(db: Session) -> models.Source:
+async def create_source(db: Session) -> models.Source:
     """
-    Create a mocked source.
+    Create a source in the database.
     """
-    # Create an source with an owner
-    owner = await crud.user.get(db=db, username="test_user")
-    source_create = models.SourceCreate(**MOCKED_ITEM_1)
+    source = await crud.source.create(db=db, obj_in=models.SourceCreate(**MOCKED_YOUTUBE_SOURCE_1))
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+    return source
 
-    return await crud.source.create_with_owner_id(db=db, obj_in=source_create, owner_id=owner.id)
 
-
-async def test_create_source(db_with_user: Session) -> None:
+async def test_create_item(db_with_user: Session) -> None:
     """
-    Test creating a new source with an owner.
+    Test creating a new item.
     """
-    created_source = await get_mocked_source(db=db_with_user)
-
-    # Check the source was created
-    assert created_source.title == MOCKED_ITEM_1["title"]
-    assert created_source.description == MOCKED_ITEM_1["description"]
-    assert created_source.owner_id is not None
+    source = await create_source(db=db_with_user)
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
 
 
-async def test_get_source(db_with_user: Session) -> None:
+async def test_create_item_from_url(db_with_user: Session) -> None:
     """
-    Test getting an source by id.
+    Test creating a new item from a url.
     """
-    created_source = await get_mocked_source(db=db_with_user)
+    owner = await crud.user.get(db=db_with_user, username="test_user")
+    url = MOCKED_YOUTUBE_SOURCE_1["url"]
+    source = await crud.source.create_source_from_url(db=db_with_user, url=url, user_id=owner.id)
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
 
-    # Get the source
-    db_source = await crud.source.get(db=db_with_user, id=created_source.id)
+
+async def test_get_item(db: Session) -> None:
+    """
+    Test getting an item by id.
+    """
+    # Create a new item
+    source = await create_source(db=db)
+
+    # Get the item by id
+    db_source = await crud.source.get(db=db, id=source.id)
     assert db_source
-    assert db_source.id == created_source.id
-    assert db_source.title == created_source.title
-    assert db_source.description == created_source.description
-    assert db_source.owner_id == created_source.owner_id
+    assert db_source.id == source.id
+    assert db_source.name == source.name
+    assert db_source.description == source.description
 
 
-async def test_update_source(db_with_user: Session) -> None:
+async def test_update_item(db: Session) -> None:
     """
-    Test updating an source.
+    Test updating an item.
     """
-    created_source = await get_mocked_source(db=db_with_user)
+    # Create a new item
+    source = await create_source(db=db)
 
-    # Update the source
-    db_source = await crud.source.get(db=db_with_user, id=created_source.id)
+    # Update the item
+    db_source = await crud.source.get(db=db, id=source.id)
     db_source_update = models.SourceUpdate(description="New Description")
-    updated_source = await crud.source.update(
-        db=db_with_user, id=created_source.id, obj_in=db_source_update
-    )
+    updated_source = await crud.source.update(db=db, id=source.id, obj_in=db_source_update)
     assert db_source.id == updated_source.id
-    assert db_source.title == updated_source.title
+    assert db_source.name == updated_source.name
     assert updated_source.description == "New Description"
-    assert db_source.owner_id == updated_source.owner_id
 
 
-async def test_update_source_without_filter(db_with_user: Session) -> None:
+async def test_update_item_without_filter(db: Session) -> None:
     """
-    Test updating an source without a filter.
+    Test updating an item without a filter.
     """
-    created_source = await get_mocked_source(db=db_with_user)
+    # Create a new item
+    source = await create_source(db=db)
 
-    # Update the source (without a filter)
-    await crud.source.get(db=db_with_user, id=created_source.id)
+    # Attempt Update the item without a filter
+    await crud.source.get(db=db, id=source.id)
     db_source_update = models.SourceUpdate(description="New Description")
     with pytest.raises(ValueError):
-        await crud.source.update(db=db_with_user, obj_in=db_source_update)
+        await crud.source.update(db=db, obj_in=db_source_update)
 
 
-async def test_delete_source(db_with_user: Session) -> None:
+async def test_delete_item(db: Session) -> None:
     """
-    Test deleting an source.
+    Test deleting an item.
     """
-    created_source = await get_mocked_source(db=db_with_user)
+    # Create a new item
+    source = await create_source(db=db)
 
-    # Delete the source
-    await crud.source.remove(db=db_with_user, id=created_source.id)
+    # Delete the item
+    await crud.source.remove(db=db, id=source.id)
     with pytest.raises(crud.RecordNotFoundError):
-        await crud.source.get(db=db_with_user, id=created_source.id)
+        await crud.source.get(db=db, id=source.id)
 
 
-async def test_delete_source_delete_error(db_with_user: Session, mocker: MagicMock) -> None:
+async def test_delete_item_delete_error(db: Session, mocker: MagicMock) -> None:
     """
-    Test deleting an source with a delete error.
+    Test deleting an item with a delete error.
     """
     mocker.patch("tubecast.crud.source.get", return_value=None)
     with pytest.raises(crud.DeleteError):
-        await crud.source.remove(db=db_with_user, id="00000001")
+        await crud.source.remove(db=db, id="00000001")
 
 
-async def test_get_all_sources(db_with_user: Session) -> None:
+async def test_fetch_all_sources(db_with_user: Session) -> None:
     """
-    Test getting all sources.
+    Test fetching all sources.
     """
-    # Create some sources
-    for i, source in enumerate(MOCKED_ITEMS):
-        source_create = models.SourceCreate(**source)
-        await crud.source.create_with_owner_id(
-            db=db_with_user, obj_in=source_create, owner_id=f"0000000{i}"
-        )
+    # Create 2 sources
+    user = await crud.user.get(db=db_with_user, username="test_user")
+    await crud.source.create_source_from_url(
+        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
+    )
+    await crud.source.create_source_from_url(
+        db=db_with_user, url=MOCKED_YOUTUBE_SOURCE_1["url"], user_id=user.id
+    )
 
-    # Get all sources
-    sources = await crud.source.get_all(db=db_with_user)
-    assert len(sources) == len(MOCKED_ITEMS)
+    # Fetch all sources
+    fetch_results: models.FetchResults = await crud.source.fetch_all_sources(db=db_with_user)
+
+    # Assert the results
+    assert fetch_results.sources == 2
+    assert fetch_results.added_videos == 4
+    assert fetch_results.refreshed_videos == 4
+    assert fetch_results.deleted_videos == 0
