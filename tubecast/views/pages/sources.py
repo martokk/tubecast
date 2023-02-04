@@ -129,6 +129,7 @@ async def create_source(
 
 @router.post("/sources/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
 async def handle_create_source(
+    background_tasks: BackgroundTasks,
     url: str = Form(...),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
@@ -148,12 +149,19 @@ async def handle_create_source(
     """
     alerts = models.Alerts()
     try:
-        await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
+        source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Source already exists")
         response = RedirectResponse("/sources/create", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
+
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_source,
+        id=source.id,
+        db=db,
+    )
 
     alerts.success.append("Source successfully created")
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
