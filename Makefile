@@ -194,9 +194,13 @@ alembic-init: ## Create Alembic Revision
 build-package: ## Build as Package
 	poetry build
 
+
 .PHONY: bump-version
 bump-version: ## Bump Version
-	poetry version patch
+	@echo -e "\n\033[1m\033[33m### BUMP VERSION ###\033[0m"
+	@poetry version patch
+	@git add pyproject.toml
+	@git commit -m "Bump version"
 
 #-----------------------------------------------------------------------------------------
 # DOCKER
