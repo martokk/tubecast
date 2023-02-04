@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from sqlmodel import Session
 
 from tubecast import crud, settings
-from tubecast.handlers import get_handler_from_url
+from tubecast.handlers import get_handler_from_string, get_handler_from_url
 from tubecast.models.video import Video, VideoCreate
 from tubecast.services.ytdlp import get_info_dict
 
@@ -84,9 +84,7 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     return [await crud.video.fetch_video(video_id=video.id, db=db) for video in videos]
 
 
-async def refresh_videos(
-    videos: list[Video], db: Session, older_than_hours: int = settings.MAX_VIDEO_AGE_HOURS
-) -> list[Video]:
+async def refresh_videos(videos: list[Video], db: Session, older_than_hours: int) -> list[Video]:
     """
     Fetches new data from yt-dlp for videos that meet all criteria.
 

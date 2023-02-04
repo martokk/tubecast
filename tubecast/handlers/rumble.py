@@ -16,7 +16,7 @@ from .base import ServiceHandler
 
 class RumbleHandler(ServiceHandler):
     USE_PROXY = False
-    MEDIA_URL_REFRESH_INTERVAL = 60 * 60 * 8  # 8 Hours
+    MAX_VIDEO_AGE_HOURS = 8
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
