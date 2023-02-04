@@ -4,12 +4,12 @@ import pytest
 from fastapi.testclient import TestClient
 from telegram.error import BadRequest
 
-from python_fastapi_stack import logger, settings
-from python_fastapi_stack.core import notify
+from tubecast import logger, settings
+from tubecast.core import notify
 
 
-@patch("python_fastapi_stack.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("python_fastapi_stack.settings.TELEGRAM_CHAT_ID", 123)
+@patch("tubecast.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("tubecast.settings.TELEGRAM_CHAT_ID", 123)
 async def test_send_telegram_message() -> None:
     """
     Test that the telegram message is sent.
@@ -19,7 +19,7 @@ async def test_send_telegram_message() -> None:
     assert mock_send_message.called
 
 
-@patch("python_fastapi_stack.settings.TELEGRAM_CHAT_ID", 0)
+@patch("tubecast.settings.TELEGRAM_CHAT_ID", 0)
 async def test_send_telegram_message_settings_not_set() -> None:
     """
     Test that the logger is called when the settings are not set.
@@ -34,8 +34,8 @@ async def test_send_telegram_message_settings_not_set() -> None:
     )
 
 
-@patch("python_fastapi_stack.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("python_fastapi_stack.settings.TELEGRAM_CHAT_ID", 123)
+@patch("tubecast.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("tubecast.settings.TELEGRAM_CHAT_ID", 123)
 async def test_telegram_message_bad_request() -> None:
     """
     Test that the telegram message raises a ValueError when a BadRequest is raised.
@@ -46,28 +46,28 @@ async def test_telegram_message_bad_request() -> None:
             await notify.send_telegram_message("test message")
 
 
-@patch("python_fastapi_stack.settings.EMAILS_ENABLED", True)
-@patch("python_fastapi_stack.settings.NOTIFY_EMAIL_TO", "test@example.com")
+@patch("tubecast.settings.EMAILS_ENABLED", True)
+@patch("tubecast.settings.NOTIFY_EMAIL_TO", "test@example.com")
 async def test_notify() -> None:
     """
     Test that the notify function calls the telegram and email functions.
     """
-    with patch("python_fastapi_stack.core.notify.send_telegram_message") as mock_telegram:
-        with patch("python_fastapi_stack.core.notify.send_email") as mock_email:
+    with patch("tubecast.core.notify.send_telegram_message") as mock_telegram:
+        with patch("tubecast.core.notify.send_email") as mock_email:
             await notify.notify("test message", email=True, telegram=True)
 
     assert mock_telegram.called
     assert mock_email.called
 
 
-@patch("python_fastapi_stack.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("python_fastapi_stack.settings.TELEGRAM_CHAT_ID", 123)
+@patch("tubecast.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("tubecast.settings.TELEGRAM_CHAT_ID", 123)
 async def test_notify_telegram_false() -> None:
     """
     Test that the notify function does not call the telegram function when telegram=False.
     """
-    with patch("python_fastapi_stack.core.notify.send_telegram_message") as mock_telegram:
-        with patch("python_fastapi_stack.core.notify.send_email") as mock_email:
+    with patch("tubecast.core.notify.send_telegram_message") as mock_telegram:
+        with patch("tubecast.core.notify.send_email") as mock_email:
             await notify.notify("test message", telegram=False, email=True)
 
     assert not mock_telegram.called
@@ -78,19 +78,19 @@ async def test_notify_email_false() -> None:
     """
     Test that the notify function does not call the email function when email=False.
     """
-    with patch("python_fastapi_stack.core.notify.send_telegram_message") as mock_telegram:
-        with patch("python_fastapi_stack.core.notify.send_email") as mock_email:
+    with patch("tubecast.core.notify.send_telegram_message") as mock_telegram:
+        with patch("tubecast.core.notify.send_email") as mock_email:
             await notify.notify("test message", email=False)
 
     assert mock_telegram.called
     assert not mock_email.called
 
 
-@patch("python_fastapi_stack.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("python_fastapi_stack.settings.TELEGRAM_CHAT_ID", 123)
-@patch("python_fastapi_stack.settings.EMAILS_ENABLED", True)
-@patch("python_fastapi_stack.settings.SMTP_USER", "user")
-@patch("python_fastapi_stack.settings.SMTP_PASSWORD", "password")
+@patch("tubecast.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("tubecast.settings.TELEGRAM_CHAT_ID", 123)
+@patch("tubecast.settings.EMAILS_ENABLED", True)
+@patch("tubecast.settings.SMTP_USER", "user")
+@patch("tubecast.settings.SMTP_PASSWORD", "password")
 async def test_send_email() -> None:
     """
     Test that the send_email function calls the emails package.
@@ -106,7 +106,7 @@ async def test_send_email() -> None:
     assert mock_message.call_count == 1
 
 
-@patch("python_fastapi_stack.settings.EMAILS_ENABLED", False)
+@patch("tubecast.settings.EMAILS_ENABLED", False)
 async def test_send_email_not_enabled() -> None:
     """
     Test that the send_email function does not call the emails package when emails are not enabled.
@@ -123,14 +123,14 @@ async def test_send_email_not_enabled() -> None:
     assert not mock_message.called
 
 
-@patch("python_fastapi_stack.core.notify.get_html_template", "")
+@patch("tubecast.core.notify.get_html_template", "")
 async def test_send_test_email() -> None:
     """
     Test that the send_test_email function calls the send_email function.
     """
-    with patch("python_fastapi_stack.core.notify.get_html_template") as mock_get_html_template:
+    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("python_fastapi_stack.core.notify.send_email") as mock_send_email:
+        with patch("tubecast.core.notify.send_email") as mock_send_email:
             notify.send_test_email(email_to="test@example.com")
 
     assert mock_send_email.called
@@ -141,9 +141,9 @@ async def test_send_reset_password_email() -> None:
     """
     Test that the send_reset_password_email function calls the send_email function.
     """
-    with patch("python_fastapi_stack.core.notify.get_html_template") as mock_get_html_template:
+    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("python_fastapi_stack.core.notify.send_email") as mock_send_email:
+        with patch("tubecast.core.notify.send_email") as mock_send_email:
             notify.send_reset_password_email(
                 email_to="test@example.com", username="test", token="test"
             )
@@ -156,9 +156,9 @@ async def test_send_new_account_email() -> None:
     """
     Test that the send_new_account_email function calls the send_email function.
     """
-    with patch("python_fastapi_stack.core.notify.get_html_template") as mock_get_html_template:
+    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("python_fastapi_stack.core.notify.send_email") as mock_send_email:
+        with patch("tubecast.core.notify.send_email") as mock_send_email:
             notify.send_new_account_email(
                 email_to="test@example.com", username="test", password="test"
             )
@@ -167,14 +167,14 @@ async def test_send_new_account_email() -> None:
     assert mock_send_email.call_count == 1
 
 
-@patch("python_fastapi_stack.settings.NOTIFY_ON_START", True)
+@patch("tubecast.settings.NOTIFY_ON_START", True)
 async def test_notify_on_start(client: TestClient) -> None:
     """
     Test that the notify_on_start function calls the notify function.
     """
-    with patch("python_fastapi_stack.core.notify.get_html_template") as mock_get_html_template:
+    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("python_fastapi_stack.core.notify.notify") as mock_notify:
+        with patch("tubecast.core.notify.notify") as mock_notify:
             with client as c:
                 c.get("/'")
     assert mock_notify.called

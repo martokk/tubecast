@@ -1,0 +1,37 @@
+{% extends "base/base.html" %}
+
+{% block title %}View Source{% endblock %}
+
+{% block content_header %}{{ source.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ source.title }}</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-4 font-weight-bold">Id:</div>
+                <div class="col-8">{{ source.id }}</div>
+            </div>
+            <div class="row">
+                <div class="col-4 font-weight-bold">Title:</div>
+                <div class="col-8">{{ source.title }}</div>
+            </div>
+            <div class="row">
+                <div class="col-4 font-weight-bold">Description:</div>
+                <div class="col-8">{{ source.description }}</div>
+            </div>
+            <div class="row">
+                <div class="col-4 font-weight-bold">Url:</div>
+                <div class="col-8">{{ source.url }}</div>
+            </div>
+            <div class="row">
+                <div class="col-4 font-weight-bold">Owner:</div>
+                <div class="col-8">{{ source.created_by }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

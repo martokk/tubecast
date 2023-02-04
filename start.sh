@@ -2,4 +2,4 @@
 
 alembic upgrade head
 
-python -m python_fastapi_stack
+python -m tubecast

@@ -3,7 +3,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
+from tubecast import crud, models, settings
 
 
 def test_get_users_superuser_me(
@@ -34,10 +34,10 @@ def test_get_users_normal_user_me(
     assert current_user["username"] == "test_user"
 
 
-@patch("python_fastapi_stack.settings.EMAILS_ENABLED", True)
-@patch("python_fastapi_stack.settings.SMTP_PORT", 1025)
-@patch("python_fastapi_stack.settings.SMTP_HOST", "example.com")
-@patch("python_fastapi_stack.settings.EMAILS_FROM_EMAIL", "test@example.com")
+@patch("tubecast.settings.EMAILS_ENABLED", True)
+@patch("tubecast.settings.SMTP_PORT", 1025)
+@patch("tubecast.settings.SMTP_HOST", "example.com")
+@patch("tubecast.settings.EMAILS_FROM_EMAIL", "test@example.com")
 async def test_create_user(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -51,7 +51,7 @@ async def test_create_user(
         "email": "testemail2@example.com",
     }
 
-    with patch("python_fastapi_stack.core.notify.send_new_account_email") as mock:
+    with patch("tubecast.core.notify.send_new_account_email") as mock:
         r = client.post(
             f"{settings.API_V1_PREFIX}/user/",
             headers=superuser_token_headers,

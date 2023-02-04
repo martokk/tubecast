@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from sqlmodel import SQLModel
 
-from python_fastapi_stack.db.init_db import create_all
+from tubecast.db.init_db import create_all
 
 
 async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
@@ -20,7 +20,7 @@ async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
     db_file = Path(tmpdir.join("test_db.sqlite"))
 
     # Patch the database file path
-    monkeypatch.setattr("python_fastapi_stack.paths.DATABASE_FILE", db_file)
+    monkeypatch.setattr("tubecast.paths.DATABASE_FILE", db_file)
 
     # Ensure the test database does not exist before running the function
     if os.path.exists(db_file):
@@ -31,6 +31,6 @@ async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
 
     # Check that the required tables have been created
     tables = SQLModel.metadata.tables
-    assert "video" in tables
+    assert "source" in tables
     assert "user" in tables
     assert "fake_table" not in tables

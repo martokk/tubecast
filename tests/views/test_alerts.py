@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from python_fastapi_stack import models
+from tubecast import models
 
 
 def test_set_alerts_from_request() -> None:

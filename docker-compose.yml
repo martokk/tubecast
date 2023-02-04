@@ -1,12 +1,12 @@
 version: "3.9"
 
 services:
-  python_fastapi_stack:
-    container_name: "python_fastapi_stack"
-    image: ghcr.io/martokk/python_fastapi_stack:latest
+  tubecast:
+    container_name: "tubecast"
+    image: ghcr.io/martokk/tubecast:latest
     restart: unless-stopped
     volumes:
       # - /home/ubuntu/volumes/youtube_rss/data:/youtube_rss/data
-      - ./python_fastapi_stack:/python_fastapi_stack
+      - ./tubecast:/tubecast
     ports:
       - "5000:5000"
