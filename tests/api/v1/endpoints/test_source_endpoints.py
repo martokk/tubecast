@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from tubecast import settings
 from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
+from tubecast import settings
 
 
 def test_create_source(client: TestClient, superuser_token_headers: dict[str, str]) -> None:

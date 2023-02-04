@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from tubecast import models, settings, version
-from tubecast.api.v1.endpoints import source, login, users
+from tubecast.api.v1.endpoints import login, source, users
 
 api_router = APIRouter()
 

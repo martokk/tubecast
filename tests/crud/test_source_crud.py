@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlmodel import Session
 
-from tubecast import crud, models
 from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
+from tubecast import crud, models
 
 
 async def get_mocked_source(db: Session) -> models.Source:

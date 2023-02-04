@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
-from tubecast import crud, models, settings
 from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
+from tubecast import crud, models, settings
 
 
 @pytest.fixture(name="source_1")

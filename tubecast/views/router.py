@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from tubecast.views.pages import account, sources, login, root, user
+from tubecast.views.pages import account, login, root, sources, user
 
 views_router = APIRouter(include_in_schema=False)
 views_router.include_router(root.router, tags=["Views"])
