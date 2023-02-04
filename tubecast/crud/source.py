@@ -4,6 +4,7 @@ from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
 from tubecast import crud, fetch_logger, handlers, logger, models, settings
+from tubecast.crud.base import BaseCRUD
 from tubecast.models.source import generate_source_id_from_url
 from tubecast.services.feed import build_rss_file, delete_rss_file
 from tubecast.services.source import (
@@ -12,9 +13,7 @@ from tubecast.services.source import (
     get_source_info_dict,
     get_source_videos_from_source_info_dict,
 )
-from tubecast.services.video import refresh_videos, get_videos_needing_refresh
-
-from .base import BaseCRUD
+from tubecast.services.video import get_videos_needing_refresh, refresh_videos
 
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):

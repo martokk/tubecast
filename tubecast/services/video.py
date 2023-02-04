@@ -67,7 +67,10 @@ async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
         The refreshed list of videos.
     """
     videos = await crud.video.get_all(db=db) or []
-    return await refresh_videos(videos=videos, db=db, older_than_hours=older_than_hours)
+    videos_needing_refresh = await get_videos_needing_refresh(
+        videos=videos, older_than_hours=older_than_hours
+    )
+    return await refresh_videos(videos_needing_refresh=videos_needing_refresh, db=db)
 
 
 async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:

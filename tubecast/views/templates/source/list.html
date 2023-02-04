@@ -33,10 +33,14 @@
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         </button>
                         <div class="dropdown-menu dropdown-menu-right p-1">
-                            <a class="dropdown-item p-2" href="{{ source.pktc_subscription_url }}">Add to PocketCast</a>
-                            <a class="dropdown-item p-2" href="/feed/{{ source.id }}">Go to Podcast Feed</a>
-                            <a class="dropdown-item p-2" href="/source/{{ source.id }}/fetch">Fetch Source</a>
                             <a class="dropdown-item p-2" href="/source/{{ source.id }}/edit">Edit</a>
+                            <a class="dropdown-item p-2" href="/feed/{{ source.id }}">Go to Podcast Feed</a>
+                            <a class="dropdown-item p-2" href="{{ source.pktc_subscription_url }}">Add to PocketCast</a>
+                            {% if current_user.is_superuser %}
+                            <hr class="dropdown-divider">
+                            <a class="dropdown-item p-2" href="/source/{{ source.id }}/fetch">Fetch Source</a>
+                            {% endif %}
+                            <hr class="dropdown-divider">
                             <a class="dropdown-item p-2" href="#"
                                 onclick="confirmDelete('/source/{{ source.id }}/delete')">Delete</a>
                         </div>

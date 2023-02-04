@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from tubecast import crud, logger, models, settings, version
+from tubecast import crud, logger, settings, version
 from tubecast.api import deps
 from tubecast.api.v1.api import api_router
 from tubecast.core import notify

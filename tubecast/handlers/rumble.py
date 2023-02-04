@@ -2,14 +2,15 @@ from typing import Any
 
 import datetime
 
+from loguru import logger as _logger
+
 from tubecast.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
     CustomRumbleIE,
 )
-from tubecast.services.ytdlp import YDL_OPTS_BASE
-from loguru import logger as _logger
 from tubecast.paths import LOG_FILE as _LOG_FILE
+from tubecast.services.ytdlp import YDL_OPTS_BASE
 
 from .base import ServiceHandler
 
