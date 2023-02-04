@@ -8,8 +8,14 @@ from tubecast.handlers.extractors.rumble import (
     CustomRumbleIE,
 )
 from tubecast.services.ytdlp import YDL_OPTS_BASE
+from loguru import logger as _logger
+from tubecast.paths import LOG_FILE as _LOG_FILE
 
 from .base import ServiceHandler
+
+# Main Logger
+logger = _logger.bind(name="logger")
+logger.add(_LOG_FILE, level="WARNING", rotation="10 MB")
 
 # import re
 
@@ -164,10 +170,22 @@ class RumbleHandler(ServiceHandler):
         format_info_dict = self._get_format_info_dict_from_entry_info_dict(
             entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
         )
-        media_filesize = format_info_dict.get("filesize") or format_info_dict.get(
-            "filesize_approx", 0
+        media_filesize = (
+            format_info_dict.get("filesize") or format_info_dict.get("filesize_approx") or 0
         )
+
+        media_url = format_info_dict.get("url")
         released_at = datetime.datetime.utcfromtimestamp(entry_info_dict["timestamp"])
+
+        # TODO: Finalize this solution after some time/testings to see why this happens
+        # Handle when media_filesize in below 2MB
+        if media_filesize > 0 and media_filesize < 2 * 1024 * 1024:
+            logger.warning(
+                f"Video {entry_info_dict['title']} has a filesize of {media_filesize} bytes. Setting media_url to None. {entry_info_dict=}"
+            )
+            media_filesize = 0
+            media_url = None
+
         return {
             "title": entry_info_dict["title"],
             "uploader": entry_info_dict["uploader"],
@@ -177,7 +195,7 @@ class RumbleHandler(ServiceHandler):
             ),
             "duration": entry_info_dict["duration"],
             "url": entry_info_dict["original_url"],
-            "media_url": format_info_dict["url"],
+            "media_url": media_url,
             "media_filesize": media_filesize,
             "thumbnail": entry_info_dict["thumbnail"],
             "released_at": released_at,
