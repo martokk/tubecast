@@ -4,9 +4,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
-from python_fastapi_stack.core import security
-from python_fastapi_stack.db.session import SessionLocal
+from tubecast import crud, models, settings
+from tubecast.core import security
+from tubecast.db.session import SessionLocal
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/login/access-token")
 

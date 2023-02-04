@@ -3,8 +3,8 @@ from typing import Any
 from sqlalchemy.engine.base import Engine
 from sqlmodel import Session, SQLModel
 
-from python_fastapi_stack import crud, logger, models, settings
-from python_fastapi_stack.db.session import engine as _engine
+from tubecast import crud, logger, models, settings
+from tubecast.db.session import engine as _engine
 
 
 async def create_all(engine: Engine = _engine, sqlmodel_create_all: bool = False) -> None:

@@ -7,7 +7,7 @@ from emails.template import JinjaTemplate  # type: ignore
 from telegram import Bot
 from telegram.error import BadRequest
 
-from python_fastapi_stack import logger, paths, settings
+from tubecast import logger, paths, settings
 
 
 async def notify(

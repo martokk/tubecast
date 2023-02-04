@@ -1,6 +1,6 @@
 from fastapi.templating import Jinja2Templates
 
-from python_fastapi_stack import paths, settings
+from tubecast import paths, settings
 
 # Create Jinja2Templates object
 templates = Jinja2Templates(directory=paths.TEMPLATES_PATH)

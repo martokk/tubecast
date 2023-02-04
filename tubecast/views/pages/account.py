@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models
-from python_fastapi_stack.views import deps, templates
+from tubecast import crud, models
+from tubecast.views import deps, templates
 
 router = APIRouter()
 

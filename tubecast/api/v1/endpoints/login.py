@@ -7,9 +7,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic.networks import EmailStr
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
-from python_fastapi_stack.api import deps
-from python_fastapi_stack.core import notify, security
+from tubecast import crud, models, settings
+from tubecast.api import deps
+from tubecast.core import notify, security
 
 router = APIRouter()
 

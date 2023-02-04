@@ -8,7 +8,7 @@ from fastapi.security import HTTPBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
+from tubecast import crud, models, settings
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()

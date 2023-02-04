@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models
-from python_fastapi_stack.views import deps, templates
+from tubecast import crud, models
+from tubecast.views import deps, templates
 
 router = APIRouter()
 
@@ -68,7 +68,7 @@ async def edit_user_account(
         db_user = await crud.user.get(db=db, username=username)
     except crud.RecordNotFoundError:
         alerts.danger.append("User not found")
-        response = RedirectResponse(url="/videos", status_code=status.HTTP_302_FOUND)
+        response = RedirectResponse(url="/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
         return response
     context = {

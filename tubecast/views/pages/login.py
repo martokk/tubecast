@@ -5,10 +5,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 from sqlmodel import Session
 
-from python_fastapi_stack import logger, models, settings
-from python_fastapi_stack.api.deps import get_db
-from python_fastapi_stack.core import security
-from python_fastapi_stack.views import templates
+from tubecast import logger, models, settings
+from tubecast.api.deps import get_db
+from tubecast.core import security
+from tubecast.views import templates
 
 router = APIRouter()
 

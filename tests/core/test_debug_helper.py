@@ -1,8 +1,8 @@
 import time
 from unittest.mock import patch
 
-from python_fastapi_stack import logger
-from python_fastapi_stack.core.debug_helpers import log_function_enter_exit, timeit
+from tubecast import logger
+from tubecast.core.debug_helpers import log_function_enter_exit, timeit
 
 
 def test_log_function_enter_exit():

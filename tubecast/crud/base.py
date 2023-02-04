@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session, SQLModel, select
 
-from python_fastapi_stack.crud import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
+from tubecast.crud import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 ModelCreateType = TypeVar("ModelCreateType", bound=SQLModel)

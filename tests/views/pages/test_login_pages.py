@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
-from python_fastapi_stack import crud
+from tubecast import crud
 
 
 def test_login_page(client: TestClient) -> None:
@@ -97,7 +97,7 @@ async def test_handle_register_success(db_with_user: Session, client: TestClient
         assert mocked_async_client.call_args[1]["json"]["full_name"] == data["full_name"]
 
 
-@patch("python_fastapi_stack.settings.USERS_OPEN_REGISTRATION", False)
+@patch("tubecast.settings.USERS_OPEN_REGISTRATION", False)
 async def test_handle_registration_closed(db_with_user: Session, client: TestClient) -> None:
     """
     Test registration closed
@@ -220,7 +220,7 @@ async def test_get_tokens_from_invalid_refresh_token(
 
     # Test invalid refresh token
     with patch(
-        "python_fastapi_stack.core.security.get_tokens_from_refresh_token",
+        "tubecast.core.security.get_tokens_from_refresh_token",
         side_effect=HTTPException(status_code=400),
     ):
         response = client.get("/account", cookies=normal_user_cookies)
@@ -230,11 +230,11 @@ async def test_get_tokens_from_invalid_refresh_token(
     # Test invalid refresh token
     with (
         patch(
-            "python_fastapi_stack.core.security.decode_token",
+            "tubecast.core.security.decode_token",
             side_effect=HTTPException(status_code=400),
         ),
         patch(
-            "python_fastapi_stack.core.security.get_tokens_from_refresh_token",
+            "tubecast.core.security.get_tokens_from_refresh_token",
             side_effect=HTTPException(status_code=400),
         ),
     ):
@@ -244,7 +244,7 @@ async def test_get_tokens_from_invalid_refresh_token(
 
     # Test invalid refresh token
     with patch(
-        "python_fastapi_stack.views.deps.get_current_user_or_raise",
+        "tubecast.views.deps.get_current_user_or_raise",
         return_value=None,
     ):
         client.cookies.clear()

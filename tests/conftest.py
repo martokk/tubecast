@@ -12,12 +12,12 @@ from httpx import Cookies
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel, create_engine
 
-from python_fastapi_stack import crud, models, settings
-from python_fastapi_stack.api import deps as api_deps
-from python_fastapi_stack.core import security
-from python_fastapi_stack.core.app import app
-from python_fastapi_stack.db.init_db import init_initial_data
-from python_fastapi_stack.views import deps as views_deps
+from tubecast import crud, models, settings
+from tubecast.api import deps as api_deps
+from tubecast.core import security
+from tubecast.core.app import app
+from tubecast.db.init_db import init_initial_data
+from tubecast.views import deps as views_deps
 
 # Set up the database
 db_url = "sqlite:///:memory:"
@@ -52,7 +52,7 @@ def do_begin(conn: Any) -> None:
 
 @pytest.fixture(name="init")
 def fixture_init(mocker: MagicMock, tmp_path: Path) -> None:  # pylint: disable=unused-argument
-    # mocker.patch("python_fastapi_stack.paths.FEEDS_PATH", return_value=tmp_path)
+    # mocker.patch("tubecast.paths.FEEDS_PATH", return_value=tmp_path)
     pass
 
 
@@ -195,7 +195,7 @@ def fixture_normal_user_cookies(
     """
     form_data = {"username": "test_user", "password": "test_password"}
 
-    with patch("python_fastapi_stack.views.pages.login.RedirectResponse") as mock:
+    with patch("tubecast.views.pages.login.RedirectResponse") as mock:
         mock.return_value = Response(status_code=302)
         response = client.post("/login", data=form_data)
         print(response.cookies)
@@ -221,7 +221,7 @@ def fixture_superuser_cookies(
         "password": settings.FIRST_SUPERUSER_PASSWORD,
     }
 
-    with patch("python_fastapi_stack.views.pages.login.RedirectResponse") as mock:
+    with patch("tubecast.views.pages.login.RedirectResponse") as mock:
         mock.return_value = Response(status_code=302)
         response = client.post("/login", data=form_data)
         print(response.cookies)

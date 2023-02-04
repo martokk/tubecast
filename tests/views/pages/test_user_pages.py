@@ -38,7 +38,7 @@ def test_edit_user_account_page(
     # Test user not found
     response = client.get("/user/wrong_username/edit", cookies=superuser_cookies)
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "video/list.html"  # type: ignore
+    assert response.template.name == "source/list.html"  # type: ignore
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore
 
 

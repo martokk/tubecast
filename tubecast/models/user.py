@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Any
 from pydantic import root_validator
 from sqlmodel import Field, Relationship, SQLModel
 
-from python_fastapi_stack.core.uuid import generate_uuid_from_string
+from tubecast.core.uuid import generate_uuid_from_string
 
 if TYPE_CHECKING:
-    from python_fastapi_stack.models.video import Video  # pragma: no cover
+    from tubecast.models.source import Source  # pragma: no cover
 
 
 class UserBase(SQLModel):
@@ -25,7 +25,7 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     hashed_password: str = Field(nullable=False)
-    videos: list["Video"] = Relationship(
+    sources: list["Source"] = Relationship(
         back_populates="owner",
         sa_relationship_kwargs={
             "cascade": "all, delete",

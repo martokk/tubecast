@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, create_engine
 
-from python_fastapi_stack import paths, settings
+from tubecast import paths, settings
 
 db_url = f"sqlite:///{paths.DATABASE_FILE}"
 engine = create_engine(

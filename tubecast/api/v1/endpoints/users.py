@@ -2,9 +2,9 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, st
 from pydantic.networks import EmailStr
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
-from python_fastapi_stack.api import deps
-from python_fastapi_stack.core import notify, security
+from tubecast import crud, models, settings
+from tubecast.api import deps
+from tubecast.core import notify, security
 
 router = APIRouter()
 
@@ -28,8 +28,8 @@ async def get_users(
 
     Args:
         db (Session): database session.
-        skip (int): Number of videos to skip. Defaults to 0.
-        limit (int): Number of videos to return. Defaults to 100.
+        skip (int): Number of sources to skip. Defaults to 0.
+        limit (int): Number of sources to return. Defaults to 100.
         _ (models.User): Current active user.
 
     Returns:
@@ -64,7 +64,7 @@ async def get_by_id(
     Get user by id.
 
     Args:
-        id (str): id of the video.
+        id (str): id of the source.
         db (Session): database session.
         current_user (Any): authenticated user.
 
@@ -198,10 +198,10 @@ async def delete(
     _: models.User = Depends(deps.get_current_active_superuser),
 ) -> None:
     """
-    Delete an video. Only superusers can delete videos.
+    Delete an source. Only superusers can delete sources.
 
     Args:
-        id (str): ID of the video to delete.
+        id (str): ID of the source to delete.
         db (Session): database session.
         _ (models.User): Current active superuser.
 
@@ -209,7 +209,7 @@ async def delete(
         None
 
     Raises:
-        HTTPException: if video not found.
+        HTTPException: if source not found.
     """
     try:
         return await model_crud.remove(id=id, db=db)

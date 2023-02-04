@@ -4,9 +4,9 @@ from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
-from python_fastapi_stack.core import security
-from python_fastapi_stack.db.session import SessionLocal
+from tubecast import crud, models, settings
+from tubecast.core import security
+from tubecast.db.session import SessionLocal
 
 
 def get_db() -> Generator[Session, None, None]:

@@ -1,6 +1,6 @@
 import uvicorn
 
-from python_fastapi_stack import logger, settings
+from tubecast import logger, settings
 
 
 def start_server() -> None:

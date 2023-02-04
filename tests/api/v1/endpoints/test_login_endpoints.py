@@ -5,7 +5,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models, settings
+from tubecast import crud, models, settings
 
 
 async def test_get_access_token(
@@ -70,7 +70,7 @@ def test_use_access_token(client: TestClient, superuser_token_headers: dict[str,
 async def test_reset_password(db_with_user: Session, client: TestClient) -> None:
 
     # Test that the reset password recovery email is sent with the access token
-    with patch("python_fastapi_stack.core.notify.send_reset_password_email") as mock_send_email:
+    with patch("tubecast.core.notify.send_reset_password_email") as mock_send_email:
         r = client.post(
             f"{settings.API_V1_PREFIX}/password-recovery/test_user",
         )
@@ -103,7 +103,7 @@ async def test_reset_password_with_invalid_username(
     """
     Test that the reset password endpoint returns a 404 if the username is invalid
     """
-    with patch("python_fastapi_stack.core.notify.send_reset_password_email") as mock_send_email:
+    with patch("tubecast.core.notify.send_reset_password_email") as mock_send_email:
         r = client.post(
             f"{settings.API_V1_PREFIX}/password-recovery/999",
         )
@@ -128,7 +128,7 @@ async def test_reset_password_with_invalid_user_id_from_token(
     """
     Test that the reset password endpoint returns a 404 if the user id in the token is invalid
     """
-    with patch("python_fastapi_stack.core.security.decode_token") as mock_decode_token:
+    with patch("tubecast.core.security.decode_token") as mock_decode_token:
         mock_decode_token.return_value = "invalid_user_id"
         r = client.post(
             f"{settings.API_V1_PREFIX}/reset-password",
@@ -147,7 +147,7 @@ async def test_password_recovery_for_inactive_user(
         db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
     )
 
-    with patch("python_fastapi_stack.core.notify.send_reset_password_email") as mock_send_email:
+    with patch("tubecast.core.notify.send_reset_password_email") as mock_send_email:
         r = client.post(
             f"{settings.API_V1_PREFIX}/password-recovery/test_user",
         )
@@ -163,7 +163,7 @@ async def test_reset_password_for_inactive_user(db_with_user: Session, client: T
         db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
     )
 
-    with patch("python_fastapi_stack.core.security.decode_token") as mock_decode_token:
+    with patch("tubecast.core.security.decode_token") as mock_decode_token:
         mock_decode_token.return_value = db_user.id
         r = client.post(
             f"{settings.API_V1_PREFIX}/reset-password",
@@ -179,7 +179,7 @@ async def test_get_current_user_not_found(
     """
     Test that the current user endpoint returns a 404 if the user is not found
     """
-    with patch("python_fastapi_stack.core.security.decode_token") as mock_get_current_user_id:
+    with patch("tubecast.core.security.decode_token") as mock_get_current_user_id:
         mock_get_current_user_id.return_value = "invalid_user_id"
         r = client.get(
             f"{settings.API_V1_PREFIX}/user/me",
@@ -201,7 +201,7 @@ async def test_get_current_active_user_inactive_user(
         db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
     )
 
-    with patch("python_fastapi_stack.api.deps.get_current_user_id") as mock_get_current_user_id:
+    with patch("tubecast.api.deps.get_current_user_id") as mock_get_current_user_id:
         mock_get_current_user_id.return_value = db_user.id
         r = client.get(
             f"{settings.API_V1_PREFIX}/user/me",

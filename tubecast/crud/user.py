@@ -1,7 +1,7 @@
 from sqlmodel import Session
 
-from python_fastapi_stack import models
-from python_fastapi_stack.core import security
+from tubecast import models
+from tubecast.core import security
 
 from .base import BaseCRUD
 

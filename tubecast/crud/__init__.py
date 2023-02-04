@@ -4,12 +4,13 @@ from .exceptions import (
     RecordAlreadyExistsError,
     RecordNotFoundError,
 )
+from .source import source
 from .user import user
 from .video import video
 
 __all__ = [
     "user",
-    "video",
+    "source",
     "DeleteError",
     "InvalidRecordError",
     "RecordAlreadyExistsError",

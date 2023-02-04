@@ -42,7 +42,7 @@ COPY --from=builder-base $POETRY_HOME $POETRY_HOME
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
 # Copying in our app
-COPY /python_fastapi_stack /python_fastapi_stack
+COPY /tubecast /tubecast
 COPY /start.sh /start.sh
 COPY /migrations /migrations
 COPY /alembic.ini /alembic.ini
@@ -52,7 +52,7 @@ RUN chmod +x /start.sh
 WORKDIR $PYSETUP_PATH
 RUN poetry install
 
-WORKDIR /python_fastapi_stack
+WORKDIR /tubecast
 COPY . .
 
 EXPOSE 5000
@@ -80,7 +80,7 @@ FROM python-base as production
 COPY --from=builder-base $VENV_PATH $VENV_PATH
 
 # Copying in our app
-COPY /python_fastapi_stack /python_fastapi_stack
+COPY /tubecast /tubecast
 COPY /start.sh /start.sh
 COPY /migrations /migrations
 COPY /alembic.ini /alembic.ini

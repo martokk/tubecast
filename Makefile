@@ -4,8 +4,8 @@ PYTHON := python
 PWD := `pwd`
 
 #* Docker variables
-PROJECT := python_fastapi_stack
-PROJECT_TITLE := Python FastAPI Stack
+PROJECT := tubecast
+PROJECT_TITLE := TubeCast
 VERSION := latest
 PYINSTALLER_ENTRY := $(PROJECT)/__main__.py
 

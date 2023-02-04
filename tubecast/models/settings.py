@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     BASE_URL: str = "http://localhost:5000"
     PROXY_HOST: str = "127.0.0.1"
     UVICORN_RELOAD: bool = True
-    UVICORN_ENTRYPOINT: str = "python_fastapi_stack.core.app:app"
+    UVICORN_ENTRYPOINT: str = "tubecast.core.app:app"
 
     # API
     API_V1_PREFIX: str = "/api/v1"
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     NOTIFY_ON_START: bool = True
 
     # Project Settings
-    PROJECT_NAME: str = "Python FastAPI Stack"
+    PROJECT_NAME: str = "TubeCast"
     PACKAGE_NAME: str = PROJECT_NAME.lower().replace("-", "_").replace(" ", "_")
     PROJECT_DESCRIPTION: str = f"{PROJECT_NAME}"
     VERSION: str = ""

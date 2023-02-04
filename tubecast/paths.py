@@ -19,7 +19,7 @@ LOGS_PATH = DATA_PATH / "logs"
 CACHE_PATH = DATA_PATH / "cache"
 
 # Cache Folders
-# VIDEO_INFO_CACHE_PATH = CACHE_PATH / "video_info"
+# ITEM_INFO_CACHE_PATH = CACHE_PATH / "source_info"
 
 # Files
 ENV_FILE = DATA_PATH / ".env"

@@ -4,7 +4,7 @@ import functools
 import time
 from collections.abc import Callable
 
-from python_fastapi_stack import logger
+from tubecast import logger
 
 
 def log_function_enter_exit(  # type: ignore

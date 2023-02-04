@@ -8,7 +8,7 @@
       "name": "Python: Module",
       "type": "python",
       "request": "launch",
-      "module": "python_fastapi_stack",
+      "module": "tubecast",
       "justMyCode": true
     }
   ]

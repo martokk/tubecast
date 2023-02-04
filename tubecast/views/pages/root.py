@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from python_fastapi_stack import models, settings
-from python_fastapi_stack.views import deps, templates
+from tubecast import models, settings
+from tubecast.views import deps, templates
 
 router = APIRouter()
 

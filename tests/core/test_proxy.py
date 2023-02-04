@@ -1,6 +1,6 @@
 from fastapi import Request
 
-from python_fastapi_stack.core.proxy import reverse_proxy
+from tubecast.core.proxy import reverse_proxy
 
 
 async def test_reverse_proxy_valid_url(test_request: Request) -> None:

@@ -3,111 +3,111 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlmodel import Session
 
-from python_fastapi_stack import crud, models
-from tests.mock_objects import MOCKED_VIDEO_1, MOCKED_VIDEOS
+from tubecast import crud, models
+from tests.mock_objects import MOCKED_ITEM_1, MOCKED_ITEMS
 
 
-async def get_mocked_video(db: Session) -> models.Video:
+async def get_mocked_source(db: Session) -> models.Source:
     """
-    Create a mocked video.
+    Create a mocked source.
     """
-    # Create an video with an owner
+    # Create an source with an owner
     owner = await crud.user.get(db=db, username="test_user")
-    video_create = models.VideoCreate(**MOCKED_VIDEO_1)
+    source_create = models.SourceCreate(**MOCKED_ITEM_1)
 
-    return await crud.video.create_with_owner_id(db=db, obj_in=video_create, owner_id=owner.id)
+    return await crud.source.create_with_owner_id(db=db, obj_in=source_create, owner_id=owner.id)
 
 
-async def test_create_video(db_with_user: Session) -> None:
+async def test_create_source(db_with_user: Session) -> None:
     """
-    Test creating a new video with an owner.
+    Test creating a new source with an owner.
     """
-    created_video = await get_mocked_video(db=db_with_user)
+    created_source = await get_mocked_source(db=db_with_user)
 
-    # Check the video was created
-    assert created_video.title == MOCKED_VIDEO_1["title"]
-    assert created_video.description == MOCKED_VIDEO_1["description"]
-    assert created_video.owner_id is not None
+    # Check the source was created
+    assert created_source.title == MOCKED_ITEM_1["title"]
+    assert created_source.description == MOCKED_ITEM_1["description"]
+    assert created_source.owner_id is not None
 
 
-async def test_get_video(db_with_user: Session) -> None:
+async def test_get_source(db_with_user: Session) -> None:
     """
-    Test getting an video by id.
+    Test getting an source by id.
     """
-    created_video = await get_mocked_video(db=db_with_user)
+    created_source = await get_mocked_source(db=db_with_user)
 
-    # Get the video
-    db_video = await crud.video.get(db=db_with_user, id=created_video.id)
-    assert db_video
-    assert db_video.id == created_video.id
-    assert db_video.title == created_video.title
-    assert db_video.description == created_video.description
-    assert db_video.owner_id == created_video.owner_id
+    # Get the source
+    db_source = await crud.source.get(db=db_with_user, id=created_source.id)
+    assert db_source
+    assert db_source.id == created_source.id
+    assert db_source.title == created_source.title
+    assert db_source.description == created_source.description
+    assert db_source.owner_id == created_source.owner_id
 
 
-async def test_update_video(db_with_user: Session) -> None:
+async def test_update_source(db_with_user: Session) -> None:
     """
-    Test updating an video.
+    Test updating an source.
     """
-    created_video = await get_mocked_video(db=db_with_user)
+    created_source = await get_mocked_source(db=db_with_user)
 
-    # Update the video
-    db_video = await crud.video.get(db=db_with_user, id=created_video.id)
-    db_video_update = models.VideoUpdate(description="New Description")
-    updated_video = await crud.video.update(
-        db=db_with_user, id=created_video.id, obj_in=db_video_update
+    # Update the source
+    db_source = await crud.source.get(db=db_with_user, id=created_source.id)
+    db_source_update = models.SourceUpdate(description="New Description")
+    updated_source = await crud.source.update(
+        db=db_with_user, id=created_source.id, obj_in=db_source_update
     )
-    assert db_video.id == updated_video.id
-    assert db_video.title == updated_video.title
-    assert updated_video.description == "New Description"
-    assert db_video.owner_id == updated_video.owner_id
+    assert db_source.id == updated_source.id
+    assert db_source.title == updated_source.title
+    assert updated_source.description == "New Description"
+    assert db_source.owner_id == updated_source.owner_id
 
 
-async def test_update_video_without_filter(db_with_user: Session) -> None:
+async def test_update_source_without_filter(db_with_user: Session) -> None:
     """
-    Test updating an video without a filter.
+    Test updating an source without a filter.
     """
-    created_video = await get_mocked_video(db=db_with_user)
+    created_source = await get_mocked_source(db=db_with_user)
 
-    # Update the video (without a filter)
-    await crud.video.get(db=db_with_user, id=created_video.id)
-    db_video_update = models.VideoUpdate(description="New Description")
+    # Update the source (without a filter)
+    await crud.source.get(db=db_with_user, id=created_source.id)
+    db_source_update = models.SourceUpdate(description="New Description")
     with pytest.raises(ValueError):
-        await crud.video.update(db=db_with_user, obj_in=db_video_update)
+        await crud.source.update(db=db_with_user, obj_in=db_source_update)
 
 
-async def test_delete_video(db_with_user: Session) -> None:
+async def test_delete_source(db_with_user: Session) -> None:
     """
-    Test deleting an video.
+    Test deleting an source.
     """
-    created_video = await get_mocked_video(db=db_with_user)
+    created_source = await get_mocked_source(db=db_with_user)
 
-    # Delete the video
-    await crud.video.remove(db=db_with_user, id=created_video.id)
+    # Delete the source
+    await crud.source.remove(db=db_with_user, id=created_source.id)
     with pytest.raises(crud.RecordNotFoundError):
-        await crud.video.get(db=db_with_user, id=created_video.id)
+        await crud.source.get(db=db_with_user, id=created_source.id)
 
 
-async def test_delete_video_delete_error(db_with_user: Session, mocker: MagicMock) -> None:
+async def test_delete_source_delete_error(db_with_user: Session, mocker: MagicMock) -> None:
     """
-    Test deleting an video with a delete error.
+    Test deleting an source with a delete error.
     """
-    mocker.patch("python_fastapi_stack.crud.video.get", return_value=None)
+    mocker.patch("tubecast.crud.source.get", return_value=None)
     with pytest.raises(crud.DeleteError):
-        await crud.video.remove(db=db_with_user, id="00000001")
+        await crud.source.remove(db=db_with_user, id="00000001")
 
 
-async def test_get_all_videos(db_with_user: Session) -> None:
+async def test_get_all_sources(db_with_user: Session) -> None:
     """
-    Test getting all videos.
+    Test getting all sources.
     """
-    # Create some videos
-    for i, video in enumerate(MOCKED_VIDEOS):
-        video_create = models.VideoCreate(**video)
-        await crud.video.create_with_owner_id(
-            db=db_with_user, obj_in=video_create, owner_id=f"0000000{i}"
+    # Create some sources
+    for i, source in enumerate(MOCKED_ITEMS):
+        source_create = models.SourceCreate(**source)
+        await crud.source.create_with_owner_id(
+            db=db_with_user, obj_in=source_create, owner_id=f"0000000{i}"
         )
 
-    # Get all videos
-    videos = await crud.video.get_all(db=db_with_user)
-    assert len(videos) == len(MOCKED_VIDEOS)
+    # Get all sources
+    sources = await crud.source.get_all(db=db_with_user)
+    assert len(sources) == len(MOCKED_ITEMS)

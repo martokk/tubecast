@@ -4,9 +4,9 @@ from os import getenv as _getenv
 from dotenv import load_dotenv as _load_dotenv
 from loguru import logger as _logger
 
-from python_fastapi_stack.models.settings import Settings as _Settings
-from python_fastapi_stack.paths import ENV_FILE as _ENV_FILE
-from python_fastapi_stack.paths import LOG_FILE as _LOG_FILE
+from tubecast.models.settings import Settings as _Settings
+from tubecast.paths import ENV_FILE as _ENV_FILE
+from tubecast.paths import LOG_FILE as _LOG_FILE
 
 
 def get_version() -> str:

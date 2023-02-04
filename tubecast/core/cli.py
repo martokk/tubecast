@@ -1,10 +1,10 @@
 import typer
 from rich.console import Console
 
-from python_fastapi_stack import logger, settings, version
-from python_fastapi_stack.core.server import start_server
+from tubecast import logger, settings, version
+from tubecast.core.server import start_server
 
-# from python_fastapi_stack.core.app import app
+# from tubecast.core.app import app
 
 # Configure Rich Console
 console = Console()
