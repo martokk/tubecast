@@ -26,7 +26,6 @@ async def list_sources(
 
     Returns:
         Response: HTML page with the sources
-
     """
     # Get alerts dict from cookies
     alerts = models.Alerts().from_cookies(request.cookies)
@@ -296,8 +295,8 @@ async def fetch_source(
         background_tasks: The background tasks to run.
         current_user: The current superuser.
 
-    Raises:
-        HTTPException: If the source was not found.
+    Returns:
+        Response: Redirects to the source page.
     """
     alerts = models.Alerts()
     source = await crud.source.get_or_none(id=source_id, db=db)
