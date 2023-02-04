@@ -84,28 +84,40 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     return [await crud.video.fetch_video(video_id=video.id, db=db) for video in videos]
 
 
-async def refresh_videos(videos: list[Video], db: Session, older_than_hours: int) -> list[Video]:
+async def refresh_videos(videos_needing_refresh: list[Video], db: Session) -> list[Video]:
     """
     Fetches new data from yt-dlp for videos that meet all criteria.
 
     Args:
-        videos: The list of videos to refresh.
-        older_than_hours: The minimum age of the videos to refresh, in hours.
+        videos_needing_refresh: The list of videos to refresh.
         db (Session): The database session.
 
     Returns:
         The refreshed list of videos.
     """
+    sorted_videos_needing_refresh = await sort_videos_by_updated_at(videos=videos_needing_refresh)
+    return await fetch_videos(videos=sorted_videos_needing_refresh, db=db)
+
+
+async def get_videos_needing_refresh(videos: list[Video], older_than_hours: int) -> list[Video]:
+    """
+    Gets a list of videos that meet all criteria.
+
+    Args:
+        videos: The list of videos to refresh.
+        older_than_hours: The minimum age of the videos to refresh, in hours.
+
+    Returns:
+        The refreshed list of videos.
+    """
     age_threshold = datetime.utcnow() - timedelta(hours=older_than_hours)
-    videos_needing_refresh = [
+    return [
         video
         for video in videos
         if (
             video.updated_at < age_threshold or video.released_at is None or video.media_url is None
         )
     ]
-    sorted_videos_needing_refresh = await sort_videos_by_updated_at(videos=videos_needing_refresh)
-    return await fetch_videos(videos=sorted_videos_needing_refresh, db=db)
 
 
 async def sort_videos_by_updated_at(videos: list[Video]) -> list[Video]:

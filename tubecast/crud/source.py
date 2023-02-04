@@ -12,7 +12,7 @@ from tubecast.services.source import (
     get_source_info_dict,
     get_source_videos_from_source_info_dict,
 )
-from tubecast.services.video import refresh_videos
+from tubecast.services.video import refresh_videos, get_videos_needing_refresh
 
 from .base import BaseCRUD
 
@@ -135,8 +135,12 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
 
         # Refresh existing videos in database
         handler = handlers.get_handler_from_string(handler_string=db_source.handler)
+        videos_needing_refresh = await get_videos_needing_refresh(
+            videos=db_source.videos, older_than_hours=handler.MAX_VIDEO_AGE_HOURS
+        )
         refreshed_videos = await refresh_videos(
-            videos=db_source.videos, db=db, older_than_hours=handler.MAX_VIDEO_AGE_HOURS
+            videos_needing_refresh=videos_needing_refresh,
+            db=db,
         )
 
         # Build RSS File
