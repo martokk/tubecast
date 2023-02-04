@@ -7,15 +7,15 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
     hooks:
+      - id: end-of-file-fixer
+        exclude: (^migrations|thunder-tests|.vscode|typings)
       - id: check-yaml
       - id: trailing-whitespace
-      - id: end-of-file-fixer
-        exclude: LICENSE
+        exclude: (^migrations|thunder-tests|.vscode|typings)
       - id: check-added-large-files
       - id: detect-private-key
       - id: debug-statements
         language_version: python3
-    exclude: "**/migrations/**"
 
   # - repo: local
   #   hooks:
@@ -25,13 +25,13 @@ repos:
   #       types: [python]
   #       language: system
 
-  # - repo: local
-  #   hooks:
-  #     - id: isort
-  #       name: isort
-  #       entry: poetry run isort --settings-path pyproject.toml
-  #       types: [python]
-  #       language: system
+  - repo: local
+    hooks:
+      - id: check-format
+        name: check-format
+        entry: poetry run make check-format
+        types: [python]
+        language: system
 
   # - repo: local
   #   hooks:
