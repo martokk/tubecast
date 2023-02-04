@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
@@ -274,6 +274,47 @@ async def delete_source(
         alerts.danger.append("Source not found")
     except crud.DeleteError:
         alerts.danger.append("Error deleting source")
+
+    response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
+    return response
+
+
+@router.get("/source/{source_id}/fetch", status_code=status.HTTP_202_ACCEPTED)
+async def fetch_source(
+    source_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Response:
+    """
+    Fetches new data from yt-dlp and updates a source on the server.
+
+    Args:
+        source_id: The ID of the source to update.
+        db(Session): The database session
+        background_tasks: The background tasks to run.
+        current_user: The current superuser.
+
+    Raises:
+        HTTPException: If the source was not found.
+    """
+    alerts = models.Alerts()
+    source = await crud.source.get_or_none(id=source_id, db=db)
+
+    if not current_user.is_superuser:
+        alerts.danger.append("You are not authorized to do that")
+    else:
+        if not source:
+            alerts.danger.append("Source not found")
+        else:
+            # Fetch the source videos in the background
+            background_tasks.add_task(
+                crud.source.fetch_source,
+                id=source_id,
+                db=db,
+            )
+            alerts.success.append(f"Fetching source ('{source.name}')")
 
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
