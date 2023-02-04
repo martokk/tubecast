@@ -35,8 +35,9 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
         raise ValueError("Invalid URL") from e
 
     if rp_response.status_code != status.HTTP_200_OK:
-        logger.error(f"Reverse proxy request failed with status code {rp_response.status_code}")
-        logger.error(f"{rp_response=}")
+        logger.error(
+            f"Reverse proxy request failed with status code {rp_response.status_code} {rp_response=} {url=} {rp_request=}"
+        )
         raise HTTPException(status_code=rp_response.status_code)
 
     return StreamingResponse(
