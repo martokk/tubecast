@@ -315,3 +315,36 @@ def test_list_all_sources(
 
     # Assert all 3 sources are returned
     assert len(response.context["sources"]) == 3  # type: ignore
+
+
+def test_fetch_source(
+    db_with_user: Session,  # pylint: disable=unused-argument
+    source_1: models.Source,  # pylint: disable=unused-argument
+    client: TestClient,
+    normal_user_cookies: Cookies,
+    superuser_cookies: Cookies,
+) -> None:
+    """
+    Test fetching a source.
+    """
+
+    # Attempt to fetch source as normal user
+    client.cookies = normal_user_cookies
+    response = client.get(
+        f"/source/{source_1.id}/fetch",
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert response.context["alerts"].danger[0] == "You are not authorized to do that"  # type: ignore
+    assert response.url.path == "/sources"
+
+    # Fetch source as superuser
+    with patch("tubecast.crud.source.fetch_source", return_value=None):
+        client.cookies = superuser_cookies
+        response = client.get(
+            f"/source/{source_1.id}/fetch",
+        )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert response.context["alerts"].success[0] == f"Fetching source ('{source_1.name}')"  # type: ignore
+    assert response.url.path == "/sources"

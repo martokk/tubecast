@@ -10,7 +10,7 @@ from tubecast.services.ytdlp import YDL_OPTS_BASE
 
 class ServiceHandler:
     USE_PROXY = False
-    MEDIA_URL_EXPIRY_INTERVAL = 60 * 60 * 24 * 365  # 1 Year
+    MAX_VIDEO_AGE_HOURS = 24
     DOMAINS: list[str] = []
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = []

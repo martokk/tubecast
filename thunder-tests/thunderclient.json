@@ -8,7 +8,7 @@
     "method": "POST",
     "sortNum": 10000,
     "created": "2023-01-30T20:46:15.438Z",
-    "modified": "2023-02-04T17:18:07.304Z",
+    "modified": "2023-02-04T21:19:44.436Z",
     "headers": [],
     "params": [],
     "body": {
@@ -17,21 +17,21 @@
       "form": [
         {
           "name": "username",
-          "value": "{{USERNAME}}",
-          "isDisabled": true
+          "value": "{{USERNAME}}"
         },
         {
           "name": "password",
-          "value": "{{PASSWORD}}",
-          "isDisabled": true
+          "value": "{{PASSWORD}}"
         },
         {
           "name": "username",
-          "value": "{{ADMIN_USERNAME}}"
+          "value": "{{ADMIN_USERNAME}}",
+          "isDisabled": true
         },
         {
           "name": "password",
-          "value": "{{ADMIN_PASSWORD}}"
+          "value": "{{ADMIN_PASSWORD}}",
+          "isDisabled": true
         }
       ]
     },
@@ -259,12 +259,12 @@
     "method": "POST",
     "sortNum": 230000,
     "created": "2023-01-30T20:46:15.461Z",
-    "modified": "2023-02-04T17:18:29.520Z",
+    "modified": "2023-02-04T21:20:03.543Z",
     "headers": [],
     "params": [],
     "body": {
       "type": "json",
-      "raw": "{\n    \"url\": \"https://www.youtube.com/@StosselTV\"\n}",
+      "raw": "{\n  \"url\": \"https://rumble.com/c/jessekelly\"\n}",
       "form": []
     },
     "tests": []
@@ -293,11 +293,11 @@
     "colId": "fd4bbae6-1678-481a-94f0-3046b14d11cf",
     "containerId": "aa555665-adbf-411b-b267-901f93fe0291",
     "name": "Delete Source",
-    "url": "{{BASE_API_URL}}/source/MuWariCN",
+    "url": "{{BASE_API_URL}}/source/4TDRBqCF",
     "method": "DELETE",
     "sortNum": 250000,
     "created": "2023-01-30T20:46:15.463Z",
-    "modified": "2023-01-31T00:49:28.161Z",
+    "modified": "2023-02-04T21:19:26.617Z",
     "headers": [],
     "params": [],
     "tests": []

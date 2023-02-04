@@ -42,12 +42,10 @@ async def test_refresh_all_videos(db_with_user: Session) -> None:
     with patch("tubecast.services.video.refresh_videos") as mocked_refresh_videos:
         await refresh_all_videos(db=db_with_user, older_than_hours=0)
         assert mocked_refresh_videos.call_count == 1
-        mocked_refresh_videos.assert_called_with(videos=ANY, db=ANY, older_than_hours=0)
+        mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)
 
     # Refresh all videos older than 0 hours
     with patch("tubecast.services.video.refresh_videos") as mocked_refresh_videos:
-        await refresh_all_videos(db=db_with_user, older_than_hours=99999999999999999999)
+        await refresh_all_videos(db=db_with_user, older_than_hours=999)
         assert mocked_refresh_videos.call_count == 1
-        mocked_refresh_videos.assert_called_with(
-            videos=ANY, db=ANY, older_than_hours=99999999999999999999
-        )
+        mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)

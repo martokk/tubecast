@@ -356,6 +356,24 @@ class CustomRumbleChannelIE(RumbleChannelIE):
                 "_type": "playlist",
             },
         },
+        {
+            "url": "https://rumble.com/c/jessekelly",
+            "playlist_mincount": 4,
+            "info_dict": {
+                "url": "https://rumble.com/c/jessekelly",
+                "thumbnail": "https://sp.rmbl.ws/z8/r/U/E/b/rUEba.baa-jessekelly-ql3c12.jpg",
+                "description": "\"I'm Right\" with Jesse Kelly's Rumble Channel",
+                "title": '"I\'m Right" with Jesse Kelly',
+                "channel": '"I\'m Right" with Jesse Kelly',
+                "channel_id": "jessekelly",
+                "channel_url": "https://rumble.com/c/jessekelly",
+                "uploader": '"I\'m Right" with Jesse Kelly',
+                "uploader_id": "jessekelly",
+                "uploader_url": "https://rumble.com/c/jessekelly",
+                "id": "jessekelly",
+                "_type": "playlist",
+            },
+        },
     ]
 
     def entries(self, url, playlist_id, webpage, **kwargs):  # pragma: no cover
@@ -424,7 +442,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
         thumbnail_match = re.search(r"class=listing-header--thumb src=([^\s>]+)", webpage)
         thumbnail = thumbnail_match.group(1) if thumbnail_match else None
 
-        channel_match = re.search(r"class=ellipsis-1>([^\">]+)<", webpage)
+        channel_match = re.search(r"class=ellipsis-1>([^>]+)<", webpage)
         channel = channel_match.group(1) if channel_match else None
 
         channel_id_match = re.search(

@@ -12,7 +12,7 @@ from .base import ServiceHandler
 
 class YoutubeHandler(ServiceHandler):
     USE_PROXY = True
-    MEDIA_URL_REFRESH_INTERVAL = 60 * 60 * 8  # 8 Hours
+    MAX_VIDEO_AGE_HOURS = 2
     DOMAINS = ["youtube.com"]
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = [".*"]

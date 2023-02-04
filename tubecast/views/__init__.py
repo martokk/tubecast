@@ -6,5 +6,8 @@ from tubecast import paths, settings
 templates = Jinja2Templates(directory=paths.TEMPLATES_PATH)
 
 # Add global variables to templates
-templates.env.globals["PROJECT_NAME"] = settings.PROJECT_NAME
+if settings.ENV_NAME == "production":
+    templates.env.globals["PROJECT_NAME"] = settings.PROJECT_NAME
+else:
+    templates.env.globals["PROJECT_NAME"] = f"{settings.PROJECT_NAME} ({settings.ENV_NAME})"
 templates.env.globals["PROJECT_DESCRIPTION"] = settings.PROJECT_DESCRIPTION

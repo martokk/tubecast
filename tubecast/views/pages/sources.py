@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
@@ -26,7 +26,6 @@ async def list_sources(
 
     Returns:
         Response: HTML page with the sources
-
     """
     # Get alerts dict from cookies
     alerts = models.Alerts().from_cookies(request.cookies)
@@ -130,6 +129,7 @@ async def create_source(
 
 @router.post("/sources/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
 async def handle_create_source(
+    background_tasks: BackgroundTasks,
     url: str = Form(...),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
@@ -140,6 +140,7 @@ async def handle_create_source(
     Handles the creation of a new source.
 
     Args:
+        background_tasks(BackgroundTasks): The background tasks
         url(str): The url of the source
         db(Session): The database session.
         current_user(User): The authenticated user.
@@ -149,12 +150,19 @@ async def handle_create_source(
     """
     alerts = models.Alerts()
     try:
-        await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
+        source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Source already exists")
         response = RedirectResponse("/sources/create", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
+
+    # Fetch the source videos in the background
+    background_tasks.add_task(
+        crud.source.fetch_source,
+        id=source.id,
+        db=db,
+    )
 
     alerts.success.append("Source successfully created")
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
@@ -274,6 +282,47 @@ async def delete_source(
         alerts.danger.append("Source not found")
     except crud.DeleteError:
         alerts.danger.append("Error deleting source")
+
+    response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
+    return response
+
+
+@router.get("/source/{source_id}/fetch", status_code=status.HTTP_202_ACCEPTED)
+async def fetch_source(
+    source_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Response:
+    """
+    Fetches new data from yt-dlp and updates a source on the server.
+
+    Args:
+        source_id: The ID of the source to update.
+        db(Session): The database session
+        background_tasks: The background tasks to run.
+        current_user: The current superuser.
+
+    Returns:
+        Response: Redirects to the source page.
+    """
+    alerts = models.Alerts()
+    source = await crud.source.get_or_none(id=source_id, db=db)
+
+    if not current_user.is_superuser:
+        alerts.danger.append("You are not authorized to do that")
+    else:
+        if not source:
+            alerts.danger.append("Source not found")
+        else:
+            # Fetch the source videos in the background
+            background_tasks.add_task(
+                crud.source.fetch_source,
+                id=source_id,
+                db=db,
+            )
+            alerts.success.append(f"Fetching source ('{source.name}')")
 
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)

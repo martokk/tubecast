@@ -3,7 +3,8 @@ from typing import Any
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
-from tubecast import crud, fetch_logger, logger, models, settings
+from tubecast import crud, fetch_logger, handlers, logger, models, settings
+from tubecast.crud.base import BaseCRUD
 from tubecast.models.source import generate_source_id_from_url
 from tubecast.services.feed import build_rss_file, delete_rss_file
 from tubecast.services.source import (
@@ -12,9 +13,7 @@ from tubecast.services.source import (
     get_source_info_dict,
     get_source_videos_from_source_info_dict,
 )
-from tubecast.services.video import refresh_videos
-
-from .base import BaseCRUD
+from tubecast.services.video import get_videos_needing_refresh, refresh_videos
 
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):
@@ -134,7 +133,14 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         # )
 
         # Refresh existing videos in database
-        refreshed_videos = await refresh_videos(videos=db_source.videos, db=db)
+        handler = handlers.get_handler_from_string(handler_string=db_source.handler)
+        videos_needing_refresh = await get_videos_needing_refresh(
+            videos=db_source.videos, older_than_hours=handler.MAX_VIDEO_AGE_HOURS
+        )
+        refreshed_videos = await refresh_videos(
+            videos_needing_refresh=videos_needing_refresh,
+            db=db,
+        )
 
         # Build RSS File
         await build_rss_file(source=db_source)
