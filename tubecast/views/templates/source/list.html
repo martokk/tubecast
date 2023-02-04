@@ -9,8 +9,9 @@
     <table class="table table-hover table-sm">
         <thead>
             <tr>
-                <th scope="col" class="w-75">Name</th>
-                <th scope="col" class="d-none d-md-table-cell w-25">Description</th>
+                <th scope="col" class="w-65">Name</th>
+                <th scope="col" class="d-none d-md-table-cell w-10">Videos</th>
+                <th scope="col" class="d-none d-md-table-cell w-25">Created By</th>
                 <th scope="col" class="w-auto"></th>
             </tr>
         </thead>
@@ -22,7 +23,9 @@
                     <a href="/source/{{ source.id }}" class="">{{ source.name }}</a>
                 </td>
 
-                <td class="">{{ source.description }}</td>
+                <td class="">{{ source.videos | length }}</td>
+
+                <td class="">{{ source.created_user.username }}</td>
 
                 <td class="">
                     <div class="btn-group">
