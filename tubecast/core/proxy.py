@@ -1,5 +1,5 @@
 import httpx
-from fastapi import status, HTTPException
+from fastapi import HTTPException, status
 from fastapi.requests import Request
 from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
@@ -22,6 +22,7 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
 
     Raises:
         ValueError: If URL is invalid.
+        HTTPException: If reverse proxy request fails.
     """
     url = httpx.URL(url=url)  # type: ignore
 

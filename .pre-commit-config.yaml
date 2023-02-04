@@ -25,13 +25,13 @@ repos:
   #       types: [python]
   #       language: system
 
-  - repo: local
-    hooks:
-      - id: check-format
-        name: check-format
-        entry: poetry run make check-format
-        types: [python]
-        language: system
+  # - repo: local
+  #   hooks:
+  #     - id: isort
+  #       name: isort
+  #       entry: poetry run isort --settings-path pyproject.toml ./
+  #       types: [python]
+  #       language: system
 
   # - repo: local
   #   hooks:
