@@ -1,4 +1,5 @@
 import pytest
+
 from tubecast import paths, settings
 from tubecast.views import get_templates
 
