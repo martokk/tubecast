@@ -33,7 +33,3 @@ logger.add(_LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")
 # Fetch Logger
 fetch_logger = _logger.bind(name="fetch_logger")
 fetch_logger.add(_FETCH_LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")
-
-# YoutubeDL Logger
-ytdlp_logger = _logger.bind(name="ytdlp_logger")
-ytdlp_logger.add(_YTDLP_LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")

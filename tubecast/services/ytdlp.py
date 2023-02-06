@@ -1,8 +1,10 @@
 from typing import Any, Type
 
-from loguru import logger
 from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
+from yt_dlp.utils import YoutubeDLError
+
+from tubecast.core.loggers import ytdlp_logger as logger
 
 YDL_OPTS_BASE: dict[str, Any] = {
     "logger": logger,
@@ -44,7 +46,16 @@ async def get_info_dict(
                 ydl.add_info_extractor(custom_extractor())
 
         # Get Info Dict
-        info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
+        try:
+            info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
+        except YoutubeDLError as e:
+            logger.error(
+                f"yt-dlp could not extract info for {url=}. Saved info_info dict to logs {e=}"
+            )
+            raise ValueError(
+                "yt-dlp could not extract info for {url}. Saved info_info dict to logs"
+            ) from e
+
         if info_dict is None:
             raise ValueError(
                 f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl_opts=}"
