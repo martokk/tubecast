@@ -39,8 +39,10 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     if rp_response.status_code != status.HTTP_200_OK:
         """"""
         pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
-        matches = pattern.findall(url)
-        ip_from_url = matches[0]
+        try:
+            ip_from_url = pattern.findall(url)[0]
+        except TypeError:
+            ip_from_url = None
         logger.error(
             f"Reverse proxy request failed with status code {rp_response.status_code} {rp_response=} {ip_from_url=} {rp_request=}"
         )
