@@ -4,7 +4,7 @@ import pytest
 from yt_dlp.extractor.common import InfoExtractor
 
 from tests.mock_objects import MOCKED_RUMBLE_VIDEO_3, get_mocked_video_info_dict
-from tubecast.services.ytdlp import get_info_dict
+from tubecast.services.ytdlp import YDL_OPTS_BASE, get_info_dict
 
 
 async def test_get_info_dict() -> None:
@@ -44,3 +44,9 @@ async def test_get_info_dict() -> None:
             )
             assert mocked_extract_info.called
             assert info_dict_none is None
+
+    # Test raises exception when YoutubeDL.extract_info raises exception.
+    url = "https://nonexistent-video.com"
+
+    with pytest.raises(ValueError, match="yt-dlp could not extract info for"):
+        await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)

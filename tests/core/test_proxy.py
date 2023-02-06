@@ -1,4 +1,8 @@
-from fastapi import Request
+from unittest.mock import AsyncMock, patch
+
+import httpx
+import pytest
+from fastapi import HTTPException, Request
 
 from tubecast.core.proxy import reverse_proxy
 
@@ -15,3 +19,23 @@ async def test_reverse_proxy_non_existing_url(test_request: Request) -> None:
         await reverse_proxy(url, test_request)
     except ValueError as e:
         assert str(e) == "Invalid URL"
+
+
+async def test_reverse_proxy_non_200_status_code(test_request: Request) -> None:
+    url = "https://someurl.com/api"
+    request = Request(scope={"type": "http", "method": "GET", "path": url})
+
+    with patch("tubecast.core.proxy.client.send") as mock:
+        mock.return_value = AsyncMock(
+            status_code=410,
+            headers={"Content-Type": "application/json"},
+            aiter_raw=AsyncMock(),
+            aclose=AsyncMock(),
+        )
+
+        with pytest.raises(HTTPException) as e:
+            await reverse_proxy(url, request)
+        success = False
+        if (e is not None) and (e.value.status_code == 410):
+            success = True
+        assert success == True

@@ -7,12 +7,15 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from tubecast.core.uuid import generate_uuid_from_url
 from tubecast.handlers import get_handler_from_url
+from tubecast.models.settings import Settings as _Settings
 
 from .common import TimestampModel
 
 if TYPE_CHECKING:
     from .user import User  # pragma: no cover
     from .video import Video  # pragma: no cover
+
+settings = _Settings()
 
 
 async def generate_source_id_from_url(url: str) -> str:
@@ -65,6 +68,7 @@ class SourceCreate(SourceBase):
             "id": source_id,
             "feed_url": feed_url,
             "ordered_by": SourceOrderBy.RELEASE.value,
+            "pktc_subscription_url": f"pktc://subscribe/{settings.BASE_DOMAIN}{feed_url}",
         }
 
 

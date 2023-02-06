@@ -348,3 +348,14 @@ def test_fetch_source(
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].success[0] == f"Fetching source ('{source_1.name}')"  # type: ignore
     assert response.url.path == "/sources"
+
+    # Fetch source as superuser with not found source
+    with patch("tubecast.crud.source.fetch_source", return_value=None):
+        client.cookies = superuser_cookies
+        response = client.get(
+            f"/source/wrongs_source_id/fetch",
+        )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert response.context["alerts"].danger[0] == "Source not found"  # type: ignore
+    assert response.url.path == "/sources"
