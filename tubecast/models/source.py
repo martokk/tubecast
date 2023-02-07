@@ -31,6 +31,7 @@ class SourceOrderBy(Enum):
 
 class SourceBase(TimestampModel, SQLModel):
     id: str = Field(default=None, primary_key=True, index=True)
+    created_by: str = Field(default=None, foreign_key="user.id", nullable=False)
     url: str = Field(default=None)
     name: str = Field(default=None)
     author: str = Field(default=None)
@@ -40,7 +41,6 @@ class SourceBase(TimestampModel, SQLModel):
     feed_url: str = Field(default=None)
     extractor: str = Field(default=None)
     handler: str = Field(default=None)
-    created_by: str = Field(default=None, foreign_key="user.id", nullable=False)
 
 
 class Source(SourceBase, table=True):
@@ -68,7 +68,6 @@ class SourceCreate(SourceBase):
             "id": source_id,
             "feed_url": feed_url,
             "ordered_by": SourceOrderBy.RELEASE.value,
-            "pktc_subscription_url": f"pktc://subscribe/{settings.BASE_DOMAIN}{feed_url}",
         }
 
 
