@@ -15,6 +15,12 @@ YDL_OPTS_BASE: dict[str, Any] = {
 }
 
 
+class IsLiveEventError(YoutubeDLError):
+    """
+    Raised when a video is a live event.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -36,7 +42,9 @@ async def get_info_dict(
         dict[str, Any]: The info dictionary for the object.
 
     Raises:
-        ValueError: If the info dictionary could not be retrieved.
+        IsLiveEventError: If the video is a live event.
+        YoutubeDLError: If the info dictionary could not be retrieved.
+        YoutubeDLError: If the info dictionary is None.
     """
     with YoutubeDL(ydl_opts) as ydl:
 
@@ -49,17 +57,23 @@ async def get_info_dict(
         try:
             info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
         except YoutubeDLError as e:
-            logger.error(
-                f"yt-dlp could not extract info for {url=}. Saved info_info dict to logs {e=}"
-            )
-            raise ValueError(
+            if "this live event will begin in" in str(e):
+                raise IsLiveEventError(
+                    "This video is a live event. Please try again after the event has started."
+                ) from e
+
+            logger.error(f"yt-dlp could not extract info for {url=}. {e=}")
+            raise YoutubeDLError(
                 "yt-dlp could not extract info for {url}. Saved info_info dict to logs"
             ) from e
 
         if info_dict is None:
-            raise ValueError(
+            raise YoutubeDLError(
                 f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl_opts=}"
             )
+
+        if info_dict.get("is_live"):
+            raise IsLiveEventError("This video is a live event.")
 
         # Append Metadata to info_dict
         info_dict["metadata"] = {
