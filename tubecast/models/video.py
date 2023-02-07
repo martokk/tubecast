@@ -40,6 +40,9 @@ class VideoBase(TimestampModel, SQLModel):
 class Video(VideoBase, table=True):
     source: "Source" = Relationship(back_populates="videos")
 
+    def __repr__(self) -> str:
+        return f"Video(id={self.id}, title={self.title[:20] if self.title else ''}, source={self.source.name} handler={self.handler})"
+
 
 class VideoCreate(VideoBase):
     @root_validator(pre=True)
