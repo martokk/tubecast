@@ -9,7 +9,7 @@ from tubecast import crud
 from tubecast.core.loggers import ytdlp_logger
 from tubecast.handlers import get_handler_from_url
 from tubecast.models.video import Video, VideoCreate
-from tubecast.services.ytdlp import IsLiveEventError, get_info_dict
+from tubecast.services.ytdlp import Http410Error, IsLiveEventError, get_info_dict
 
 
 async def get_video_info_dict(
@@ -93,10 +93,12 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
             fetched_video = await crud.video.fetch_video(video_id=video.id, db=db)
         except IsLiveEventError:
             continue
+        except Http410Error:
+            # Video has been deleted on host server
+            await crud.video.remove(db=db, id=video.id)
+            continue
         except (YoutubeDLError, Exception) as e:
-            ytdlp_logger.error(
-                f"Error fetching '{video.source.name}' video '{video.title}':  {e=} {video=}"
-            )
+            ytdlp_logger.error(f"Error fetching video: {e=} {video=}")
             continue
 
         fetched_videos.append(fetched_video)

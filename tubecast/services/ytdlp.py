@@ -21,6 +21,12 @@ class IsLiveEventError(YoutubeDLError):
     """
 
 
+class Http410Error(YoutubeDLError):
+    """
+    Raised after a HTTP 410 "GONE" error.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -40,11 +46,6 @@ async def get_info_dict(
 
     Returns:
         dict[str, Any]: The info dictionary for the object.
-
-    Raises:
-        IsLiveEventError: If the video is a live event.
-        YoutubeDLError: If the info dictionary could not be retrieved.
-        YoutubeDLError: If the info dictionary is None.
     """
     with YoutubeDL(ydl_opts) as ydl:
 
@@ -52,28 +53,8 @@ async def get_info_dict(
         if custom_extractors:
             for custom_extractor in custom_extractors:
                 ydl.add_info_extractor(custom_extractor())
-
-        # Get Info Dict
-        try:
-            info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
-        except YoutubeDLError as e:
-            if "this live event will begin in" in str(e):
-                raise IsLiveEventError(
-                    "This video is a live event. Please try again after the event has started."
-                ) from e
-
-            logger.error(f"yt-dlp could not extract info for {url=}. {e=}")
-            raise YoutubeDLError(
-                "yt-dlp could not extract info for {url}. Saved info_info dict to logs"
-            ) from e
-
-        if info_dict is None:
-            raise YoutubeDLError(
-                f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl_opts=}"
-            )
-
-        if info_dict.get("is_live"):
-            raise IsLiveEventError("This video is a live event.")
+        # Extract info dict
+        info_dict = await ydl_extract_info(ydl=ydl, url=url, download=False, ie_key=ie_key)
 
         # Append Metadata to info_dict
         info_dict["metadata"] = {
@@ -82,5 +63,50 @@ async def get_info_dict(
             "ie_key": ie_key,
             "custom_extractors": custom_extractors,
         }
+
+    return info_dict
+
+
+async def ydl_extract_info(
+    ydl: YoutubeDL, url: str, ie_key: str | None, download: bool = False
+) -> dict[str, Any]:
+    """
+    Use YouTube-DL to extract info for a given URL.
+
+    Parameters:
+        ydl (YoutubeDL): The YouTube-DL object to use.
+        url (str): The URL of the object to retrieve info for.
+        download (bool): Whether to download the video or not. Defaults to False.
+        ie_key (Optional[str]): The name of the YouTube-DL info extractor to use.
+
+    Returns:
+        dict[str, Any]: The info dictionary for the object.
+
+    Raises:
+        IsLiveEventError: If the video is a live event.
+        YoutubeDLError: If the info dictionary could not be retrieved.
+        YoutubeDLError: If the info dictionary is None.
+        Http410Error: If a HTTP 410 "GONE" error is encountered.
+    """
+    try:
+        info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
+
+    except YoutubeDLError as e:
+        if "this live event will begin in" in str(e):
+            raise IsLiveEventError("This video is a live event.") from e
+        if e.__class__.__name__ == "DownloadError":
+            if "HTTP Error 410" in str(e):
+                raise Http410Error from e
+
+        logger.error(f"yt-dlp could not extract info for {url=}. {e=}")
+        raise YoutubeDLError(f"yt-dlp could not extract info for {url}. {e=}") from e
+
+    if info_dict is None:
+        raise YoutubeDLError(
+            f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl=}"
+        )
+
+    if info_dict.get("is_live"):
+        raise IsLiveEventError("This video is a live event.")
 
     return info_dict
