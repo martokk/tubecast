@@ -14,11 +14,14 @@ def get_templates() -> Jinja2Templates:
     templates = Jinja2Templates(directory=paths.TEMPLATES_PATH)
 
     # Add global variables to templates
-    if settings.ENV_NAME == "production":
-        templates.env.globals["PROJECT_NAME"] = settings.PROJECT_NAME
-    else:
-        templates.env.globals["PROJECT_NAME"] = f"{settings.PROJECT_NAME} ({settings.ENV_NAME})"
+    templates.env.globals["PROJECT_NAME"] = settings.PROJECT_NAME
+    templates.env.globals["ENV_NAME"] = settings.ENV_NAME
+    templates.env.globals["PACKAGE_NAME"] = settings.PACKAGE_NAME
     templates.env.globals["PROJECT_DESCRIPTION"] = settings.PROJECT_DESCRIPTION
+    templates.env.globals["BASE_DOMAIN"] = settings.BASE_DOMAIN
+    templates.env.globals["BASE_URL"] = settings.BASE_URL
+    templates.env.globals["VERSION"] = settings.VERSION
+
     return templates
 
 
