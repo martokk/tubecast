@@ -28,7 +28,7 @@ class RumbleHandler(ServiceHandler):
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
 
-    # def sanitize_video_url(self, url: str) -> str:
+    # def sanitize_video_url(self, url: str) -> str: # TODO: Do this for rumble
     #     """
     #     Sanitizes the url to a standard format
 
@@ -180,9 +180,13 @@ class RumbleHandler(ServiceHandler):
 
         # TODO: Finalize this solution after some time/testings to see why this happens
         # Handle when media_filesize in below 2MB
-        if media_filesize > 0 and media_filesize < 2 * 1024 * 1024:
+        if (
+            media_filesize > 0  # 0 bytes
+            and media_filesize < 2 * 1024 * 1024  # 2MB
+            and entry_info_dict["duration"] > 300  # 5 minutes
+        ):
             logger.warning(
-                f"Video {entry_info_dict['title']} has a filesize of {media_filesize} bytes. Setting media_url to None. {entry_info_dict=}"
+                f"Video '{entry_info_dict['title']}' has a filesize of {media_filesize} bytes. Setting media_url to None. {entry_info_dict=}"
             )
             media_filesize = 0
             media_url = None
