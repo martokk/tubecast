@@ -182,12 +182,25 @@ class RumbleHandler(ServiceHandler):
 
         # TODO: Finalize this solution after some time/testings to see why this happens
         # Handle when media_filesize in below 2MB
-        if "live" in entry_info_dict["title"].lower():  # TODO: This is temporary. Remove
+        if entry_info_dict["live_status"]:  # TODO: This is temporary. Remove
+
             logger.critical(
-                f"'Live' found in title. The first appearance is the one causing issues."
-            )
-            logger.critical(
-                f"\n{entry_info_dict['title']=}\n{media_filesize=}\n{media_url=}\n\n{entry_info_dict=}\n\n-----------------\n\n"
+                f"\n{entry_info_dict['uploader']=}"
+                f"\n{entry_info_dict['title']=}"
+                f"\n\n{released_at=}"
+                f"\n{entry_info_dict['upload_date']=}"
+                f"\n{entry_info_dict['release_date']=}"
+                f"\n{entry_info_dict['live_status']=}"
+                f"\n{entry_info_dict['is_live']=}"
+                f"\n{entry_info_dict['was_live']=}"
+                f"\n\n{entry_info_dict['duration']=}"
+                f"\n{entry_info_dict['duration_string']=}"
+                f"\n{media_url=}"
+                f"\n\n{format_info_dict.get('filesize')=}"
+                f"\n\n{format_info_dict.get('filesize_approx')=}"
+                f"\n{media_filesize=}"
+                f"\n\n{format_info_dict=}"
+                f"\n\n-----------------\n\n"
             )
         if (
             media_filesize > 0  # 0 bytes
