@@ -1,28 +1,12 @@
-from typing import Any
-
 from unittest.mock import ANY, patch
 
-from fastapi.testclient import TestClient
 from sqlmodel import Session
+from yt_dlp.utils import YoutubeDLError
 
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_RUMBLE_SOURCE_2
-from tubecast import crud
-from tubecast.services.video import refresh_all_videos, refresh_videos
-
-# async def test_refresh_videos(db_with_user: Session, mocker: MagicMock) -> None:
-#     """
-#     Tests 'refresh_videos', fetching new data from yt-dlp for a list of Videos.
-#     """
-#     # Create source
-#     user = await crud.user.get(db=db_with_user, username="test_user")
-#     source = await crud.source.create_source_from_url(
-#         db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-#     )
-
-#     # Refresh source
-#     refreshed_sources = await refresh_videos(sources=[source], db=db_with_user)
-
-#     assert len(refreshed_sources) == 1
+from tubecast import crud, models
+from tubecast.services.video import fetch_videos, refresh_all_videos
+from tubecast.services.ytdlp import IsLiveEventError
 
 
 async def test_refresh_all_videos(db_with_user: Session) -> None:
@@ -49,3 +33,31 @@ async def test_refresh_all_videos(db_with_user: Session) -> None:
         await refresh_all_videos(db=db_with_user, older_than_hours=999)
         assert mocked_refresh_videos.call_count == 1
         mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)
+
+
+async def test_fetch_videos(db_with_user: Session) -> None:
+    """
+    Tests 'fetch_videos', fetching new data for a list of videos from yt-dlp.
+    """
+    # Create source
+    user = await crud.user.get(db=db_with_user, username="test_user")
+    source = await crud.source.create_source_from_url(
+        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
+    )
+
+    videos = [models.Video(**video) for video in MOCKED_RUMBLE_SOURCE_1["videos"]]
+    source.videos = videos
+
+    with patch("tubecast.crud.video.fetch_video", return_value=videos[0]):
+        fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
+        assert len(fetched_videos) == len(videos)
+
+    # Test that videos that are live events are ignored
+    with patch("tubecast.crud.video.fetch_video", side_effect=IsLiveEventError):
+        fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
+        assert len(fetched_videos) == 0
+
+    # Test that videos with errors are ignored
+    with patch("tubecast.crud.video.fetch_video", side_effect=YoutubeDLError):
+        fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
+        assert len(fetched_videos) == 0

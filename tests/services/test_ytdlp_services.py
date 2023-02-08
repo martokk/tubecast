@@ -2,9 +2,10 @@ from unittest.mock import patch
 
 import pytest
 from yt_dlp.extractor.common import InfoExtractor
+from yt_dlp.utils import YoutubeDLError
 
 from tests.mock_objects import MOCKED_RUMBLE_VIDEO_3, get_mocked_video_info_dict
-from tubecast.services.ytdlp import YDL_OPTS_BASE, get_info_dict
+from tubecast.services.ytdlp import YDL_OPTS_BASE, IsLiveEventError, get_info_dict
 
 
 async def test_get_info_dict() -> None:
@@ -38,15 +39,36 @@ async def test_get_info_dict() -> None:
     with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
         mocked_extract_info.return_value = None
 
-        with pytest.raises(ValueError):
+        with pytest.raises(YoutubeDLError) as raised:
             info_dict_none = await get_info_dict(
                 url=url, ydl_opts=ydl_opts, ie_key=ie_key, custom_extractors=custom_extractors
             )
             assert mocked_extract_info.called
+            assert raised.match("yt-dlp did not download a info_dict object.")
             assert info_dict_none is None
 
     # Test raises exception when YoutubeDL.extract_info raises exception.
     url = "https://nonexistent-video.com"
 
-    with pytest.raises(ValueError, match="yt-dlp could not extract info for"):
+    with pytest.raises(YoutubeDLError) as raised:
         await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+        assert raised.match("yt-dlp could not extract info for")
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = IsLiveEventError("this live event will begin in 1 hour")
+
+        with pytest.raises(IsLiveEventError) as raised:
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+            assert raised.match("this live event will begin in")
+
+    # Test raises exception when info dict is_live.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.return_value = {"is_live": True}
+
+        with pytest.raises(IsLiveEventError) as raised:
+            await get_info_dict(
+                url=url, ydl_opts=ydl_opts, ie_key=ie_key, custom_extractors=custom_extractors
+            )
+            assert mocked_extract_info.called
+            assert raised.match("yt-dlp did not download a info_dict object.")

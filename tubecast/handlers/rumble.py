@@ -10,6 +10,7 @@ from tubecast.handlers.extractors.rumble import (
     CustomRumbleIE,
 )
 from tubecast.paths import LOG_FILE as _LOG_FILE
+from tubecast.paths import TEMP_LOG_FILE as _TEMP_LOG_FILE
 from tubecast.services.ytdlp import YDL_OPTS_BASE
 
 from .base import ServiceHandler
@@ -18,7 +19,8 @@ from .base import ServiceHandler
 logger = _logger.bind(name="logger")
 logger.add(_LOG_FILE, level="WARNING", rotation="10 MB")
 
-# import re
+temp_logger = _logger.bind(name="logger")  # TODO: This is temporary. Remove this.
+temp_logger.add(_TEMP_LOG_FILE, level="CRITICAL", rotation="10 MB")
 
 
 class RumbleHandler(ServiceHandler):
@@ -28,7 +30,7 @@ class RumbleHandler(ServiceHandler):
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
 
-    # def sanitize_video_url(self, url: str) -> str:
+    # def sanitize_video_url(self, url: str) -> str: # TODO: Do this for rumble
     #     """
     #     Sanitizes the url to a standard format
 
@@ -180,9 +182,20 @@ class RumbleHandler(ServiceHandler):
 
         # TODO: Finalize this solution after some time/testings to see why this happens
         # Handle when media_filesize in below 2MB
-        if media_filesize > 0 and media_filesize < 2 * 1024 * 1024:
+        if "live" in entry_info_dict["title"].lower():  # TODO: This is temporary. Remove
+            logger.critical(
+                f"'Live' found in title. The first appearance is the one causing issues."
+            )
+            logger.critical(
+                f"\n{entry_info_dict['title']=}\n{media_filesize=}\n{media_url=}\n\n{entry_info_dict=}\n\n-----------------\n\n"
+            )
+        if (
+            media_filesize > 0  # 0 bytes
+            and media_filesize < 2 * 1024 * 1024  # 2MB
+            and entry_info_dict["duration"] > 300  # 5 minutes
+        ):
             logger.warning(
-                f"Video {entry_info_dict['title']} has a filesize of {media_filesize} bytes. Setting media_url to None. {entry_info_dict=}"
+                f"Video '{entry_info_dict['title']}' has a filesize of {media_filesize} bytes. Setting media_url to None. {entry_info_dict=}"
             )
             media_filesize = 0
             media_url = None

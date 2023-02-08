@@ -3,11 +3,13 @@ from typing import Any
 from datetime import datetime, timedelta
 
 from sqlmodel import Session
+from yt_dlp.utils import YoutubeDLError
 
-from tubecast import crud, settings
-from tubecast.handlers import get_handler_from_string, get_handler_from_url
+from tubecast import crud
+from tubecast.core.loggers import ytdlp_logger
+from tubecast.handlers import get_handler_from_url
 from tubecast.models.video import Video, VideoCreate
-from tubecast.services.ytdlp import get_info_dict
+from tubecast.services.ytdlp import Http410Error, IsLiveEventError, get_info_dict
 
 
 async def get_video_info_dict(
@@ -76,6 +78,7 @@ async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
 async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     """
     Fetches new data for a list of videos from yt-dlp.
+    Ignores videos that are live events.
 
     Args:
         videos: The list of videos to fetch.
@@ -84,7 +87,23 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     Returns:
         The fetched list of videos.
     """
-    return [await crud.video.fetch_video(video_id=video.id, db=db) for video in videos]
+    fetched_videos = []
+    for video in videos:
+        try:
+            fetched_video = await crud.video.fetch_video(video_id=video.id, db=db)
+        except IsLiveEventError:
+            continue
+        except Http410Error:
+            # Video has been deleted on host server
+            await crud.video.remove(db=db, id=video.id)
+            continue
+        except (YoutubeDLError, Exception) as e:
+            ytdlp_logger.error(f"Error fetching video: {e=} {video=}")
+            continue
+
+        fetched_videos.append(fetched_video)
+
+    return fetched_videos
 
 
 async def refresh_videos(videos_needing_refresh: list[Video], db: Session) -> list[Video]:
