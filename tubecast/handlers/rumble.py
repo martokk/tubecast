@@ -182,7 +182,7 @@ class RumbleHandler(ServiceHandler):
 
         # TODO: Finalize this solution after some time/testings to see why this happens
         # Handle when media_filesize in below 2MB
-        if entry_info_dict["live_status"]:  # TODO: This is temporary. Remove
+        if entry_info_dict.get("live_status"):  # TODO: This is temporary. Remove
 
             logger.critical(
                 f"\n{entry_info_dict['uploader']=}"
