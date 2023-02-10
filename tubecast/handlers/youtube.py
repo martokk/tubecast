@@ -11,6 +11,7 @@ from .base import ServiceHandler
 
 
 class YoutubeHandler(ServiceHandler):
+    SERVICE_NAME = "Youtube"
     USE_PROXY = True
     MAX_VIDEO_AGE_HOURS = 2
     DOMAINS = ["youtube.com"]

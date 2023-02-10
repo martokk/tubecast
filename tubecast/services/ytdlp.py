@@ -27,6 +27,12 @@ class Http410Error(YoutubeDLError):
     """
 
 
+class IsPrivateVideoError(YoutubeDLError):
+    """
+    Raised when a video is private.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -84,6 +90,7 @@ async def ydl_extract_info(
 
     Raises:
         IsLiveEventError: If the video is a live event.
+        IsPrivateVideoError: If the video is private.
         YoutubeDLError: If the info dictionary could not be retrieved.
         YoutubeDLError: If the info dictionary is None.
         Http410Error: If a HTTP 410 "GONE" error is encountered.
@@ -94,6 +101,8 @@ async def ydl_extract_info(
     except YoutubeDLError as e:
         if "this live event will begin in" in str(e):
             raise IsLiveEventError("This video is a live event.") from e
+        if "Private video" in str(e):
+            raise IsPrivateVideoError("This video is a private video.") from e
         if e.__class__.__name__ == "DownloadError":
             if "HTTP Error 410" in str(e):
                 raise Http410Error from e

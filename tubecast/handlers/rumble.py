@@ -10,7 +10,6 @@ from tubecast.handlers.extractors.rumble import (
     CustomRumbleIE,
 )
 from tubecast.paths import LOG_FILE as _LOG_FILE
-from tubecast.paths import TEMP_LOG_FILE as _TEMP_LOG_FILE
 from tubecast.services.ytdlp import YDL_OPTS_BASE
 
 from .base import ServiceHandler
@@ -19,55 +18,26 @@ from .base import ServiceHandler
 logger = _logger.bind(name="logger")
 logger.add(_LOG_FILE, level="WARNING", rotation="10 MB")
 
-temp_logger = _logger.bind(name="logger")  # TODO: This is temporary. Remove this.
-temp_logger.add(_TEMP_LOG_FILE, level="CRITICAL", rotation="10 MB")
-
 
 class RumbleHandler(ServiceHandler):
+    SERVICE_NAME = "Rumble"
     USE_PROXY = False
     MAX_VIDEO_AGE_HOURS = 8
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
 
-    # def sanitize_video_url(self, url: str) -> str: # TODO: Do this for rumble
-    #     """
-    #     Sanitizes the url to a standard format
+    def sanitize_video_url(self, url: str) -> str:
+        """
+        Sanitizes the url to a standard format
 
-    #     Args:
-    #         url: The URL to be sanitized
+        Args:
+            url: The URL to be sanitized
 
-    #     Returns:
-    #         The sanitized URL.
-    #     """
-    #     url = await self.force_watch_v_format(url=url)
-    #     return await super().sanitize_video_url(url=url)
-
-    # def force_watch_v_format(self, url: str) -> str:
-    #     """
-    #     Extracts the YouTube video ID from a URL and returns the URL
-    #     formatted like `https://www.youtube.com/watch?v=VIDEO_ID`.
-
-    #     Args:
-    #         url: The URL of the YouTube video.
-
-    #     Returns:
-    #         The formatted URL.
-
-    #     Raises:
-    #         ValueError: If the URL is not a valid YouTube video URL.
-    #     """
-    #     match = re.search(r"(?<=shorts/).*", url)
-    #     if match:
-    #         video_id = match.group()
-    #     else:
-    #         match = re.search(r"(?<=watch\?v=).*", url)
-    #         if match:
-    #             video_id = match.group()
-    #         else:
-    #             raise ValueError("Invalid YouTube video URL")
-
-    #     return f"https://www.youtube.com/watch?v={video_id}"
+        Returns:
+            The sanitized URL.
+        """
+        return super().sanitize_video_url(url=url)
 
     def get_source_ydl_opts(
         self, *, extract_flat: bool, playlistreverse: bool, playlistend: int, dateafter: str
@@ -181,7 +151,10 @@ class RumbleHandler(ServiceHandler):
         released_at = datetime.datetime.utcfromtimestamp(entry_info_dict["timestamp"])
 
         # Handle 'is_live' and 'is_upcoming' videos
-        if entry_info_dict.get("live_status") != "not_live":
+        if (
+            entry_info_dict.get("live_status") == "is_live"
+            or entry_info_dict.get("live_status") == "is_upcoming"
+        ):
             media_filesize = 0
             media_url = None
 
