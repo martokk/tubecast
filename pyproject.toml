@@ -31,7 +31,7 @@ python-dotenv = "^0.21.0"
 shortuuid = "^1.0.11"
 httpx = "^0.23.3"
 wheel = "^0.38.1"
-python-telegram-bot = "^20.0"
+python-telegram-bot = "^20.1"
 typer = {extras = ["all"], version = "^0.6.1"}
 rich = "^12.6.0"
 colorama = "^0.4.5"
