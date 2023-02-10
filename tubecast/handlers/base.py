@@ -9,6 +9,7 @@ from tubecast.services.ytdlp import YDL_OPTS_BASE
 
 
 class ServiceHandler:
+    SERVICE_NAME = "Base"
     USE_PROXY = False
     MAX_VIDEO_AGE_HOURS = 24
     DOMAINS: list[str] = []

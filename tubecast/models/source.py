@@ -41,6 +41,7 @@ class SourceBase(TimestampModel, SQLModel):
     feed_url: str = Field(default=None)
     extractor: str = Field(default=None)
     handler: str = Field(default=None)
+    service: str = Field(default=None)
 
 
 class Source(SourceBase, table=True):
@@ -58,12 +59,14 @@ class SourceCreate(SourceBase):
     @classmethod
     def set_pre_validation_defaults(cls, values: dict[str, Any]) -> dict[str, Any]:
         handler = get_handler_from_url(url=values["url"])
+        service = handler.SERVICE_NAME
         sanitized_url = handler.sanitize_source_url(url=values["url"])
         source_id = generate_uuid_from_url(url=sanitized_url)
         feed_url = f"/feed/{source_id}"
         return {
             **values,
             "handler": handler.name,
+            "service": service,
             "url": sanitized_url,
             "id": source_id,
             "feed_url": feed_url,

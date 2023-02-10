@@ -20,6 +20,7 @@ logger.add(_LOG_FILE, level="WARNING", rotation="10 MB")
 
 
 class RumbleHandler(ServiceHandler):
+    SERVICE_NAME = "Rumble"
     USE_PROXY = False
     MAX_VIDEO_AGE_HOURS = 8
     DOMAINS = ["rumble.com"]
@@ -150,7 +151,7 @@ class RumbleHandler(ServiceHandler):
         released_at = datetime.datetime.utcfromtimestamp(entry_info_dict["timestamp"])
 
         # Handle 'is_live' and 'is_upcoming' videos
-        if entry_info_dict.get("live_status") != "not_live":
+        if entry_info_dict.get("live_status") == "is_live" or entry_info_dict.get("is_upcoming"):
             media_filesize = 0
             media_url = None
 
