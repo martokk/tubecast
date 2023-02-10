@@ -90,6 +90,7 @@ async def ydl_extract_info(
 
     Raises:
         IsLiveEventError: If the video is a live event.
+        IsPrivateVideoError: If the video is private.
         YoutubeDLError: If the info dictionary could not be retrieved.
         YoutubeDLError: If the info dictionary is None.
         Http410Error: If a HTTP 410 "GONE" error is encountered.

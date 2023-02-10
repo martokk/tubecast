@@ -151,7 +151,10 @@ class RumbleHandler(ServiceHandler):
         released_at = datetime.datetime.utcfromtimestamp(entry_info_dict["timestamp"])
 
         # Handle 'is_live' and 'is_upcoming' videos
-        if entry_info_dict.get("live_status") == "is_live" or entry_info_dict.get("is_upcoming"):
+        if (
+            entry_info_dict.get("live_status") == "is_live"
+            or entry_info_dict.get("live_status") == "is_upcoming"
+        ):
             media_filesize = 0
             media_url = None
 
