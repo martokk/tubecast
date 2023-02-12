@@ -196,7 +196,7 @@ async def test_get_tokens_from_refresh_token(
     """
     normal_user_cookies.delete("access_token")
     client.cookies = normal_user_cookies
-    response = client.get("/account", cookies=normal_user_cookies)
+    response = client.get("/account")
 
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "user/view.html"  # type: ignore
@@ -214,7 +214,7 @@ async def test_get_tokens_from_invalid_refresh_token(
     normal_user_cookies.delete("access_token")
     normal_user_cookies.set("refresh_token", "invalid_refresh_token")
     client.cookies = normal_user_cookies
-    response = client.get("/account", cookies=normal_user_cookies)
+    response = client.get("/account")
 
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "user/view.html"  # type: ignore
@@ -225,7 +225,8 @@ async def test_get_tokens_from_invalid_refresh_token(
         "tubecast.core.security.get_tokens_from_refresh_token",
         side_effect=HTTPException(status_code=400),
     ):
-        response = client.get("/account", cookies=normal_user_cookies)
+        client.cookies = normal_user_cookies
+        response = client.get("/account")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.url.path == "/account/"  # type: ignore
 
@@ -240,7 +241,8 @@ async def test_get_tokens_from_invalid_refresh_token(
             side_effect=HTTPException(status_code=400),
         ),
     ):
-        response = client.get("/account", cookies=normal_user_cookies)
+        client.cookies = normal_user_cookies
+        response = client.get("/account")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.url.path == "/account/"  # type: ignore
 
