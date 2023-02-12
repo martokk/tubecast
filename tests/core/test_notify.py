@@ -47,7 +47,7 @@ async def test_telegram_message_bad_request() -> None:
 
 
 @patch("tubecast.settings.EMAILS_ENABLED", True)
-@patch("tubecast.settings.NOTIFY_EMAIL_TO", "test@example.com")
+@patch("tubecast.core.settings.settings.NOTIFY_EMAIL_ENABLED", True)
 async def test_notify() -> None:
     """
     Test that the notify function calls the telegram and email functions.
@@ -60,7 +60,7 @@ async def test_notify() -> None:
     assert mock_email.called
 
 
-@patch("tubecast.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("tubecast.core.settings.settings.NOTIFY_EMAIL_ENABLED", True)
 @patch("tubecast.settings.TELEGRAM_CHAT_ID", 123)
 async def test_notify_telegram_false() -> None:
     """
