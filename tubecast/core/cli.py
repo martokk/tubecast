@@ -29,7 +29,7 @@ def version_callback(print_version: bool) -> None:
         Exit: Exit the application.
     """
     if print_version:
-        console.print(f"[yellow]{settings.PACKAGE_NAME}[/] version: [bold blue]{version}[/]")
+        console.print(f"[yellow]{settings.PACKAGE_NAME}[/] version: [bold blue][/]")
         raise typer.Exit()
 
 

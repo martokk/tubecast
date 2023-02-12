@@ -5,6 +5,7 @@ from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.utils import YoutubeDLError
 
 from tubecast.core.loggers import ytdlp_logger as logger
+from tubecast.core.notify import notify
 
 YDL_OPTS_BASE: dict[str, Any] = {
     "logger": logger,
@@ -107,8 +108,10 @@ async def ydl_extract_info(
             if "HTTP Error 410" in str(e):
                 raise Http410Error from e
 
-        logger.error(f"yt-dlp could not extract info for {url=}. {e=}")
-        raise YoutubeDLError(f"yt-dlp could not extract info for {url}. {e=}") from e
+        err_msg = f"yt-dlp could not extract info for {url}. {e=}"
+        logger.critical(err_msg)
+        await notify(telegram=True, email=False, text=err_msg)
+        raise YoutubeDLError(err_msg) from e
 
     if info_dict is None:
         raise YoutubeDLError(

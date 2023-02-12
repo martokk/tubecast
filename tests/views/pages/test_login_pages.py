@@ -70,6 +70,7 @@ def test_register_page(client: TestClient) -> None:
     assert response.status_code == 200
 
 
+@patch("tubecast.core.settings.settings.USERS_OPEN_REGISTRATION", True)
 async def test_handle_register_success(db_with_user: Session, client: TestClient) -> None:
     """
     Test handling register
@@ -97,7 +98,7 @@ async def test_handle_register_success(db_with_user: Session, client: TestClient
         assert mocked_async_client.call_args[1]["json"]["full_name"] == data["full_name"]
 
 
-@patch("tubecast.settings.USERS_OPEN_REGISTRATION", False)
+@patch("tubecast.core.settings.settings.USERS_OPEN_REGISTRATION", False)
 async def test_handle_registration_closed(db_with_user: Session, client: TestClient) -> None:
     """
     Test registration closed
@@ -108,6 +109,7 @@ async def test_handle_registration_closed(db_with_user: Session, client: TestCli
     assert response.context["alerts"].danger[0] == "Registration is closed"  # type: ignore
 
 
+@patch("tubecast.core.settings.settings.USERS_OPEN_REGISTRATION", True)
 async def test_handle_register_failure(db_with_user: Session, client: TestClient) -> None:
     """
     Test handling register

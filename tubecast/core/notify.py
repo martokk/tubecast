@@ -26,9 +26,9 @@ async def notify(
 
     """
     response = {}
-    if telegram:
+    if telegram and settings.NOTIFY_TELEGRAM_ENABLED:
         response["telegram"] = await send_telegram_message(text=text)
-    if email:
+    if email and settings.NOTIFY_EMAIL_ENABLED:
         response["email"] = send_email(
             email_to=settings.NOTIFY_EMAIL_TO,
             subject_template="Server Notification",

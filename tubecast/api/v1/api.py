@@ -22,6 +22,6 @@ async def health_check() -> dict[str, str]:
     """
     return {
         "name": settings.PROJECT_NAME,
-        "version": version,
+        "version": "unknown",  # TODO: get version from pyproject.toml
         "description": settings.PROJECT_DESCRIPTION,
     }

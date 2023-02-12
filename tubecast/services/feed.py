@@ -3,7 +3,9 @@ from pathlib import Path
 
 from feedgen.feed import FeedGenerator
 
-from tubecast import logger, settings
+from tubecast.core.loggers import logger
+from tubecast.core.notify import notify
+from tubecast.core.settings import settings
 from tubecast.models.source import Source
 from tubecast.paths import FEEDS_PATH
 
@@ -136,7 +138,8 @@ async def get_rss_file(source_id: str) -> Path:
     # Validate RSS File exists
     if not rss_file.exists():
         err_msg = f"RSS file ({source_id}.rss) does not exist for ({source_id=})"
-        logger.error(err_msg)
+        logger.critical(err_msg)
+        await notify(telegram=True, email=False, text=err_msg)
         raise FileNotFoundError(err_msg)
     return rss_file
 
