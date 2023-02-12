@@ -3,7 +3,6 @@ from sqlmodel import Session
 
 from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1
 from tubecast import settings
-from tubecast.paths import FEEDS_PATH
 
 
 def test_build_rss(

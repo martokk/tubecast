@@ -8,30 +8,57 @@
 <div class="container my-5">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">{{ source.title }}</h3>
+            <h3 class="card-title">{{ source.name }} ({{ source.service }})</h3>
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="col-4 font-weight-bold">Id:</div>
-                <div class="col-8">{{ source.id }}</div>
+                <div class="col-2 fw-bold">Id:</div>
+                <div class="col">{{ source.id }}</div>
             </div>
             <div class="row">
-                <div class="col-4 font-weight-bold">Title:</div>
-                <div class="col-8">{{ source.title }}</div>
+                <div class="col-2 fw-bold">Description:</div>
+                <div class="col">{{ source.description }}</div>
             </div>
             <div class="row">
-                <div class="col-4 font-weight-bold">Description:</div>
-                <div class="col-8">{{ source.description }}</div>
+                <div class="col-2 fw-bold">Url:</div>
+                <div class="col">{{ source.url }}</div>
             </div>
             <div class="row">
-                <div class="col-4 font-weight-bold">Url:</div>
-                <div class="col-8">{{ source.url }}</div>
-            </div>
-            <div class="row">
-                <div class="col-4 font-weight-bold">Owner:</div>
-                <div class="col-8">{{ source.created_by }}</div>
+                <div class="col-2 fw-bold">Owner:</div>
+                <div class="col">{{ source.created_user.username }}</div>
             </div>
         </div>
     </div>
+</div>
+
+<div class="container">
+    <table class="table table-hover table-sm">
+        <thead>
+            <tr>
+                <th scope="col" class="">Video</th>
+                <th scope="col" class="d-none d-md-table-cell w-10">Media Url</th>
+                <th scope="col" class="d-none d-md-table-cell w-15">Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            {% for video in source.videos %}
+            <tr>
+                <td class="">
+                    <a href="/video/{{ video.id }}" class="">{{ video.title }}</a>
+                </td>
+
+                <td class='{{ "text-body-tertiary"  if video.media_url else "text-danger fw-bold" }}'>{{ "True" if
+                    video.media_url
+                    else "False" }}</td>
+
+                <td class='{{ video.updated_at | humanize_color_class }}'>{{
+                    video.updated_at | humanize }}</td>
+
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
 </div>
 {% endblock content %}

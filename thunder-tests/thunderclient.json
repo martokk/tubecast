@@ -777,17 +777,13 @@
     "colId": "fd4bbae6-1678-481a-94f0-3046b14d11cf",
     "containerId": "aa555665-adbf-411b-b267-901f93fe0291",
     "name": "Fetch Source",
-    "url": "{{ _.BASE_URL }}{{ _.API_V1_PREFIX }}{{ _.ROUTE }}/7hyhcvzT/fetch",
+    "url": "{{BASE_API_URL}}/source/7hyhcvzT/fetch",
     "method": "PUT",
     "sortNum": 260000,
     "created": "2023-02-04T16:38:45.889Z",
-    "modified": "2023-02-10T14:37:36.002Z",
+    "modified": "2023-02-10T15:14:53.952Z",
     "headers": [],
     "params": [],
-    "auth": {
-      "type": "bearer",
-      "bearer": "{% response 'body', 'req_2462cc22af0f4d48a507ab5c5ccb44d4', 'b64::JFthY2Nlc3NfdG9rZW5d::46b', 'never', 60 %}"
-    },
     "tests": []
   },
   {

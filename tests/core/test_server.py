@@ -6,6 +6,7 @@ import uvicorn
 from fastapi.testclient import TestClient
 from typer import Exit
 
+from tubecast import settings
 from tubecast.core.cli import version_callback
 from tubecast.core.server import start_server
 

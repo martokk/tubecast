@@ -3,9 +3,8 @@ from pathlib import Path
 
 from feedgen.feed import FeedGenerator
 
-from tubecast.core.loggers import logger
+from tubecast import logger, settings
 from tubecast.core.notify import notify
-from tubecast.core.settings import settings
 from tubecast.models.source import Source
 from tubecast.paths import FEEDS_PATH
 
