@@ -100,6 +100,8 @@ async def ydl_extract_info(
         info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
 
     except YoutubeDLError as e:
+        if "No video formats found" in str(e):
+            raise IsLiveEventError("No video formats found.") from e
         if "this live event will begin in" in str(e):
             raise IsLiveEventError("This video is a live event.") from e
         if "Private video" in str(e):

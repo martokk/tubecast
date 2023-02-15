@@ -390,10 +390,9 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             r'<li class="video-listing-entry">(.+?)</li>', webpage, flags=re.DOTALL
         ):
             # Handle if video is a LIVE video.
-            live_match = re.search(r'class=video-item--live data-value="([^"]+)', container)
+            live_match = re.search(r'data-value="LIVE"', container)
             if live_match:
-                if live_match.group(1) == "LIVE":
-                    continue
+                continue
 
             # Build Entry
             yield self._build_entry(container=container, **kwargs)
