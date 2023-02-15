@@ -4,13 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from telegram.error import BadRequest
 
-from tubecast import logger, settings
-from tubecast.core import notify
+from app import logger, settings
+from app.core import notify
 
 
-@patch("tubecast.core.notify.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("tubecast.core.notify.settings.TELEGRAM_CHAT_ID", 123)
-@patch("tubecast.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
+@patch("app.core.notify.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("app.core.notify.settings.TELEGRAM_CHAT_ID", 123)
+@patch("app.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
 async def test_send_telegram_message() -> None:
     """
     Test that the telegram message is sent.
@@ -20,21 +20,21 @@ async def test_send_telegram_message() -> None:
     assert mock_send_message.called
 
 
-@patch("tubecast.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
-@patch("tubecast.core.notify.settings.TELEGRAM_CHAT_ID", 0)
+@patch("app.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
+@patch("app.core.notify.settings.TELEGRAM_CHAT_ID", 0)
 async def test_send_telegram_message_settings_not_set() -> None:
     """
     Test that the logger is called when the settings are not set.
     """
-    with patch("tubecast.core.notify.logger") as mock_logger:
+    with patch("app.core.notify.logger") as mock_logger:
         await notify.send_telegram_message("test message")
         mock_logger.warning.assert_called_with(
             "TELEGRAM_API_TOKEN or TELEGRAM_CHAT_ID config variables are not set."
         )
 
 
-@patch("tubecast.core.notify.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("tubecast.core.notify.settings.TELEGRAM_CHAT_ID", 123)
+@patch("app.core.notify.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("app.core.notify.settings.TELEGRAM_CHAT_ID", 123)
 async def test_telegram_message_bad_request() -> None:
     """
     Test that the telegram message raises a ValueError when a BadRequest is raised.
@@ -45,54 +45,54 @@ async def test_telegram_message_bad_request() -> None:
             await notify.send_telegram_message("test message")
 
 
-@patch("tubecast.core.notify.settings.EMAILS_ENABLED", True)
-@patch("tubecast.core.notify.settings.NOTIFY_EMAIL_ENABLED", True)
-@patch("tubecast.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
+@patch("app.core.notify.settings.EMAILS_ENABLED", True)
+@patch("app.core.notify.settings.NOTIFY_EMAIL_ENABLED", True)
+@patch("app.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
 async def test_notify() -> None:
     """
     Test that the notify function calls the telegram and email functions.
     """
-    with patch("tubecast.core.notify.send_telegram_message") as mock_telegram:
-        with patch("tubecast.core.notify.send_email") as mock_email:
+    with patch("app.core.notify.send_telegram_message") as mock_telegram:
+        with patch("app.core.notify.send_email") as mock_email:
             await notify.notify("test message", email=True, telegram=True)
 
     assert mock_telegram.called
     assert mock_email.called
 
 
-@patch("tubecast.core.notify.settings.NOTIFY_EMAIL_ENABLED", True)
-@patch("tubecast.core.notify.settings.TELEGRAM_CHAT_ID", 123)
+@patch("app.core.notify.settings.NOTIFY_EMAIL_ENABLED", True)
+@patch("app.core.notify.settings.TELEGRAM_CHAT_ID", 123)
 async def test_notify_telegram_false() -> None:
     """
     Test that the notify function does not call the telegram function when telegram=False.
     """
-    with patch("tubecast.core.notify.send_telegram_message") as mock_telegram:
-        with patch("tubecast.core.notify.send_email") as mock_email:
+    with patch("app.core.notify.send_telegram_message") as mock_telegram:
+        with patch("app.core.notify.send_email") as mock_email:
             await notify.notify("test message", telegram=False, email=True)
 
     assert not mock_telegram.called
     assert mock_email.called
 
 
-@patch("tubecast.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
-@patch("tubecast.core.notify.settings.NOTIFY_EMAIL_ENABLED", True)
+@patch("app.core.notify.settings.NOTIFY_TELEGRAM_ENABLED", True)
+@patch("app.core.notify.settings.NOTIFY_EMAIL_ENABLED", True)
 async def test_notify_email_false() -> None:
     """
     Test that the notify function does not call the email function when email=False.
     """
-    with patch("tubecast.core.notify.send_telegram_message") as mock_telegram:
-        with patch("tubecast.core.notify.send_email") as mock_email:
+    with patch("app.core.notify.send_telegram_message") as mock_telegram:
+        with patch("app.core.notify.send_email") as mock_email:
             await notify.notify("test message", email=False)
 
     assert mock_telegram.called
     assert not mock_email.called
 
 
-@patch("tubecast.core.notify.settings.TELEGRAM_API_TOKEN", "valid_token")
-@patch("tubecast.core.notify.settings.TELEGRAM_CHAT_ID", 123)
-@patch("tubecast.core.notify.settings.EMAILS_ENABLED", True)
-@patch("tubecast.core.notify.settings.SMTP_USER", "user")
-@patch("tubecast.core.notify.settings.SMTP_PASSWORD", "password")
+@patch("app.core.notify.settings.TELEGRAM_API_TOKEN", "valid_token")
+@patch("app.core.notify.settings.TELEGRAM_CHAT_ID", 123)
+@patch("app.core.notify.settings.EMAILS_ENABLED", True)
+@patch("app.core.notify.settings.SMTP_USER", "user")
+@patch("app.core.notify.settings.SMTP_PASSWORD", "password")
 async def test_send_email() -> None:
     """
     Test that the send_email function calls the emails package.
@@ -108,7 +108,7 @@ async def test_send_email() -> None:
     assert mock_message.call_count == 1
 
 
-@patch("tubecast.core.notify.settings.EMAILS_ENABLED", False)
+@patch("app.core.notify.settings.EMAILS_ENABLED", False)
 async def test_send_email_not_enabled() -> None:
     """
     Test that the send_email function does not call the emails package when emails are not enabled.
@@ -125,14 +125,14 @@ async def test_send_email_not_enabled() -> None:
     assert not mock_message.called
 
 
-@patch("tubecast.core.notify.get_html_template", "")
+@patch("app.core.notify.get_html_template", "")
 async def test_send_test_email() -> None:
     """
     Test that the send_test_email function calls the send_email function.
     """
-    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
+    with patch("app.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("tubecast.core.notify.send_email") as mock_send_email:
+        with patch("app.core.notify.send_email") as mock_send_email:
             notify.send_test_email(email_to="test@example.com")
 
     assert mock_send_email.called
@@ -143,9 +143,9 @@ async def test_send_reset_password_email() -> None:
     """
     Test that the send_reset_password_email function calls the send_email function.
     """
-    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
+    with patch("app.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("tubecast.core.notify.send_email") as mock_send_email:
+        with patch("app.core.notify.send_email") as mock_send_email:
             notify.send_reset_password_email(
                 email_to="test@example.com", username="test", token="test"
             )
@@ -158,9 +158,9 @@ async def test_send_new_account_email() -> None:
     """
     Test that the send_new_account_email function calls the send_email function.
     """
-    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
+    with patch("app.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("tubecast.core.notify.send_email") as mock_send_email:
+        with patch("app.core.notify.send_email") as mock_send_email:
             notify.send_new_account_email(
                 email_to="test@example.com", username="test", password="test"
             )
@@ -169,14 +169,14 @@ async def test_send_new_account_email() -> None:
     assert mock_send_email.call_count == 1
 
 
-@patch("tubecast.core.notify.settings.NOTIFY_ON_START", True)
+@patch("app.core.notify.settings.NOTIFY_ON_START", True)
 async def test_notify_on_start(client: TestClient) -> None:
     """
     Test that the notify_on_start function calls the notify function.
     """
-    with patch("tubecast.core.notify.get_html_template") as mock_get_html_template:
+    with patch("app.core.notify.get_html_template") as mock_get_html_template:
         mock_get_html_template.return_value = ""
-        with patch("tubecast.core.notify.notify") as mock_notify:
+        with patch("app.core.notify.notify") as mock_notify:
             with client as c:
                 c.get("/'")
     assert mock_notify.called

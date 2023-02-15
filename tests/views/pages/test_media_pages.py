@@ -4,8 +4,8 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app import crud, models, settings
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
-from tubecast import crud, models, settings
 
 
 async def test_handle_media_404(client: TestClient) -> None:
@@ -34,7 +34,7 @@ async def test_handle_redirect_media(
 
     # Handle media
     source_video_0_url = source_videos[0]["feed_media_url"]
-    with patch("tubecast.views.pages.media.RedirectResponse") as mock_redirect:
+    with patch("app.views.pages.media.RedirectResponse") as mock_redirect:
         mock_redirect.return_value = RedirectResponse(url="http://example.com")
         response = client.get(source_video_0_url)
         assert response.status_code == 200
@@ -61,7 +61,7 @@ async def test_handle_reverse_proxy_media(
 
     # Handle media
     source_video_0_url = source_videos[0]["feed_media_url"]
-    with patch("tubecast.views.pages.media.reverse_proxy") as mock_reverse_proxy:
+    with patch("app.views.pages.media.reverse_proxy") as mock_reverse_proxy:
         mock_reverse_proxy.return_value = Response(content=None, status_code=200)
         response = client.get(source_video_0_url)
         assert response.status_code == 200

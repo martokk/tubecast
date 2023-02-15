@@ -2,8 +2,8 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from tubecast import settings
-from tubecast.core.cli import typer_app
+from app import settings
+from app.core.cli import typer_app
 
 
 def test_cli_version() -> None:
@@ -20,7 +20,7 @@ def test_cli_main() -> None:
     """
     Test the CLI main command.
     """
-    with patch("tubecast.core.cli.start_server") as mock_start_server:
+    with patch("app.core.cli.start_server") as mock_start_server:
         runner = CliRunner()
         result = runner.invoke(typer_app)
         assert result.exit_code == 0

@@ -1,8 +1,8 @@
 import time
 from unittest.mock import patch
 
-from tubecast import logger
-from tubecast.core.debug_helpers import log_function_enter_exit, timeit
+from app import logger
+from app.core.debug_helpers import log_function_enter_exit, timeit
 
 
 def test_log_function_enter_exit():

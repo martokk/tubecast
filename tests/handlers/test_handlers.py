@@ -1,7 +1,7 @@
 import pytest
 
-from tubecast.handlers import get_handler_from_string, get_handler_from_url
-from tubecast.handlers.exceptions import HandlerNotFoundError
+from app.handlers import get_handler_from_string, get_handler_from_url
+from app.handlers.exceptions import HandlerNotFoundError
 
 
 def test_get_handler_from_url() -> None:

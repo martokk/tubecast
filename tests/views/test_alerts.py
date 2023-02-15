@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from tubecast import models
+from app import models
 
 
 def test_set_alerts_from_request() -> None:

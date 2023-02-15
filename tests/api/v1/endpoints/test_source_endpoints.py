@@ -3,8 +3,8 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app import settings
 from tests.mock_objects import MOCKED_SOURCES, MOCKED_YOUTUBE_SOURCE_1
-from tubecast import settings
 
 
 def test_create_source_from_url(
@@ -323,7 +323,7 @@ def test_fetch_source(client: TestClient, superuser_token_headers: dict[str, str
     created_source = response.json()
 
     # Fetch Source
-    with patch("tubecast.crud.source.fetch_source") as mocked_fetch_source:
+    with patch("app.crud.source.fetch_source") as mocked_fetch_source:
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/{created_source['id']}/fetch",
             headers=superuser_token_headers,
@@ -357,7 +357,7 @@ def test_fetch_all_sources(client: TestClient, superuser_token_headers: dict[str
     assert response.status_code == 201
 
     # Fetch All Sources
-    with patch("tubecast.crud.source.fetch_all_sources") as mocked_fetch_source:
+    with patch("app.crud.source.fetch_all_sources") as mocked_fetch_source:
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/fetch",
             headers=superuser_token_headers,

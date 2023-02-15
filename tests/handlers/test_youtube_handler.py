@@ -1,7 +1,7 @@
 import pytest
 
+from app.handlers.youtube import YoutubeHandler
 from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1, get_mocked_source_info_dict
-from tubecast.handlers.youtube import YoutubeHandler
 
 HANDLER = YoutubeHandler()
 

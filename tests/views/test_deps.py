@@ -1,7 +1,7 @@
 from sqlmodel import Session
 
-from tubecast import models
-from tubecast.views import deps
+from app import models
+from app.views import deps
 
 
 async def test_get_db() -> None:

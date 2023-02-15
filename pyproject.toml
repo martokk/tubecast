@@ -21,7 +21,7 @@ classifiers = []
 
 [tool.poetry.scripts]
 # Entry points for the package https://python-poetry.org/docs/pyproject/#scripts
-"tubecast" = "tubecast.__main__:app"
+"tubecast" = "app.__main__:app"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -176,7 +176,7 @@ addopts = [
 source = ["tests"]
 
 [coverage.paths]
-source = "tubecast"
+source = "app"
 
 [coverage.run]
 branch = true
@@ -200,7 +200,7 @@ no_pretty = true
 follow_imports = "silent"
 
 [tool.pyright]
-include = ["tubecast", "tests"]
+include = ["app", "tests"]
 ignore = ["typings", "migrations", "venv", "build", "dist", "docs", ".tox", ".git", "__pycache__"]
 # useLibraryCodeForTypes = true
 # typeCheckingMode = "strict"
@@ -208,7 +208,7 @@ ignore = ["typings", "migrations", "venv", "build", "dist", "docs", ".tox", ".gi
 # reportMissingTypeStubs = "information"
 # reportUnknownMemberType = "information"
 # reportGeneralTypeIssues = "information"
-extraPaths = ["tubecast"]
+extraPaths = ["app"]
 
 [tool.pyupgrade]
 py310-plus = true

@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastapi import HTTPException, Request
 
-from tubecast.core.proxy import reverse_proxy
+from app.core.proxy import reverse_proxy
 
 
 async def test_reverse_proxy_valid_url(test_request: Request) -> None:
@@ -25,7 +25,7 @@ async def test_reverse_proxy_non_200_status_code(test_request: Request) -> None:
     url = "https://someurl.com/api"
     request = Request(scope={"type": "http", "method": "GET", "path": url})
 
-    with patch("tubecast.core.proxy.client.send") as mock:
+    with patch("app.core.proxy.client.send") as mock:
         mock.return_value = AsyncMock(
             status_code=410,
             headers={"Content-Type": "application/json"},

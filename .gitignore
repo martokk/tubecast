@@ -658,4 +658,4 @@ thunder-tests/thunderEnvironment.json
 
 **/data/.env
 
-tubecast/data/feed/
+app/data/feed/

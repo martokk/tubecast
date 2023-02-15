@@ -1,8 +1,8 @@
 import pytest
 from sqlmodel import Session
 
+from app import crud
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1
-from tubecast import crud
 
 
 async def test_create_video_from_url_already_exists(

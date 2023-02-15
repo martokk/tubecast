@@ -1,6 +1,6 @@
 import pytest
 
-from tubecast import models
+from app import models
 
 
 def test_sum_FetchResults() -> None:

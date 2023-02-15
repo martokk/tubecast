@@ -7,6 +7,6 @@ services:
     restart: unless-stopped
     volumes:
       # - /home/ubuntu/volumes/youtube_rss/data:/youtube_rss/data
-      - ./tubecast:/tubecast
+      - ./app:/app
     ports:
       - "5000:5000"
