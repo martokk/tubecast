@@ -1,6 +1,5 @@
 from unittest.mock import AsyncMock, patch
 
-import httpx
 import pytest
 from fastapi import HTTPException, Request
 

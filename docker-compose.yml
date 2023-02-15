@@ -6,7 +6,7 @@ services:
     image: ghcr.io/martokk/tubecast:latest
     restart: unless-stopped
     volumes:
-      # - /home/ubuntu/volumes/youtube_rss/data:/youtube_rss/data
+      # - /home/ubuntu/volumes/python_fastapi_stack/data:/python_fastapi_stack/data
       - ./app:/app
     ports:
       - "5000:5000"

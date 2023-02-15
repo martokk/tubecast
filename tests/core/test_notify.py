@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from telegram.error import BadRequest
 
-from app import logger, settings
+from app import settings
 from app.core import notify
 
 

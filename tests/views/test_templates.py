@@ -1,6 +1,6 @@
 import pytest
 
-from app import paths, settings
+from app import settings
 from app.views import get_templates
 
 
