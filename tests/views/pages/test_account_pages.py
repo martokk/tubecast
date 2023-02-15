@@ -12,7 +12,8 @@ async def test_display_user_account(
     """
     Test that a normal user can view their account.
     """
-    response = client.get("/account", cookies=normal_user_cookies)
+    client.cookies = normal_user_cookies
+    response = client.get("/account")
     assert response.status_code == 200
     assert response.template.name == "user/view.html"  # type: ignore
     assert response.context["db_user"].username == "test_user"  # type: ignore
@@ -24,7 +25,8 @@ async def test_edit_user_account_page(
     """
     Test that a normal user can view their account edit page.
     """
-    response = client.get("/account/edit", cookies=normal_user_cookies)
+    client.cookies = normal_user_cookies
+    response = client.get("/account/edit")
     assert response.status_code == 200
     assert response.template.name == "user/edit.html"  # type: ignore
     assert response.context["db_user"].username == "test_user"  # type: ignore
@@ -42,7 +44,8 @@ async def test_update_user_account(
         "is_active": False,
         "is_superuser": True,
     }
-    response = client.post("/account/edit", cookies=normal_user_cookies, data=data)
+    client.cookies = normal_user_cookies
+    response = client.post("/account/edit", data=data)
     assert response.status_code == 200
     assert response.template.name == "user/edit.html"  # type: ignore
     assert response.context["db_user"].username == "test_user"  # type: ignore
@@ -64,7 +67,8 @@ async def test_update_superuser_account(
         "is_active": False,
         "is_superuser": True,
     }
-    response = client.post("/account/edit", cookies=superuser_cookies, data=data)
+    client.cookies = superuser_cookies
+    response = client.post("/account/edit", data=data)
     assert response.status_code == 200
     assert response.template.name == "user/edit.html"  # type: ignore
     assert response.context["db_user"].email == data["email"]  # type: ignore

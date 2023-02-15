@@ -15,7 +15,6 @@ from tubecast.views.router import views_router
 # Initialize FastAPI App
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    version=version,
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
     debug=settings.DEBUG,
 )

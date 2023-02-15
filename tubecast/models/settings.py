@@ -37,7 +37,6 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str | None = None
     EMAILS_FROM_EMAIL: EmailStr | None = None
     EMAILS_FROM_NAME: str | None = None
-    NOTIFY_EMAIL_TO: EmailStr | None = None
 
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
     EMAILS_ENABLED: bool = False
@@ -49,6 +48,9 @@ class Settings(BaseSettings):
     USERS_OPEN_REGISTRATION: bool = False
 
     # Notify
+    NOTIFY_EMAIL_ENABLED: bool = False
+    NOTIFY_EMAIL_TO: EmailStr | None = None
+    NOTIFY_TELEGRAM_ENABLED: bool = False
     TELEGRAM_API_TOKEN: str = ""
     TELEGRAM_CHAT_ID: int = 0
     NOTIFY_ON_START: bool = True

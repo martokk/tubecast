@@ -4,10 +4,18 @@ from pathlib import Path
 
 import emails
 from emails.template import JinjaTemplate  # type: ignore
+from loguru import logger as _logger
 from telegram import Bot
 from telegram.error import BadRequest
 
-from tubecast import logger, paths, settings
+from tubecast import paths
+from tubecast.models.settings import Settings as _Settings
+
+settings = _Settings()
+
+# Main Logger
+logger = _logger.bind(name="logger")
+logger.add(paths.LOG_FILE, level=settings.LOG_LEVEL, rotation="10 MB")
 
 
 async def notify(
@@ -26,9 +34,9 @@ async def notify(
 
     """
     response = {}
-    if telegram:
+    if telegram and settings.NOTIFY_TELEGRAM_ENABLED:
         response["telegram"] = await send_telegram_message(text=text)
-    if email:
+    if email and settings.NOTIFY_EMAIL_ENABLED:
         response["email"] = send_email(
             email_to=settings.NOTIFY_EMAIL_TO,
             subject_template="Server Notification",

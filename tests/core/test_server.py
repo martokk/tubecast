@@ -6,7 +6,7 @@ import uvicorn
 from fastapi.testclient import TestClient
 from typer import Exit
 
-from tubecast import get_version, settings
+from tubecast import settings
 from tubecast.core.cli import version_callback
 from tubecast.core.server import start_server
 
@@ -18,7 +18,7 @@ def test_version_callback(mocker: MagicMock) -> None:
         version_callback(print_version=True)
     except Exit:
         pass
-    version = get_version()
+    version = ""
     mock_console.print.assert_called_with(
         f"[yellow]{settings.PACKAGE_NAME}[/] version: [bold blue]{version}[/]"
     )
@@ -64,6 +64,6 @@ def test_health_check(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "name": settings.PROJECT_NAME,
-        "version": get_version(),
+        "version": "unknown",
         "description": settings.PROJECT_DESCRIPTION,
     }

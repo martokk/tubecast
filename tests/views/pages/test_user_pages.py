@@ -12,13 +12,14 @@ def test_display_user_account_page(
     """
     Test that superusers can view a users account page.
     """
-    response = client.get("/user/test_user", cookies=superuser_cookies)
+    client.cookies = superuser_cookies
+    response = client.get("/user/test_user")
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "user/view.html"  # type: ignore
     assert response.context["db_user"].username == "test_user"  # type: ignore
 
     # Test user not found
-    response = client.get("/user/wrong_username", cookies=superuser_cookies)
+    response = client.get("/user/wrong_username")
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "base/base.html"  # type: ignore
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore
@@ -30,13 +31,14 @@ def test_edit_user_account_page(
     """
     Test that superusers can edit a users account page.
     """
-    response = client.get("/user/test_user/edit", cookies=superuser_cookies)
+    client.cookies = superuser_cookies
+    response = client.get("/user/test_user/edit")
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "user/edit.html"  # type: ignore
     assert response.context["db_user"].username == "test_user"  # type: ignore
 
     # Test user not found
-    response = client.get("/user/wrong_username/edit", cookies=superuser_cookies)
+    response = client.get("/user/wrong_username/edit")
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "source/list.html"  # type: ignore
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore
@@ -52,7 +54,8 @@ def test_update_user_account(client: TestClient, db: Session, superuser_cookies:
         "is_active": False,
         "is_superuser": True,
     }
-    response = client.post("/user/test_user/edit", cookies=superuser_cookies, data=data)
+    client.cookies = superuser_cookies
+    response = client.post("/user/test_user/edit", data=data)
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "user/edit.html"  # type: ignore
     assert response.context["db_user"].username == "test_user"  # type: ignore
@@ -62,7 +65,7 @@ def test_update_user_account(client: TestClient, db: Session, superuser_cookies:
     assert response.context["db_user"].is_superuser == data["is_superuser"]  # type: ignore
 
     # Test user not found & redirect
-    response = client.post("/user/wrong_username/edit", cookies=superuser_cookies, data=data)
+    response = client.post("/user/wrong_username/edit", data=data)
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_302_FOUND
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore

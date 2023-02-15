@@ -7,15 +7,12 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from tubecast.core.uuid import generate_uuid_from_url
 from tubecast.handlers import get_handler_from_url
-from tubecast.models.settings import Settings as _Settings
 
 from .common import TimestampModel
 
 if TYPE_CHECKING:
     from .user import User  # pragma: no cover
     from .video import Video  # pragma: no cover
-
-settings = _Settings()
 
 
 async def generate_source_id_from_url(url: str) -> str:

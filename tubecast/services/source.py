@@ -111,6 +111,7 @@ async def get_source_videos_from_source_info_dict(
         )
         for playlist in playlists
         for entry_info_dict in playlist.get("entries", [])
+        if entry_info_dict.get("live_status") is None
     ]
     return [VideoCreate(**video_dict) for video_dict in video_dicts]
 

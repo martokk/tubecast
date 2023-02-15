@@ -7,6 +7,7 @@ from yt_dlp.utils import YoutubeDLError
 
 from tubecast import crud
 from tubecast.core.loggers import ytdlp_logger
+from tubecast.core.notify import notify
 from tubecast.handlers import get_handler_from_url
 from tubecast.models.video import Video, VideoCreate
 from tubecast.services.ytdlp import (
@@ -98,14 +99,14 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
             fetched_video = await crud.video.fetch_video(video_id=video.id, db=db)
         except IsLiveEventError:
             continue
-        except IsPrivateVideoError:
-            continue
-        except Http410Error:
+        except (Http410Error, IsPrivateVideoError):
             # Video has been deleted on host server
             await crud.video.remove(db=db, id=video.id)
             continue
         except (YoutubeDLError, Exception) as e:
-            ytdlp_logger.critical(f"Error fetching video: {e=} {video=}")
+            err_msg = f"Error fetching video: \n{e=} \n{video=}"
+            ytdlp_logger.critical(err_msg)
+            await notify(telegram=True, email=False, text=err_msg)
             continue
 
         fetched_videos.append(fetched_video)
