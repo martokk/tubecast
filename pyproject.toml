@@ -52,7 +52,7 @@ yt-dlp = "^2022.11.11"
 feedgen = "^0.9.0"
 virtualenv = "^20.19.0"
 platformdirs = "^3.0.0"
-setuptools = "^67.2.0"
+setuptools = "^67.3.2"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.1"
