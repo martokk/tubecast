@@ -1,13 +1,13 @@
 from unittest.mock import patch
 
-from tubecast.__main__ import main
+from app.__main__ import main
 
 
 def test_main() -> None:
     """
     test __main__.py
     """
-    with patch("tubecast.__main__.typer_app") as mock_typer_app:
+    with patch("app.__main__.typer_app") as mock_typer_app:
         main()
 
     assert mock_typer_app.called

@@ -1,8 +1,8 @@
 from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session
 
-from tubecast import crud, models
-from tubecast.core import security
+from app import crud, models
+from app.core import security
 
 
 async def test_create_user(db: Session) -> None:

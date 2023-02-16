@@ -1,6 +1,6 @@
 import datetime
 
-from tubecast.services.feed import get_published_date
+from app.services.feed import get_published_date
 
 
 def test_get_published_date() -> None:

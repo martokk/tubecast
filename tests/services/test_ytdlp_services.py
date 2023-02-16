@@ -4,8 +4,8 @@ import pytest
 from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.utils import YoutubeDLError
 
+from app.services.ytdlp import YDL_OPTS_BASE, IsLiveEventError, get_info_dict
 from tests.mock_objects import MOCKED_RUMBLE_VIDEO_3, get_mocked_video_info_dict
-from tubecast.services.ytdlp import YDL_OPTS_BASE, IsLiveEventError, get_info_dict
 
 
 async def test_get_info_dict() -> None:

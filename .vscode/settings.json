@@ -93,6 +93,7 @@
 		"pyqt",
 		"pyright",
 		"pysqlite's",
+		"python_fastapi_stack",
 		"pyup",
 		"pyupgrade",
 		"sessionmaker",

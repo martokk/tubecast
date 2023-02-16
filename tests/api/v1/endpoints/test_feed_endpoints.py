@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
+from app import settings
 from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1
-from tubecast import settings
 
 
 def test_build_rss(

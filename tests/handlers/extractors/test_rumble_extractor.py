@@ -1,6 +1,6 @@
 from yt_dlp import YoutubeDL
 
-from tubecast.handlers.extractors.rumble import (
+from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
     CustomRumbleIE,

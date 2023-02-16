@@ -2,8 +2,8 @@ import datetime
 
 import pytest
 
+from app.handlers.rumble import RumbleHandler
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, get_mocked_source_info_dict
-from tubecast.handlers.rumble import RumbleHandler
 
 
 async def test_map_video_info_dict_entity_to_video_dict() -> None:

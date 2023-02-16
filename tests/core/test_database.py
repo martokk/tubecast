@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 from sqlmodel import SQLModel
 
-from tubecast.db.init_db import create_all
+from app.db.init_db import create_all
 
 
 async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
@@ -20,7 +20,7 @@ async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
     db_file = Path(tmpdir.join("test_db.sqlite"))
 
     # Patch the database file path
-    monkeypatch.setattr("tubecast.paths.DATABASE_FILE", db_file)
+    monkeypatch.setattr("app.paths.DATABASE_FILE", db_file)
 
     # Ensure the test database does not exist before running the function
     if os.path.exists(db_file):

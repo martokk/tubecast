@@ -19,6 +19,7 @@ def test_display_user_account_page(
     assert response.context["db_user"].username == "test_user"  # type: ignore
 
     # Test user not found
+    client.cookies = superuser_cookies
     response = client.get("/user/wrong_username")
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "base/base.html"  # type: ignore
@@ -38,9 +39,10 @@ def test_edit_user_account_page(
     assert response.context["db_user"].username == "test_user"  # type: ignore
 
     # Test user not found
+    client.cookies = superuser_cookies
     response = client.get("/user/wrong_username/edit")
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/list.html"  # type: ignore
+    assert response.template.name == "base/base.html"  # type: ignore
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore
 
 
@@ -65,6 +67,7 @@ def test_update_user_account(client: TestClient, db: Session, superuser_cookies:
     assert response.context["db_user"].is_superuser == data["is_superuser"]  # type: ignore
 
     # Test user not found & redirect
+    client.cookies = superuser_cookies
     response = client.post("/user/wrong_username/edit", data=data)
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_302_FOUND

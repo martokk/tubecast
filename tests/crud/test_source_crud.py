@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 from sqlmodel import Session
 
+from app import crud, models
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
-from tubecast import crud, models
 
 
 async def create_source(db: Session) -> models.Source:
@@ -102,7 +102,7 @@ async def test_delete_item_delete_error(db: Session, mocker: MagicMock) -> None:
     """
     Test deleting an item with a delete error.
     """
-    mocker.patch("tubecast.crud.source.get", return_value=None)
+    mocker.patch("app.crud.source.get", return_value=None)
     with pytest.raises(crud.DeleteError):
         await crud.source.remove(db=db, id="00000001")
 

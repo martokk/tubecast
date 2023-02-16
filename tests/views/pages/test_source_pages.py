@@ -6,8 +6,8 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
+from app import crud, models, settings
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES
-from tubecast import crud, models, settings
 
 
 @pytest.fixture(name="source_1")
@@ -286,7 +286,7 @@ def test_delete_source(
     assert response.url.path == "/sources"
 
     # Test DeleteError
-    with patch("tubecast.crud.source.remove", side_effect=crud.DeleteError):
+    with patch("app.crud.source.remove", side_effect=crud.DeleteError):
         response = client.get(
             f"/source/123/delete",
         )
@@ -339,7 +339,7 @@ def test_fetch_source(
     assert response.url.path == "/sources"
 
     # Fetch source as superuser
-    with patch("tubecast.crud.source.fetch_source", return_value=None):
+    with patch("app.crud.source.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/{source_1.id}/fetch",
@@ -350,7 +350,7 @@ def test_fetch_source(
     assert response.url.path == "/sources"
 
     # Fetch source as superuser with not found source
-    with patch("tubecast.crud.source.fetch_source", return_value=None):
+    with patch("app.crud.source.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/wrongs_source_id/fetch",

@@ -2,4 +2,4 @@
 
 alembic upgrade head
 
-python -m tubecast
+python -m app

@@ -12,13 +12,13 @@ from httpx import Cookies
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel, create_engine
 
+from app import crud, models, settings
+from app.api import deps as api_deps
+from app.core import security
+from app.core.app import app
+from app.db.init_db import init_initial_data
+from app.views import deps as views_deps
 from tests.mock_objects import get_mocked_source_info_dict, get_mocked_video_info_dict
-from tubecast import crud, models, settings
-from tubecast.api import deps as api_deps
-from tubecast.core import security
-from tubecast.core.app import app
-from tubecast.db.init_db import init_initial_data
-from tubecast.views import deps as views_deps
 
 # Set up the database
 db_url = "sqlite:///:memory:"
@@ -53,9 +53,9 @@ def do_begin(conn: Any) -> None:
 
 @pytest.fixture(name="init")
 def fixture_init(mocker: MagicMock, tmp_path: Path) -> None:  # pylint: disable=unused-argument
-    mocker.patch("tubecast.paths.FEEDS_PATH", return_value=tmp_path)
-    mocker.patch("tubecast.paths.LOG_FILE", return_value=tmp_path / "test.log")
-    mocker.patch("tubecast.services.feed.build_rss_file", None)
+    mocker.patch("app.paths.FEEDS_PATH", return_value=tmp_path)
+    mocker.patch("app.paths.LOG_FILE", return_value=tmp_path / "test.log")
+    mocker.patch("app.services.feed.build_rss_file", None)
 
 
 @pytest.fixture(name="db")
@@ -80,14 +80,14 @@ async def fixture_db(
         if not nested.is_active:
             nested = connection.begin_nested()
 
-    mocker.patch("tubecast.services.feed.FEEDS_PATH", tmp_path)
+    mocker.patch("app.services.feed.FEEDS_PATH", tmp_path)
     with (
         patch(
-            "tubecast.services.source.get_info_dict",
+            "app.services.source.get_info_dict",
             get_mocked_source_info_dict,
         ),
         patch(
-            "tubecast.services.video.get_info_dict",
+            "app.services.video.get_info_dict",
             get_mocked_video_info_dict,
         ),
     ):
@@ -210,7 +210,7 @@ def fixture_normal_user_cookies(
     """
     form_data = {"username": "test_user", "password": "test_password"}
 
-    with patch("tubecast.views.pages.login.RedirectResponse") as mock:
+    with patch("app.views.pages.login.RedirectResponse") as mock:
         mock.return_value = Response(status_code=302)
         response = client.post("/login", data=form_data)
         print(response.cookies)
@@ -236,7 +236,7 @@ def fixture_superuser_cookies(
         "password": settings.FIRST_SUPERUSER_PASSWORD,
     }
 
-    with patch("tubecast.views.pages.login.RedirectResponse") as mock:
+    with patch("app.views.pages.login.RedirectResponse") as mock:
         mock.return_value = Response(status_code=302)
         response = client.post("/login", data=form_data)
         print(response.cookies)
