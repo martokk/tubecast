@@ -64,7 +64,7 @@ async def get_by_id(
     Get user by id.
 
     Args:
-        id (str): id of the video.
+        id (str): id of the user.
         db (Session): database session.
         current_user (Any): authenticated user.
 
@@ -198,10 +198,10 @@ async def delete(
     _: models.User = Depends(deps.get_current_active_superuser),
 ) -> None:
     """
-    Delete an video. Only superusers can delete videos.
+    Delete an user. Only superusers can delete users.
 
     Args:
-        id (str): ID of the video to delete.
+        id (str): ID of the user to delete.
         db (Session): database session.
         _ (models.User): Current active superuser.
 
@@ -209,7 +209,7 @@ async def delete(
         None
 
     Raises:
-        HTTPException: if video not found.
+        HTTPException: if user not found.
     """
     try:
         return await model_crud.remove(id=id, db=db)

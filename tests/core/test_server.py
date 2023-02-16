@@ -18,7 +18,7 @@ def test_version_callback(mocker: MagicMock) -> None:
         version_callback(print_version=True)
     except Exit:
         pass
-    version = ""
+    version = "unknown"
     mock_console.print.assert_called_with(
         f"[yellow]{settings.PACKAGE_NAME}[/] version: [bold blue]{version}[/]"
     )
