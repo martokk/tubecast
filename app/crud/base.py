@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session, SQLModel, select
 
-from app.crud import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
+from app.crud.exceptions import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 ModelCreateType = TypeVar("ModelCreateType", bound=SQLModel)
