@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
+from app.services.source import fetch_source
 from app.views import deps, templates
 
 router = APIRouter()
@@ -159,7 +160,7 @@ async def handle_create_source(
 
     # Fetch the source videos in the background
     background_tasks.add_task(
-        crud.source.fetch_source,
+        fetch_source,
         id=source.id,
         db=db,
     )
@@ -289,7 +290,7 @@ async def delete_source(
 
 
 @router.get("/source/{source_id}/fetch", status_code=status.HTTP_202_ACCEPTED)
-async def fetch_source(
+async def fetch_source_page(
     source_id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
@@ -318,7 +319,7 @@ async def fetch_source(
         else:
             # Fetch the source videos in the background
             background_tasks.add_task(
-                crud.source.fetch_source,
+                fetch_source,
                 id=source_id,
                 db=db,
             )

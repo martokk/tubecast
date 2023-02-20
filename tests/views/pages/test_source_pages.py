@@ -339,7 +339,7 @@ def test_fetch_source(
     assert response.url.path == "/sources"
 
     # Fetch source as superuser
-    with patch("app.crud.source.fetch_source", return_value=None):
+    with patch("app.services.source.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/{source_1.id}/fetch",
@@ -350,7 +350,7 @@ def test_fetch_source(
     assert response.url.path == "/sources"
 
     # Fetch source as superuser with not found source
-    with patch("app.crud.source.fetch_source", return_value=None):
+    with patch("app.services.source.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/wrongs_source_id/fetch",

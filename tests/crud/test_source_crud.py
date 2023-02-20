@@ -4,6 +4,7 @@ import pytest
 from sqlmodel import Session
 
 from app import crud, models
+from app.services.source import fetch_all_sources
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
 
 
@@ -121,7 +122,7 @@ async def test_fetch_all_sources(db_with_user: Session) -> None:
     )
 
     # Fetch all sources
-    fetch_results: models.FetchResults = await crud.source.fetch_all_sources(db=db_with_user)
+    fetch_results: models.FetchResults = await fetch_all_sources(db=db_with_user)
 
     # Assert the results
     assert fetch_results.sources == 2
