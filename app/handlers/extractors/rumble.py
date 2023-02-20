@@ -277,7 +277,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     if bitrate:
                         f["tbr"] = int_or_none(bitrate)
                     formats.append(f)
-        self._sort_formats(formats)
+        self._downloader.sort_formats({"formats": formats})
 
         subtitles = {
             lang: [
