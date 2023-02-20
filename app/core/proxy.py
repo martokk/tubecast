@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 import httpx
 from fastapi import HTTPException, status
@@ -36,7 +37,10 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     except httpx.ConnectError as e:
         raise ValueError("Invalid URL") from e
 
-    if rp_response.status_code != status.HTTP_200_OK:
+    if (
+        rp_response.status_code != status.HTTP_200_OK
+        and rp_response.status_code != status.HTTP_302_FOUND
+    ):
         """"""
         pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
         try:
@@ -44,7 +48,7 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
         except (TypeError, IndexError):
             ip_from_url = None
         logger.error(
-            f"Reverse proxy request failed with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
+            f"Reverse proxy request failed for url ('{url}') with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
         )
         raise HTTPException(status_code=rp_response.status_code)
 
