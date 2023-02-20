@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     PROXY_HOST: str = "127.0.0.1"
     UVICORN_RELOAD: bool = True
     UVICORN_ENTRYPOINT: str = "app.core.app:app"
+    UVICORN_WORKERS: int = 1
 
     # API
     API_V1_PREFIX: str = "/api/v1"
