@@ -391,7 +391,8 @@ class CustomRumbleChannelIE(RumbleChannelIE):
         ):
             # Handle if video is a LIVE video.
             live_match = re.search(r'data-value="LIVE"', container)
-            if live_match:
+            upcoming_match = re.search(r'data-value="UPCOMING"', container)
+            if upcoming_match or live_match:
                 continue
 
             # Build Entry
