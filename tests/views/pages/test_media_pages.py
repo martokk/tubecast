@@ -101,5 +101,5 @@ async def test_html_view_users_sources_no_media_url(
     )
     assert response.status_code == 202
     assert response.json() == {
-        "detail": "The server has not yet retrieved a media_url from yt-dlp.",
+        "detail": f"The server has not yet retrieved a media_url from yt-dlp. video_id='{db_video.id}'",
     }

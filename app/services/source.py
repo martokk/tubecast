@@ -1,14 +1,17 @@
 from typing import Any
 
+from loguru import logger as _logger
 from sqlmodel import Session
 
-from app import crud, fetch_logger, handlers, logger, models, settings
+from app import crud, handlers, logger, models, settings
 from app.handlers import get_handler_from_url
 from app.models.source import Source, SourceCreate
 from app.models.video import Video, VideoCreate
 from app.services.feed import build_rss_file
 from app.services.video import get_videos_needing_refresh, refresh_videos
 from app.services.ytdlp import get_info_dict
+
+fetch_logger = _logger.bind(name="fetch_logger")
 
 
 async def get_source_info_dict(
@@ -186,8 +189,10 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     """
 
     db_source = await crud.source.get(id=id, db=db)
-    logger.debug(f"Fetching Source(id='{db_source.id}, name='{db_source.name}')")
-    fetch_logger.debug(f"Fetching Source(id='{db_source.id}, name='{db_source.name}')")
+
+    info_message = f"Fetching Source(id='{db_source.id}, name='{db_source.name}')"
+    logger.info(info_message)
+    fetch_logger.info(info_message)
 
     # Fetch source information from yt-dlp and create the source object
     source_info_dict = await get_source_info_dict(
@@ -234,20 +239,15 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     # Build RSS File
     await build_rss_file(source=db_source)
 
-    logger.success(
-        f"Completed fetching Source(id='{db_source.id}'). "
+    success_message = (
+        f"Completed fetching Source(id='{db_source.id}', name='{db_source.name}'). "
         f"[{len(new_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
         f"Added {len(new_videos)} new videos. "
         f"Deleted {len(deleted_videos)} orphaned videos. "
         f"Refreshed {len(refreshed_videos)} videos."
     )
-    fetch_logger.success(
-        f"Completed fetching Source(id='{db_source.id}'). "
-        f"[{len(new_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
-        f"Added {len(new_videos)} new videos. "
-        f"Deleted {len(deleted_videos)} orphaned videos. "
-        f"Refreshed {len(refreshed_videos)} videos."
-    )
+    logger.success(success_message)
+    fetch_logger.success(success_message)
 
     return models.FetchResults(
         sources=1,
@@ -267,8 +267,8 @@ async def fetch_all_sources(db: Session) -> models.FetchResults:
     Returns:
         models.FetchResults: The results of the fetch.
     """
-    logger.debug("Fetching ALL Sources...")
-    fetch_logger.debug("Fetching ALL Sources...")
+    logger.info("Fetching ALL Sources...")
+    fetch_logger.info("Fetching ALL Sources...")
     sources = await crud.source.get_all(db=db) or []
     results = models.FetchResults()
 
@@ -276,18 +276,14 @@ async def fetch_all_sources(db: Session) -> models.FetchResults:
         source_fetch_results = await fetch_source(id=_source.id, db=db)
         results += source_fetch_results
 
-    logger.success(
+    success_message = (
         f"Completed fetching All ({results.sources}) Sources. "
         f"[{results.added_videos}/{results.deleted_videos}/{results.refreshed_videos}]"
         f"Added {results.added_videos} new videos. "
         f"Deleted {results.deleted_videos} orphaned videos. "
-        f"Refreshed {results.refreshed_videos} videos."
+        f"Refreshed {results.refreshed_videos} videos.\n"
     )
-    fetch_logger.success(
-        f"Completed fetching All ({results.sources}) Sources. "
-        f"[{results.added_videos}/{results.deleted_videos}/{results.refreshed_videos}]"
-        f"Added {results.added_videos} new videos. "
-        f"Deleted {results.deleted_videos} orphaned videos. "
-        f"Refreshed {results.refreshed_videos} videos."
-    )
+    logger.success(success_message)
+    fetch_logger.success(success_message)
+
     return results

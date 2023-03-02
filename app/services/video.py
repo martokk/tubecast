@@ -5,8 +5,7 @@ from datetime import datetime, timedelta
 from sqlmodel import Session
 from yt_dlp.utils import YoutubeDLError
 
-from app import crud
-from app.core.loggers import ytdlp_logger
+from app import crud, logger
 from app.core.notify import notify
 from app.handlers import get_handler_from_url
 from app.models.video import Video, VideoCreate
@@ -100,7 +99,7 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
             continue
         except (YoutubeDLError, Exception) as e:
             err_msg = f"Error fetching video: \n{e=} \n{video=}"
-            ytdlp_logger.critical(err_msg)
+            logger.critical(err_msg)
             await notify(telegram=True, email=False, text=err_msg)
             continue
 

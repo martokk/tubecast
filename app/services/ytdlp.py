@@ -1,17 +1,24 @@
 from typing import Any, Type
 
+from loguru import logger as _logger
 from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.utils import YoutubeDLError
 
-from app.core.loggers import ytdlp_logger as logger
+# from app.core.loggers import ytdlp_logger as logger
 from app.core.notify import notify
 
+# YoutubeDL Logger
+logger = _logger.bind(name="logger")
+ytdlp_logger = _logger.bind(name="ytdlp_logger")
+
+# YoutubeDL Base Options
 YDL_OPTS_BASE: dict[str, Any] = {
-    "logger": logger,
+    "logger": ytdlp_logger,
     "format": "worst[ext=mp4]",
     "skip_download": True,
     "simulate": True,
+    "ignore_no_formats_error": True,
     # "verbose": True,
 }
 
@@ -112,6 +119,7 @@ async def ydl_extract_info(
 
         err_msg = f"yt-dlp could not extract info for {url}. {e=}"
         logger.critical(err_msg)
+        ytdlp_logger.critical(err_msg)
         await notify(telegram=True, email=False, text=err_msg)
         raise YoutubeDLError(err_msg) from e
 
