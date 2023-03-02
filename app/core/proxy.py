@@ -1,5 +1,6 @@
-import re
 from typing import Any
+
+import re
 
 import httpx
 from fastapi import HTTPException, status

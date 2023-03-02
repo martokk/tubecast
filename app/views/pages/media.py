@@ -38,10 +38,11 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
         ) from e
 
     if video.media_url is None:
-        logger.error("The server has not yet retrieved a media_url from yt-dlp.")
+        msg = f"The server has not yet retrieved a media_url from yt-dlp. {video_id=}"
+        logger.error(msg)
         raise HTTPException(
             status_code=status.HTTP_202_ACCEPTED,
-            detail="The server has not yet retrieved a media_url from yt-dlp.",
+            detail=msg,
         )
     handler = get_handler_from_string(handler_string=video.handler)
     if handler.USE_PROXY:

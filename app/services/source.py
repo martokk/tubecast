@@ -1,12 +1,17 @@
 from typing import Any
 
+from loguru import logger as _logger
 from sqlmodel import Session
 
-from app import crud
+from app import crud, handlers, logger, models, settings
 from app.handlers import get_handler_from_url
 from app.models.source import Source, SourceCreate
 from app.models.video import Video, VideoCreate
+from app.services.feed import build_rss_file
+from app.services.video import get_videos_needing_refresh, refresh_videos
 from app.services.ytdlp import get_info_dict
+
+fetch_logger = _logger.bind(name="fetch_logger")
 
 
 async def get_source_info_dict(
@@ -167,3 +172,118 @@ async def delete_orphaned_source_videos(
             await crud.video.remove(id=db_video.id, db=db)
 
     return deleted_videos
+
+
+async def fetch_source(db: Session, id: str) -> models.FetchResults:
+    """
+    Fetch new data from yt-dlp for the source and update the source in the database.
+
+    This function will also delete any videos that are no longer associated with the source.
+
+    Args:
+        id: The id of the source to fetch and update.
+        db (Session): The database session.
+
+    Returns:
+        models.FetchResult: The result of the fetch.
+    """
+
+    db_source = await crud.source.get(id=id, db=db)
+
+    info_message = f"Fetching Source(id='{db_source.id}, name='{db_source.name}')"
+    logger.info(info_message)
+    fetch_logger.info(info_message)
+
+    # Fetch source information from yt-dlp and create the source object
+    source_info_dict = await get_source_info_dict(
+        source_id=id,
+        url=db_source.url,
+        extract_flat=True,
+        playlistreverse=True,
+        playlistend=settings.BUILD_FEED_RECENT_VIDEOS,
+        dateafter=settings.BUILD_FEED_DATEAFTER,
+    )
+    _source = await get_source_from_source_info_dict(
+        source_info_dict=source_info_dict, user_id=db_source.created_by
+    )
+    db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
+
+    # Use the source information to fetch the videos
+    fetched_videos = await get_source_videos_from_source_info_dict(
+        source_info_dict=source_info_dict
+    )
+
+    # Add new videos to database
+    new_videos = await add_new_source_videos_from_fetched_videos(
+        fetched_videos=fetched_videos, db_source=db_source, db=db
+    )
+
+    # Delete orphaned videos from database
+    deleted_videos: list[models.Video] = []
+    # NOTE: Enable if db grows too large. Otherwise best not to delete any videos
+    # from database as podcast app will still reference the video's feed_media_url
+    # deleted_videos = await delete_orphaned_source_videos(
+    #     fetched_videos=fetched_videos, db_source=db_source
+    # )
+
+    # Refresh existing videos in database
+    handler = handlers.get_handler_from_string(handler_string=db_source.handler)
+    videos_needing_refresh = await get_videos_needing_refresh(
+        videos=db_source.videos, older_than_hours=handler.MAX_VIDEO_AGE_HOURS
+    )
+    refreshed_videos = await refresh_videos(
+        videos_needing_refresh=videos_needing_refresh,
+        db=db,
+    )
+
+    # Build RSS File
+    await build_rss_file(source=db_source)
+
+    success_message = (
+        f"Completed fetching Source(id='{db_source.id}', name='{db_source.name}'). "
+        f"[{len(new_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
+        f"Added {len(new_videos)} new videos. "
+        f"Deleted {len(deleted_videos)} orphaned videos. "
+        f"Refreshed {len(refreshed_videos)} videos."
+    )
+    logger.success(success_message)
+    fetch_logger.success(success_message)
+
+    return models.FetchResults(
+        sources=1,
+        added_videos=len(new_videos),
+        deleted_videos=len(deleted_videos),
+        refreshed_videos=len(refreshed_videos),
+    )
+
+
+async def fetch_all_sources(db: Session) -> models.FetchResults:
+    """
+    Fetch all sources.
+
+    Args:
+        db (Session): The database session.
+
+    Returns:
+        models.FetchResults: The results of the fetch.
+    """
+    logger.info("Fetching ALL Sources...")
+    fetch_logger.info("Fetching ALL Sources...")
+    sources = await crud.source.get_all(db=db) or []
+    results = models.FetchResults()
+
+    for _source in sources:
+        source_fetch_results = await fetch_source(id=_source.id, db=db)
+        results += source_fetch_results
+
+    success_message = (
+        f"Completed fetching All ({results.sources}) Sources. "
+        f"[{results.added_videos}/{results.deleted_videos}/{results.refreshed_videos}]"
+        f"Added {results.added_videos} new videos. "
+        f"Deleted {results.deleted_videos} orphaned videos. "
+        f"Refreshed {results.refreshed_videos} videos.\n"
+    )
+    logger.success(success_message)
+    fetch_logger.success(success_message)
+
+    return results

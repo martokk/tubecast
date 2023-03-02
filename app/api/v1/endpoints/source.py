@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app import crud, models
 from app.api import deps
+from app.services.source import fetch_all_sources, fetch_source
 
 router = APIRouter()
 ModelClass = models.Source
@@ -44,7 +45,7 @@ async def create_source_from_url(
 
     # Fetch the source videos in the background
     background_tasks.add_task(
-        crud.source.fetch_source,
+        fetch_source,
         id=source.id,
         db=db,
     )
@@ -206,7 +207,7 @@ async def delete(
 
 
 @router.put("/{id}/fetch", status_code=status.HTTP_202_ACCEPTED)
-async def fetch_source(
+async def fetch_source_endpoint(
     id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
@@ -234,7 +235,7 @@ async def fetch_source(
 
     # Fetch the source videos in the background
     background_tasks.add_task(
-        crud.source.fetch_source,
+        fetch_source,
         id=source.id,
         db=db,
     )
@@ -257,6 +258,6 @@ async def fetch_all(
     """
     # Fetch the source videos in the background
     background_tasks.add_task(
-        crud.source.fetch_all_sources,
+        fetch_all_sources,
         db=db,
     )

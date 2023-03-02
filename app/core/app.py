@@ -9,6 +9,7 @@ from app.api.v1.api import api_router
 from app.core import notify
 from app.db.init_db import init_initial_data
 from app.paths import FEEDS_PATH, STATIC_PATH
+from app.services.source import fetch_all_sources
 from app.services.video import refresh_all_videos
 from app.views.router import views_router
 
@@ -53,7 +54,7 @@ async def repeating_fetch_all_sources() -> None:  # pragma: no cover
     """
     logger.debug("Repeating fetch of All Sources...")
     db: Session = next(deps.get_db())
-    fetch_results = await crud.source.fetch_all_sources(db=db)
+    fetch_results = await fetch_all_sources(db=db)
     logger.success(f"Completed refreshing {fetch_results.sources} Sources from yt-dlp.")
 
 
