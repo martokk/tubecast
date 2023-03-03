@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
+from app.handlers.exceptions import HandlerNotFoundError
 from app.services.source import fetch_source
 from app.views import deps, templates
 
@@ -155,6 +156,11 @@ async def handle_create_source(
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Source already exists")
         response = RedirectResponse("/sources/create", status_code=status.HTTP_302_FOUND)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
+    except HandlerNotFoundError:
+        alerts.danger.append("Handler not found for this url.")
+        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
 
