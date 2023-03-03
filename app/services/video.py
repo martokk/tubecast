@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 
 from datetime import datetime, timedelta
@@ -5,10 +6,9 @@ from datetime import datetime, timedelta
 from sqlmodel import Session
 from yt_dlp.utils import YoutubeDLError
 
-from app import crud, logger
+from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers import get_handler_from_url
-from app.models.video import Video, VideoCreate
 from app.services.ytdlp import Http410Error, IsLiveEventError, IsPrivateVideoError, get_info_dict
 
 
@@ -40,24 +40,24 @@ async def get_video_info_dict(
     handler = get_handler_from_url(url=url)
     ydl_opts = handler.get_video_ydl_opts()
     custom_extractors = handler.YTDLP_CUSTOM_EXTRACTORS
-    info_dict = await get_info_dict(url=url, ydl_opts=ydl_opts, custom_extractors=custom_extractors)
+    info_dict = get_info_dict(url=url, ydl_opts=ydl_opts, custom_extractors=custom_extractors)
 
     # Save Pickle
     # cache_file.parent.mkdir(exist_ok=True, parents=True)
     # cache_file.write_bytes(pickle.dumps(info_dict))
-    return info_dict
+    return await info_dict
 
 
-async def get_video_from_video_info_dict(
+def get_video_from_video_info_dict(
     video_info_dict: dict[str, Any], source_id: str
-) -> VideoCreate:
+) -> models.VideoCreate:
     handler = get_handler_from_url(url=video_info_dict["webpage_url"])
     video_dict = handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=video_info_dict)
     video_dict["source_id"] = source_id
-    return VideoCreate(**video_dict)
+    return models.VideoCreate(**video_dict)
 
 
-async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
+async def refresh_all_videos(older_than_hours: int, db: Session) -> list[models.Video]:
     """
     Fetches new data from yt-dlp for all Videos that are older than a certain number of hours.
 
@@ -69,7 +69,7 @@ async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
         The refreshed list of videos.
     """
     videos = await crud.video.get_all(db=db) or []
-    videos_needing_refresh = await get_videos_needing_refresh(
+    videos_needing_refresh = get_videos_needing_refresh(
         videos=videos, older_than_hours=older_than_hours
     )
     return await refresh_videos(videos_needing_refresh=videos_needing_refresh, db=db)
@@ -116,7 +116,7 @@ async def fetch_all_videos(db: Session) -> list[models.Video]:
     return fetched
 
 
-async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
+async def fetch_videos(videos: list[models.Video], db: Session) -> list[models.Video]:
     """
     Fetches new data for a list of videos from yt-dlp.
     Ignores videos that are live events.
@@ -144,12 +144,17 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
             await notify(telegram=True, email=False, text=err_msg)
             continue
 
+        # Allow other tasks to run
+        await asyncio.sleep(0)
+
         fetched_videos.append(fetched_video)
 
     return fetched_videos
 
 
-async def refresh_videos(videos_needing_refresh: list[Video], db: Session) -> list[Video]:
+async def refresh_videos(
+    videos_needing_refresh: list[models.Video], db: Session
+) -> list[models.Video]:
     """
     Fetches new data from yt-dlp for videos that meet all criteria.
 
@@ -160,11 +165,13 @@ async def refresh_videos(videos_needing_refresh: list[Video], db: Session) -> li
     Returns:
         The refreshed list of videos.
     """
-    sorted_videos_needing_refresh = await sort_videos_by_updated_at(videos=videos_needing_refresh)
+    sorted_videos_needing_refresh = sort_videos_by_updated_at(videos=videos_needing_refresh)
     return await fetch_videos(videos=sorted_videos_needing_refresh, db=db)
 
 
-async def get_videos_needing_refresh(videos: list[Video], older_than_hours: int) -> list[Video]:
+def get_videos_needing_refresh(
+    videos: list[models.Video], older_than_hours: int
+) -> list[models.Video]:
     """
     Gets a list of videos that meet all criteria.
 
@@ -185,7 +192,7 @@ async def get_videos_needing_refresh(videos: list[Video], older_than_hours: int)
     ]
 
 
-async def sort_videos_by_updated_at(videos: list[Video]) -> list[Video]:
+def sort_videos_by_updated_at(videos: list[models.Video]) -> list[models.Video]:
     """
     Sorts a list of videos by the `updated_at` property.
 

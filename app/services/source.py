@@ -1,5 +1,7 @@
 from typing import Any
 
+import asyncio
+
 from loguru import logger as _logger
 from sqlmodel import Session
 
@@ -81,7 +83,7 @@ async def get_source_from_source_info_dict(
         SourceCreate: The `SourceCreate` object.
     """
     handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
-    source_videos = await get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
+    source_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
     return SourceCreate(
         created_by=user_id,
         **handler.map_source_info_dict_to_source_dict(
@@ -90,9 +92,7 @@ async def get_source_from_source_info_dict(
     )
 
 
-async def get_source_videos_from_source_info_dict(
-    source_info_dict: dict[str, Any]
-) -> list[VideoCreate]:
+def get_source_videos_from_source_info_dict(source_info_dict: dict[str, Any]) -> list[VideoCreate]:
     """
     Get a list of `Video` objects from a source_info_dict.
 
@@ -209,9 +209,7 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
     # Use the source information to fetch the videos
-    fetched_videos = await get_source_videos_from_source_info_dict(
-        source_info_dict=source_info_dict
-    )
+    fetched_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
 
     # Add new videos to database
     new_videos = await add_new_source_videos_from_fetched_videos(
@@ -228,7 +226,7 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
 
     # Refresh existing videos in database
     handler = handlers.get_handler_from_string(handler_string=db_source.handler)
-    videos_needing_refresh = await get_videos_needing_refresh(
+    videos_needing_refresh = get_videos_needing_refresh(
         videos=db_source.videos, older_than_hours=handler.MAX_VIDEO_AGE_HOURS
     )
     refreshed_videos = await refresh_videos(
@@ -275,6 +273,9 @@ async def fetch_all_sources(db: Session) -> models.FetchResults:
     for _source in sources:
         source_fetch_results = await fetch_source(id=_source.id, db=db)
         results += source_fetch_results
+
+        # Allow other tasks to run
+        await asyncio.sleep(0)
 
     success_message = (
         f"Completed fetching All ({results.sources}) Sources. "

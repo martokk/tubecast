@@ -31,7 +31,7 @@ class VideoCRUD(BaseCRUD[models.Video, models.VideoCreate, models.VideoUpdate]):
 
         # Fetch video information from yt-dlp and create the video object
         video_info_dict = await get_video_info_dict(url=url)
-        _video = await get_video_from_video_info_dict(
+        _video = get_video_from_video_info_dict(
             video_info_dict=video_info_dict, source_id=source_id
         )
 
