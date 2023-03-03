@@ -72,4 +72,4 @@ def test_update_user_account(client: TestClient, db: Session, superuser_cookies:
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_302_FOUND
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore
-    assert response.url == "http://testserver/"
+    assert response.url == "http://testserver/sources"

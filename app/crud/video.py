@@ -31,53 +31,12 @@ class VideoCRUD(BaseCRUD[models.Video, models.VideoCreate, models.VideoUpdate]):
 
         # Fetch video information from yt-dlp and create the video object
         video_info_dict = await get_video_info_dict(url=url)
-        _video = await get_video_from_video_info_dict(
+        _video = get_video_from_video_info_dict(
             video_info_dict=video_info_dict, source_id=source_id
         )
 
         # Save the video to the database
         return await self.create(obj_in=_video, db=db)
-
-    async def fetch_video(self, video_id: str, db: Session) -> models.Video:
-        """Fetches new data from yt-dlp for the video.
-
-        Args:
-            video_id: The ID of the video to fetch data for.
-            db (Session): The database session.
-
-        Returns:
-            The updated video.
-        """
-        # Get the video from the database
-        db_video = await self.get(id=video_id, db=db)
-        source_id = db_video.source_id
-
-        # Fetch video information from yt-dlp and create the video object
-        video_info_dict = await get_video_info_dict(url=db_video.url)
-        _video = await get_video_from_video_info_dict(
-            video_info_dict=video_info_dict, source_id=source_id
-        )
-
-        # Update the video in the database and return it
-        return await self.update(obj_in=models.VideoUpdate(**_video.dict()), id=_video.id, db=db)
-
-    async def fetch_all_videos(self, db: Session) -> list[models.Video]:
-        """
-        Fetch videos from all sources.
-
-        Args:
-            db (Session): The database session.
-
-        Returns:
-            List[Video]: List of fetched videos
-        """
-        logger.debug("Fetching ALL Videos...")
-        videos = await self.get_all(db=db) or []
-        fetched = []
-        for _video in videos:
-            fetched.append(await self.fetch_video(video_id=_video.id, db=db))
-
-        return fetched
 
 
 video = VideoCRUD(models.Video)

@@ -51,14 +51,4 @@ async def root_index_authenticated(
     Returns:
         Response: Home page
     """
-    alerts = models.Alerts().from_cookies(request.cookies)
-    title = f"{settings.PROJECT_NAME} - Home"
-    message = f"Welcome to the {settings.PROJECT_NAME}, {current_user.username}!"
-    context = {
-        "request": request,
-        "current_user": current_user,
-        "title": title,
-        "message": message,
-        "alerts": alerts,
-    }
-    return templates.TemplateResponse("root/home.html", context=context)
+    return RedirectResponse(url="/sources")

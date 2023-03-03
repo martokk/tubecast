@@ -22,7 +22,7 @@ logger.add(_LOG_FILE, level="WARNING", rotation="10 MB")
 class RumbleHandler(ServiceHandler):
     SERVICE_NAME = "Rumble"
     USE_PROXY = False
-    MAX_VIDEO_AGE_HOURS = 8
+    MAX_VIDEO_AGE_HOURS = 48
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]

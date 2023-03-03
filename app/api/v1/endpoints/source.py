@@ -241,12 +241,12 @@ async def fetch_source_endpoint(
     )
 
 
-@router.put("/fetch", status_code=status.HTTP_202_ACCEPTED)
+@router.put("/fetch", status_code=status.HTTP_202_ACCEPTED, response_model=models.Msg)
 async def fetch_all(
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
-) -> None:
+) -> dict[str, str]:
     """
     Fetches new data from yt-dlp for all sources on the server.
 
@@ -257,7 +257,6 @@ async def fetch_all(
 
     """
     # Fetch the source videos in the background
-    background_tasks.add_task(
-        fetch_all_sources,
-        db=db,
-    )
+    background_tasks.add_task(fetch_all_sources, db=db)
+
+    return {"msg": "Fetching all sources in the background."}

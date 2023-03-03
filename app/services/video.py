@@ -1,14 +1,14 @@
 from typing import Any
 
+import asyncio
 from datetime import datetime, timedelta
 
 from sqlmodel import Session
 from yt_dlp.utils import YoutubeDLError
 
-from app import crud, logger
+from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers import get_handler_from_url
-from app.models.video import Video, VideoCreate
 from app.services.ytdlp import Http410Error, IsLiveEventError, IsPrivateVideoError, get_info_dict
 
 
@@ -40,24 +40,24 @@ async def get_video_info_dict(
     handler = get_handler_from_url(url=url)
     ydl_opts = handler.get_video_ydl_opts()
     custom_extractors = handler.YTDLP_CUSTOM_EXTRACTORS
-    info_dict = await get_info_dict(url=url, ydl_opts=ydl_opts, custom_extractors=custom_extractors)
+    info_dict = get_info_dict(url=url, ydl_opts=ydl_opts, custom_extractors=custom_extractors)
 
     # Save Pickle
     # cache_file.parent.mkdir(exist_ok=True, parents=True)
     # cache_file.write_bytes(pickle.dumps(info_dict))
-    return info_dict
+    return await info_dict
 
 
-async def get_video_from_video_info_dict(
+def get_video_from_video_info_dict(
     video_info_dict: dict[str, Any], source_id: str
-) -> VideoCreate:
+) -> models.VideoCreate:
     handler = get_handler_from_url(url=video_info_dict["webpage_url"])
     video_dict = handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=video_info_dict)
     video_dict["source_id"] = source_id
-    return VideoCreate(**video_dict)
+    return models.VideoCreate(**video_dict)
 
 
-async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
+async def refresh_all_videos(older_than_hours: int, db: Session) -> list[models.Video]:
     """
     Fetches new data from yt-dlp for all Videos that are older than a certain number of hours.
 
@@ -69,13 +69,54 @@ async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
         The refreshed list of videos.
     """
     videos = await crud.video.get_all(db=db) or []
-    videos_needing_refresh = await get_videos_needing_refresh(
+    videos_needing_refresh = get_videos_needing_refresh(
         videos=videos, older_than_hours=older_than_hours
     )
     return await refresh_videos(videos_needing_refresh=videos_needing_refresh, db=db)
 
 
-async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
+async def fetch_video(video_id: str, db: Session) -> models.Video:
+    """Fetches new data from yt-dlp for the video.
+
+    Args:
+        video_id: The ID of the video to fetch data for.
+        db (Session): The database session.
+
+    Returns:
+        The updated video.
+    """
+    # Get the video from the database
+    db_video = await crud.video.get(id=video_id, db=db)
+    source_id = db_video.source_id
+
+    # Fetch video information from yt-dlp and create the video object
+    video_info_dict = await get_video_info_dict(url=db_video.url)
+    _video = get_video_from_video_info_dict(video_info_dict=video_info_dict, source_id=source_id)
+
+    # Update the video in the database and return it
+    return await crud.video.update(obj_in=models.VideoUpdate(**_video.dict()), id=_video.id, db=db)
+
+
+async def fetch_all_videos(db: Session) -> list[models.Video]:
+    """
+    Fetch videos from all sources.
+
+    Args:
+        db (Session): The database session.
+
+    Returns:
+        List[Video]: List of fetched videos
+    """
+    logger.debug("Fetching ALL Videos...")
+    videos = await crud.video.get_all(db=db) or []
+    fetched = []
+    for _video in videos:
+        fetched.append(await fetch_video(video_id=_video.id, db=db))
+
+    return fetched
+
+
+async def fetch_videos(videos: list[models.Video], db: Session) -> list[models.Video]:
     """
     Fetches new data for a list of videos from yt-dlp.
     Ignores videos that are live events.
@@ -90,7 +131,7 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     fetched_videos = []
     for video in videos:
         try:
-            fetched_video = await crud.video.fetch_video(video_id=video.id, db=db)
+            fetched_video = await fetch_video(video_id=video.id, db=db)
         except IsLiveEventError:
             continue
         except (Http410Error, IsPrivateVideoError):
@@ -103,12 +144,17 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
             await notify(telegram=True, email=False, text=err_msg)
             continue
 
+        # Allow other tasks to run
+        await asyncio.sleep(0)
+
         fetched_videos.append(fetched_video)
 
     return fetched_videos
 
 
-async def refresh_videos(videos_needing_refresh: list[Video], db: Session) -> list[Video]:
+async def refresh_videos(
+    videos_needing_refresh: list[models.Video], db: Session
+) -> list[models.Video]:
     """
     Fetches new data from yt-dlp for videos that meet all criteria.
 
@@ -119,11 +165,13 @@ async def refresh_videos(videos_needing_refresh: list[Video], db: Session) -> li
     Returns:
         The refreshed list of videos.
     """
-    sorted_videos_needing_refresh = await sort_videos_by_updated_at(videos=videos_needing_refresh)
+    sorted_videos_needing_refresh = sort_videos_by_updated_at(videos=videos_needing_refresh)
     return await fetch_videos(videos=sorted_videos_needing_refresh, db=db)
 
 
-async def get_videos_needing_refresh(videos: list[Video], older_than_hours: int) -> list[Video]:
+def get_videos_needing_refresh(
+    videos: list[models.Video], older_than_hours: int
+) -> list[models.Video]:
     """
     Gets a list of videos that meet all criteria.
 
@@ -144,7 +192,7 @@ async def get_videos_needing_refresh(videos: list[Video], older_than_hours: int)
     ]
 
 
-async def sort_videos_by_updated_at(videos: list[Video]) -> list[Video]:
+def sort_videos_by_updated_at(videos: list[models.Video]) -> list[models.Video]:
     """
     Sorts a list of videos by the `updated_at` property.
 

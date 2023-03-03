@@ -5,56 +5,89 @@
 {% block content_header %}Sources ({{ sources|length }}){% endblock %}
 
 {% block content %}
+
 <div class="container">
+    <form action="/sources/create" method="POST" class="row">
+        <div class="col-10">
+            <div class="form-group">
+                <label for="url" class="small">Add New:</label>
+                <input type="text" name="url" class="form-control" id="url" placeholder="Enter video URL">
+            </div>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-primary btn-block mt-4 w-100">Add</button>
+        </div>
+    </form>
+</div>
+
+<div class="container mt-4">
     <table class="table table-hover table-sm">
         <thead>
             <tr>
                 <th scope="col" class="w-65">Name</th>
-                <th scope="col" class="d-none d-md-table-cell w-10">Videos</th>
-                <th scope="col" class="d-none d-md-table-cell w-25">Created By</th>
+                <th scope="col" class="d-none d-md-table-cell w-15">Created By</th>
                 <th scope="col" class="w-auto"></th>
             </tr>
         </thead>
         <tbody>
-
             {% for source in sources %}
-            <tr>
-                <td class="">
-                    <a href="/source/{{ source.id }}" class="">{{ source.name }}</a>
-                </td>
-
-                <td class="">{{ source.videos | length }}</td>
-
-                <td class="">{{ source.created_user.username }}</td>
-
-                <td class="">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-sm btn-dark btn-transparent dropdown-toggle"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right p-1">
-                            <a class="dropdown-item p-2" href="/source/{{ source.id }}/edit">Edit</a>
-                            <a class="dropdown-item p-2" href="/feed/{{ source.id }}">Go to Podcast Feed</a>
-                            <a class="dropdown-item p-2"
-                                href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}">Add to
-                                PocketCast</a>
-                            {% if current_user.is_superuser %}
-                            <hr class="dropdown-divider">
-                            <a class="dropdown-item p-2" href="/source/{{ source.id }}/fetch">Fetch Source</a>
-                            {% endif %}
-                            <hr class="dropdown-divider">
-                            <a class="dropdown-item p-2" href="#"
-                                onclick="confirmDelete('/source/{{ source.id }}/delete')">Delete</a>
+            <tr class="bg-dark">
+                <td>
+                    <div class="d-flex align-items-top">
+                        <div class="me-3">
+                            <img src="{{ source.logo }}" alt="" width="60" height="60">
+                        </div>
+                        <div>
+                            <a href="/source/{{ source.id }}" class="fw-bold text-light">{{ source.name }}</a>
+                            <div class="small text-muted">{{ source.videos | length }} videos</div>
                         </div>
                     </div>
                 </td>
+                <td>
+                    <div class="small text-muted">{{ source.created_user.username }}</div>
+                </td>
+                <td>
+                    <div class="dropdown mt-2">
+                        <button class="btn btn-dark" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
 
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li><a class="dropdown-item" href="/source/{{ source.id }}/edit"><i
+                                        class="bi bi-pencil-square me-2"></i>Edit</a></li>
+                            <li><a class="dropdown-item" href="/feed/{{ source.id }}"><i class="bi bi-rss me-2"></i>Go
+                                    to Podcast
+                                    Feed</a></li>
+                            <li><a class="dropdown-item"
+                                    href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}"><i
+                                        class="bi bi-plus-circle me-2"></i>Add to PocketCast</a></li>
+                            {% if current_user.is_superuser %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="/source/{{ source.id }}/fetch"><i
+                                        class="bi bi-arrow-clockwise me-2"></i>Fetch Source</a></li>
+                            {% endif %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="#"
+                                    onclick="confirmDelete('/source/{{ source.id }}/delete')"><i
+                                        class="bi bi-trash me-2"></i>Delete</a></li>
+                        </ul>
+                    </div>
+                </td>
             </tr>
+            <tr class="border-bottom"></tr>
+
             {% endfor %}
 
         </tbody>
     </table>
 </div>
+
+
 <script>
     function confirmDelete(url) {
         if (confirm("Are you sure you want to delete this source?")) {

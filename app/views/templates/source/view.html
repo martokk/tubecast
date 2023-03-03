@@ -6,59 +6,73 @@
 
 {% block content %}
 <div class="container my-5">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">{{ source.name }} ({{ source.service }})</h3>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-2 fw-bold">Id:</div>
-                <div class="col">{{ source.id }}</div>
+    <div>
+        <h3 class="d-flex align-items-center">
+            <a href="{{ source.url }}" class="text-decoration-none text-white">
+                {{ source.name }}
+                <i class="fas fa-external-link-alt ms-2 fa-sm"></i>
+            </a>
+        </h3>
+
+        <div class="row">
+            <div class="col-auto">
+                <div class="row">
+                    <img src="{{ source.logo }}" alt="Logo" width="100%" height="100%">
+                </div>
             </div>
-            <div class="row">
-                <div class="col-2 fw-bold">Description:</div>
-                <div class="col">{{ source.description }}</div>
+
+            <div class="col">
+                <div class="row">
+                    <div class="col-4 small">
+                        <span class="badge bg-primary small">{{ source.service }}</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 mt-1">{{ source.description }}</div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col small text-muted">
+                        <em>Source ({{ source.id }}) created by {{ source.created_user.username }}.</em>
+                    </div>
+                </div>
+
             </div>
-            <div class="row">
-                <div class="col-2 fw-bold">Url:</div>
-                <div class="col">{{ source.url }}</div>
-            </div>
-            <div class="row">
-                <div class="col-2 fw-bold">Owner:</div>
-                <div class="col">{{ source.created_user.username }}</div>
-            </div>
+
         </div>
     </div>
 </div>
 
+
+
 <div class="container">
-    <table class="table table-hover table-sm">
-        <thead>
-            <tr>
-                <th scope="col" class="">Video</th>
-                <th scope="col" class="d-none d-md-table-cell w-10">Media Url</th>
-                <th scope="col" class="d-none d-md-table-cell w-15">Updated</th>
-            </tr>
-        </thead>
-        <tbody>
+    {% for video in source.videos | sort(attribute='released_at') | reverse %}
+    <div class="row border-top py-3">
+        <div class="col">
+            <div class="small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
+                <small><em>({{ video.released_at | humanize }})</em></small>
+            </div>
+            <h5 class="mb-0"><a href="/video/{{ video.id }}" class="text-decoration-none text-white">{{ video.title
+                    }}</a></h5>
+            {% if not video.media_url %}
+            <div class="small text-danger fw-bold">No media URL available</div>
+            {% endif %}
 
-            {% for video in source.videos %}
-            <tr>
-                <td class="">
-                    <a href="/video/{{ video.id }}" class="">{{ video.title }}</a>
-                </td>
+            <div class="">
+                {% if video.duration %}
+                <div class="small">{{ (video.duration / 60) | int }} minutes.</div>
+                {% endif %}
+            </div>
 
-                <td class='{{ "text-body-tertiary"  if video.media_url else "text-danger fw-bold" }}'>{{ "True" if
-                    video.media_url
-                    else "False" }}</td>
-
-                <td class='{{ video.updated_at | humanize_color_class }}'>{{
-                    video.updated_at | humanize }}</td>
-
-            </tr>
-            {% endfor %}
-
-        </tbody>
-    </table>
+            <div class="text-end">
+                <div class="{{ video.updated_at | humanize_color_class }} small">Updated: {{ video.updated_at | humanize
+                    }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
+
 {% endblock content %}

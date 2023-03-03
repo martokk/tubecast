@@ -48,16 +48,16 @@ async def test_fetch_videos(db_with_user: Session) -> None:
     videos = [models.Video(**video) for video in MOCKED_RUMBLE_SOURCE_1["videos"]]
     source.videos = videos
 
-    with patch("app.crud.video.fetch_video", return_value=videos[0]):
+    with patch("app.services.video.fetch_video", return_value=videos[0]):
         fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
         assert len(fetched_videos) == len(videos)
 
     # Test that videos that are live events are ignored
-    with patch("app.crud.video.fetch_video", side_effect=IsLiveEventError):
+    with patch("app.services.video.fetch_video", side_effect=IsLiveEventError):
         fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
         assert len(fetched_videos) == 0
 
     # Test that videos with errors are ignored
-    with patch("app.crud.video.fetch_video", side_effect=YoutubeDLError):
+    with patch("app.services.video.fetch_video", side_effect=YoutubeDLError):
         fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
         assert len(fetched_videos) == 0
