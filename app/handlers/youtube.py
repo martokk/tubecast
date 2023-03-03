@@ -13,7 +13,7 @@ from .base import ServiceHandler
 class YoutubeHandler(ServiceHandler):
     SERVICE_NAME = "Youtube"
     USE_PROXY = True
-    MAX_VIDEO_AGE_HOURS = 2
+    MAX_VIDEO_AGE_HOURS = 4
     DOMAINS = ["youtube.com"]
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = [".*"]
