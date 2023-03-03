@@ -24,7 +24,7 @@ def test_handle_login_success(
     client.cookies = normal_user_cookies
     response = client.get("/")
     assert response.status_code == 200
-    assert response.template.name == "root/home.html"  # type: ignore
+    assert response.template.name == "source/list.html"  # type: ignore
 
 
 def test_handle_login_failure(db_with_user: Session, client: TestClient) -> None:
@@ -55,7 +55,7 @@ def test_logout(db_with_user: Session, client: TestClient, normal_user_cookies: 
     client.cookies = normal_user_cookies
     response = client.get("/")
     assert response.status_code == 200
-    assert response.template.name == "root/home.html"  # type: ignore
+    assert response.template.name == "source/list.html"  # type: ignore
 
     # Logout
     response = client.get("/logout")
