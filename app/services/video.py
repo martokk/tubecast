@@ -75,6 +75,47 @@ async def refresh_all_videos(older_than_hours: int, db: Session) -> list[Video]:
     return await refresh_videos(videos_needing_refresh=videos_needing_refresh, db=db)
 
 
+async def fetch_video(video_id: str, db: Session) -> models.Video:
+    """Fetches new data from yt-dlp for the video.
+
+    Args:
+        video_id: The ID of the video to fetch data for.
+        db (Session): The database session.
+
+    Returns:
+        The updated video.
+    """
+    # Get the video from the database
+    db_video = await crud.video.get(id=video_id, db=db)
+    source_id = db_video.source_id
+
+    # Fetch video information from yt-dlp and create the video object
+    video_info_dict = await get_video_info_dict(url=db_video.url)
+    _video = get_video_from_video_info_dict(video_info_dict=video_info_dict, source_id=source_id)
+
+    # Update the video in the database and return it
+    return await crud.video.update(obj_in=models.VideoUpdate(**_video.dict()), id=_video.id, db=db)
+
+
+async def fetch_all_videos(db: Session) -> list[models.Video]:
+    """
+    Fetch videos from all sources.
+
+    Args:
+        db (Session): The database session.
+
+    Returns:
+        List[Video]: List of fetched videos
+    """
+    logger.debug("Fetching ALL Videos...")
+    videos = await crud.video.get_all(db=db) or []
+    fetched = []
+    for _video in videos:
+        fetched.append(await fetch_video(video_id=_video.id, db=db))
+
+    return fetched
+
+
 async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     """
     Fetches new data for a list of videos from yt-dlp.
@@ -90,7 +131,7 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     fetched_videos = []
     for video in videos:
         try:
-            fetched_video = await crud.video.fetch_video(video_id=video.id, db=db)
+            fetched_video = await fetch_video(video_id=video.id, db=db)
         except IsLiveEventError:
             continue
         except (Http410Error, IsPrivateVideoError):

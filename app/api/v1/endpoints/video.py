@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from app import crud, models
 from app.api import deps
+from app.services.video import fetch_all_videos, fetch_video
 
 router = APIRouter()
 ModelClass = models.Video
@@ -72,7 +73,7 @@ async def get_multi(
 
 
 @router.put("/{id}/fetch", response_model=models.VideoRead)
-async def fetch_video(
+async def fetch_video_endpoint(
     id: str,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
@@ -92,7 +93,7 @@ async def fetch_video(
         HTTPException: If the video was not found.
     """
     try:
-        return await model_crud.fetch_video(video_id=id, db=db)
+        return await fetch_video(video_id=id, db=db)
     except crud.RecordNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Video Not Found"
@@ -114,4 +115,4 @@ async def fetch_all(
     Returns:
         list[ModelClass]: List of objects.
     """
-    return await model_crud.fetch_all_videos(db=db)
+    return await fetch_all_videos(db=db)
