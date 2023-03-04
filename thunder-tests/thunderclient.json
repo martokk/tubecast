@@ -782,11 +782,11 @@
     "colId": "fd4bbae6-1678-481a-94f0-3046b14d11cf",
     "containerId": "aa555665-adbf-411b-b267-901f93fe0291",
     "name": "Fetch Source",
-    "url": "{{BASE_API_URL}}/source/mLC5c5NH/fetch",
+    "url": "{{BASE_API_URL}}/source/fetch",
     "method": "PUT",
     "sortNum": 260000,
     "created": "2023-02-04T16:38:45.889Z",
-    "modified": "2023-02-21T01:02:45.696Z",
+    "modified": "2023-03-03T19:30:52.782Z",
     "headers": [],
     "params": [],
     "tests": []
@@ -883,18 +883,14 @@
     "colId": "fd4bbae6-1678-481a-94f0-3046b14d11cf",
     "containerId": "5d411c70-c6b0-42c7-9556-d6dff7502ab3",
     "name": "Delete Video",
-    "url": "{{ _.BASE_URL }}{{ _.API_V1_PREFIX }}{{ _.ROUTE }}/MuWariCN",
+    "url": "{{BASE_API_URL}}/video/kxVJwjcA",
     "method": "DELETE",
     "sortNum": 250000,
     "created": "2023-02-04T16:38:45.895Z",
-    "modified": "2023-02-04T16:38:45.895Z",
+    "modified": "2023-03-03T19:00:52.327Z",
     "headers": [],
     "params": [],
-    "auth": {
-      "type": "bearer",
-      "bearer": "{% response 'body', 'req_2462cc22af0f4d48a507ab5c5ccb44d4', 'b64::JFthY2Nlc3NfdG9rZW5d::46b', 'never', 60 %}"
-    },
-    "docs": ""
+    "tests": []
   },
   {
     "_id": "d9be1dd0-4ace-47cc-99a6-34c3653424d9",
@@ -1033,5 +1029,19 @@
     "headers": [],
     "params": [],
     "docs": ""
+  },
+  {
+    "_id": "27545105-dca4-4be5-860d-6311e25e73ca",
+    "colId": "fd4bbae6-1678-481a-94f0-3046b14d11cf",
+    "containerId": "5d411c70-c6b0-42c7-9556-d6dff7502ab3",
+    "name": "Refresh All Videos",
+    "url": "{{BASE_API_URL}}/video/refresh",
+    "method": "PUT",
+    "sortNum": 280000,
+    "created": "2023-03-03T17:36:24.590Z",
+    "modified": "2023-03-03T17:44:42.825Z",
+    "headers": [],
+    "params": [],
+    "tests": []
   }
 ]

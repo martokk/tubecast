@@ -25,6 +25,24 @@
     }
 }
 
+/* Background Colors */
+.bg-rumble {
+    background-color: #5da615;
+}
+
+.bg-youtube {
+    background-color: #8e0000;
+}
+
+/* .cropped-image {
+    width: 150px !important;
+    height: 150px !important;
+    object-fit: cover;
+} */
+
+.cropped-image {
+    object-fit: cover;
+}
 
 html,
 body {

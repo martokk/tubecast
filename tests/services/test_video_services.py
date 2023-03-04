@@ -24,13 +24,13 @@ async def test_refresh_all_videos(db_with_user: Session) -> None:
 
     # Refresh all videos older than 0 hours
     with patch("app.services.video.refresh_videos") as mocked_refresh_videos:
-        await refresh_all_videos(db=db_with_user, older_than_hours=0)
+        await refresh_all_videos(db=db_with_user)
         assert mocked_refresh_videos.call_count == 1
         mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)
 
     # Refresh all videos older than 0 hours
     with patch("app.services.video.refresh_videos") as mocked_refresh_videos:
-        await refresh_all_videos(db=db_with_user, older_than_hours=999)
+        await refresh_all_videos(db=db_with_user)
         assert mocked_refresh_videos.call_count == 1
         mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)
 

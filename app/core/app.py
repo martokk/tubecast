@@ -66,7 +66,5 @@ async def repeating_refresh_videos() -> None:  # pragma: no cover
     """
     logger.debug("Repeating refresh of Videos...")
     db: Session = next(deps.get_db())
-    refreshed_videos = await refresh_all_videos(
-        older_than_hours=settings.MAX_VIDEO_AGE_HOURS, db=db
-    )
+    refreshed_videos = await refresh_all_videos(db=db)
     logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")

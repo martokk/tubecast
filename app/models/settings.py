@@ -65,7 +65,6 @@ class Settings(BaseSettings):
     # Refresh Feeds
     REFRESH_SOURCES_INTERVAL_MINUTES: int = 15
     REFRESH_VIDEOS_INTERVAL_MINUTES: int = 30
-    MAX_VIDEO_AGE_HOURS: int = 8
 
     # Build Feeds
     BUILD_FEED_RECENT_VIDEOS: int = 10

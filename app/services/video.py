@@ -8,7 +8,7 @@ from yt_dlp.utils import YoutubeDLError
 
 from app import crud, logger, models
 from app.core.notify import notify
-from app.handlers import get_handler_from_url
+from app.handlers import get_handler_from_string, get_handler_from_url
 from app.services.ytdlp import Http410Error, IsLiveEventError, IsPrivateVideoError, get_info_dict
 
 
@@ -57,21 +57,18 @@ def get_video_from_video_info_dict(
     return models.VideoCreate(**video_dict)
 
 
-async def refresh_all_videos(older_than_hours: int, db: Session) -> list[models.Video]:
+async def refresh_all_videos(db: Session) -> list[models.Video]:
     """
     Fetches new data from yt-dlp for all Videos that are older than a certain number of hours.
 
     Args:
-        older_than_hours: The minimum age of the videos to refresh, in hours.
         db (Session): The database session.
 
     Returns:
         The refreshed list of videos.
     """
     videos = await crud.video.get_all(db=db) or []
-    videos_needing_refresh = get_videos_needing_refresh(
-        videos=videos, older_than_hours=older_than_hours
-    )
+    videos_needing_refresh = get_videos_needing_refresh(videos=videos)
     return await refresh_videos(videos_needing_refresh=videos_needing_refresh, db=db)
 
 
@@ -169,27 +166,37 @@ async def refresh_videos(
     return await fetch_videos(videos=sorted_videos_needing_refresh, db=db)
 
 
-def get_videos_needing_refresh(
-    videos: list[models.Video], older_than_hours: int
-) -> list[models.Video]:
+def get_videos_needing_refresh(videos: list[models.Video]) -> list[models.Video]:
     """
     Gets a list of videos that meet all criteria.
 
     Args:
         videos: The list of videos to refresh.
-        older_than_hours: The minimum age of the videos to refresh, in hours.
 
     Returns:
         The refreshed list of videos.
     """
-    age_threshold = datetime.utcnow() - timedelta(hours=older_than_hours)
-    return [
-        video
-        for video in videos
-        if (
-            video.updated_at < age_threshold or video.released_at is None or video.media_url is None
+    videos_needing_refresh = []
+    for video in videos:
+        handler = get_handler_from_string(handler_string=video.handler)
+        refresh_interval_age_threshold = datetime.utcnow() - timedelta(
+            hours=handler.REFRESH_INTERVAL_HOURS
         )
-    ]
+        refresh_recent_days_threshold = datetime.utcnow() - timedelta(
+            days=handler.REFRESH_RECENT_DAYS
+        )
+
+        missing_required_data = video.media_url is None or video.released_at is None
+        expired_data = video.updated_at < refresh_interval_age_threshold
+        recently_released = (
+            True if not video.released_at else video.released_at > refresh_recent_days_threshold
+        )
+
+        needs_refresh = expired_data and recently_released
+        if missing_required_data or needs_refresh:
+            videos_needing_refresh.append(video)
+
+    return videos_needing_refresh
 
 
 def sort_videos_by_updated_at(videos: list[models.Video]) -> list[models.Video]:

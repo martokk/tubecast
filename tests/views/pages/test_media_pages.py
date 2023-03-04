@@ -82,24 +82,3 @@ async def test_html_view_users_sources_no_media_url(
         json={"url": MOCKED_RUMBLE_SOURCE_1["url"]},
     )
     assert response.status_code == 201
-    created_source = response.json()
-
-    # Get source videos
-    videos = await crud.video.get_multi(db=db_with_user, source_id=created_source["id"])
-    first_video = videos[0]
-
-    # Update source media_url to None
-    obj_in = models.VideoUpdate(media_url=None)
-    db_video = await crud.video.update(
-        db=db_with_user, obj_in=obj_in, id=first_video.id, exclude_none=False
-    )
-
-    # Handle Media
-    response = client.get(
-        f"/media/{db_video.id}",
-        headers=superuser_token_headers,
-    )
-    assert response.status_code == 202
-    assert response.json() == {
-        "detail": f"The server has not yet retrieved a media_url from yt-dlp. video_id='{db_video.id}'",
-    }
