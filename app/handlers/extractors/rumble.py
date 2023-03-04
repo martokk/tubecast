@@ -255,7 +255,8 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
         if video.get("live") == 0:
             live_status = "not_live" if video.get("livestream_has_dvr") is None else "was_live"
         elif video.get("live") == 1:
-            live_status = "is_upcoming" if video.get("livestream_has_dvr") else "was_live"
+            # live_status = "is_upcoming" if video.get("livestream_has_dvr") else "was_live"
+            live_status = "is_upcoming" if video.get("live_placeholder") else "post_live"
         elif video.get("live") == 2:
             live_status = "is_live"
         else:
@@ -295,7 +296,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
         if not thumbnails and video.get("i"):
             thumbnails = [{"url": video["i"]}]
 
-        if live_status in {"is_live", "post_live"}:
+        if live_status in {"is_live", "post_live", "is_upcoming"}:
             duration = None
             formats = []
         else:
