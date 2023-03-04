@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from app import models, settings
-from app.views import deps, templates
+from app import models
+from app.views import deps
 
 router = APIRouter()
 

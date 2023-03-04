@@ -157,7 +157,12 @@ async def get_mocked_source_info_dict(*args: Any, **kwargs: Any) -> dict[str, An
                 "thumbnail": mocked_source["logo"],
                 "description": mocked_source["description"],
                 "extractor_key": mocked_source["extractor"],
-                "thumbnails": [{"url": mocked_source["logo"]}, {}, {"url": mocked_source["logo"]}],
+                "thumbnails": [
+                    {"url": mocked_source["logo"]},
+                    {"url": mocked_source["logo"]},
+                    {"url": mocked_source["logo"]},
+                ],
+                "_type": "playlist",
                 "metadata": {
                     "url": mocked_source["url"],
                 },
@@ -178,6 +183,7 @@ async def get_mocked_source_info_dict(*args: Any, **kwargs: Any) -> dict[str, An
                         "uploader_id": video["uploader_id"],
                         "channel": video["uploader"],
                         "channel_id": video["uploader_id"],
+                        "_type": "url",
                         "format_id": "0",
                         "formats": [
                             {
@@ -214,11 +220,12 @@ async def get_mocked_video_info_dict(*args: Any, **kwargs: Any) -> dict[str, Any
                 "uploader_id": mocked_video["uploader_id"],
                 "channel": mocked_video["uploader"],
                 "channel_id": mocked_video["uploader_id"],
+                "_type": "url",
                 "format_id": "mp4",
                 "formats": [
                     {
                         "format_id": "mp4",
-                        "url": mocked_video["feed_media_url"],
+                        "url": mocked_video["media_url"],
                         "filesize": mocked_video["media_filesize"],
                     }
                 ],

@@ -99,6 +99,7 @@ async def view_source(
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
 
+    source.description = str(source.description).replace("\n", "<br>")
     return templates.TemplateResponse(
         "source/view.html",
         {"request": request, "source": source, "current_user": current_user, "alerts": alerts},

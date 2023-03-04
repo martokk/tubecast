@@ -2,8 +2,6 @@
 
 {% block title %} Sources ({{ sources|length }}){% endblock %}
 
-{% block content_header %}Sources ({{ sources|length }}){% endblock %}
-
 {% block content %}
 
 <div class="container">
@@ -24,8 +22,10 @@
     <table class="table table-hover table-sm">
         <thead>
             <tr>
-                <th scope="col" class="w-65">Name</th>
-                <th scope="col" class="d-none d-md-table-cell w-15">Created By</th>
+                <th scope="col" class="w-65 small">Sources ({{ sources|length }})</th>
+                {% if current_user.is_superuser %}
+                <th scope="col" class="d-none d-md-table-cell w-15 small"></th>
+                {% endif %}
                 <th scope="col" class="w-auto"></th>
             </tr>
         </thead>
@@ -35,17 +35,27 @@
                 <td>
                     <div class="d-flex align-items-top">
                         <div class="me-3">
-                            <img src="{{ source.logo }}" alt="" width="60" height="60">
+                            <img src="{{ source.logo }}" class="cropped-image" alt="" width="60" height="60">
                         </div>
                         <div>
-                            <a href="/source/{{ source.id }}" class="fw-bold text-light">{{ source.name }}</a>
-                            <div class="small text-muted">{{ source.videos | length }} videos</div>
+                            <a href="/source/{{ source.id }}" class="fw-bold text-light text-decoration-none">{{
+                                source.name }}</a>
+                            <div class="small">
+                                <span class="badge small {{ source.service | service_badge_color}}">
+                                    {{ source.service }}
+                                </span>
+                                <span class="small text-muted">{{ source.videos | length }} videos</span>
+                            </div>
                         </div>
                     </div>
                 </td>
+
+                {% if current_user.is_superuser %}
                 <td>
                     <div class="small text-muted">{{ source.created_user.username }}</div>
                 </td>
+                {% endif %}
+
                 <td>
                     <div class="dropdown mt-2">
                         <button class="btn btn-dark" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"

@@ -1,0 +1,81 @@
+{% extends "base/base.html" %}
+
+{% block title %}View Video{% endblock %}
+
+{# {% block content_header %}{{ video.title }}{% endblock %} #}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="row align-items-center mb-3">
+            <div class="col-auto col-sm-auto">
+                <a href="/source/{{ video.source.id }}" class="text-decoration-none text-muted">{{ video.source.name
+                    }}</a>
+            </div>
+            <div class="col-auto col-sm-auto small">
+                <span class="badge {{ video.source.service | service_badge_color }}">{{ video.source.service
+                    }}</span>
+            </div>
+            <div class="col-12 col-sm-12">
+                <h4 class="d-flex align-items-center mb-0">
+                    <a href="{{ video.url }}" class="text-decoration-none text-white">{{ video.title }}</a>
+                    <a href="{{ video.url }}" target="_blank" rel="noopener" class="text-white ms-2"><i
+                            class="fas fa-external-link-alt fa-sm"></i></a>
+                </h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="row">
+                <div class="col-12 col-sm-12">
+                    <img src="{{ video.thumbnail }}" class="img-fluid rounded">
+                </div>
+
+                <div class="col-12 col-sm-12">
+                    <div class="row my-3">
+                        <div class="col-12 col-sm-12">
+                            {% if video.duration %}
+                            <p class="small mb-0"><strong>Duration</strong>: {{ (video.duration / 60) | int }} minutes
+                            </p>
+                            {% endif %}
+                            <p class="small mb-0"><strong>Released At</strong>: {{ video.released_at.strftime('%d %b %Y
+                                - %H:%M') }}</p>
+                            <p class="small mb-0"><strong>Created At</strong>: {{ video.created_at.strftime('%d %b %Y -
+                                %H:%M') }}</p>
+
+                        </div>
+                        <div class="col-12 col-sm-12">
+                            {% if not video.media_url %}
+                            <p class="small text-danger fw-bold mb-0">No media URL available</p>
+                            {% else %}
+                            <p class="small mb-0">
+                                <a href="{{ video.media_url }}" class="text-decoration-none">Media URL</a>:
+                                {% if video.handler == "RumbleHandler" %}
+                                <span class="mb-0 {{ video.updated_at | humanize_color_class_rumble }}"><em>Updated: {{
+                                        video.updated_at | humanize }}</em></span>
+                                {% else %}
+                                <span class="mb-0 {{ video.updated_at | humanize_color_class_youtube }}"><em>Updated: {{
+                                        video.updated_at | humanize }}</em></span>
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col small text-muted">
+                            <p class="mb-0"><em>Video ({{ video.id }}) created by {{ video.source.created_user.username
+                                    }}</em>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mt-2 mt-sm-0">
+            <p>{{ video.description | safe }}</p>
+        </div>
+    </div>
+</div>
+
+
+{% endblock content %}

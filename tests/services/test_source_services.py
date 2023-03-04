@@ -40,7 +40,9 @@ async def test_get_nested_source_videos_from_source_info_dict() -> None:
     """
     mocked_source_info_dict = await get_mocked_source_info_dict(url=MOCKED_RUMBLE_SOURCE_1["url"])
     mocked_source_info_dict["source_id"] = MOCKED_RUMBLE_SOURCE_1["id"]
-    mocked_source_info_dict["entries"] = [{"entries": mocked_source_info_dict["entries"]}]
+    mocked_source_info_dict["entries"] = [
+        {"entries": mocked_source_info_dict["entries"], "_type": "playlist"}
+    ]
 
     videos = get_source_videos_from_source_info_dict(source_info_dict=mocked_source_info_dict)
 

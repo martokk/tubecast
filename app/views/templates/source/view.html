@@ -16,20 +16,20 @@
 
         <div class="row">
             <div class="col-auto">
-                <div class="row">
-                    <img src="{{ source.logo }}" alt="Logo" width="100%" height="100%">
+                <div class="image-container">
+                    <img src="{{ source.logo }}" class="cropped-image" width="150" height="150">
                 </div>
             </div>
 
             <div class="col">
                 <div class="row">
                     <div class="col-4 small">
-                        <span class="badge bg-primary small">{{ source.service }}</span>
+                        <span class="badge small {{ source.service | service_badge_color}}">{{ source.service }}</span>
                     </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-12 mt-1">{{ source.description }}</div>
+                    <div class="col-12 mt-1">{{ source.description | safe }}</div>
                 </div>
 
                 <div class="row mt-3">
@@ -66,13 +66,20 @@
             </div>
 
             <div class="text-end">
-                <div class="{{ video.updated_at | humanize_color_class }} small">Updated: {{ video.updated_at | humanize
-                    }}
+                {% if video.handler == "YoutubeHandler" %}
+                <div class="{{ video.updated_at | humanize_color_class_youtube }} small">
+                    {% elif video.handler == "RumbleHandler" %}
+                    <div class="{{ video.updated_at | humanize_color_class_rumble }} small">
+                        {% else %}
+                        <div class="{{ video.updated_at | humanize_color_class_youtube }} small">
+
+                            {% endif %}
+                            <em>Updated: {{ video.updated_at | humanize }}</em>
+                        </div>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-    </div>
-    {% endfor %}
-</div>
 
-{% endblock content %}
+        {% endblock content %}
