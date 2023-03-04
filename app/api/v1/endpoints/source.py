@@ -206,13 +206,13 @@ async def delete(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
-@router.put("/{id}/fetch", status_code=status.HTTP_202_ACCEPTED)
+@router.put("/{id}/fetch", status_code=status.HTTP_202_ACCEPTED, response_model=models.Msg)
 async def fetch_source_endpoint(
     id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
-) -> None:
+) -> models.Msg:
     """
     Fetches new data from yt-dlp and updates a source on the server.
 
@@ -221,6 +221,9 @@ async def fetch_source_endpoint(
         db(Session): The database session
         background_tasks: The background tasks to run.
         _: The current superuser.
+
+    Returns:
+        models.Msg: A message that the source is being fetched.
 
     Raises:
         HTTPException: If the source was not found.
@@ -239,6 +242,7 @@ async def fetch_source_endpoint(
         id=source.id,
         db=db,
     )
+    return models.Msg(msg="Fetching source in the background.")
 
 
 @router.put("/fetch", status_code=status.HTTP_202_ACCEPTED, response_model=models.Msg)
@@ -246,7 +250,7 @@ async def fetch_all(
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
-) -> dict[str, str]:
+) -> models.Msg:
     """
     Fetches new data from yt-dlp for all sources on the server.
 
@@ -255,8 +259,9 @@ async def fetch_all(
         db(Session): The database session
         _: The current superuser.
 
+    Returns:
+        models.Msg: A message indicating that the sources are being fetched.
     """
     # Fetch the source videos in the background
     background_tasks.add_task(fetch_all_sources, db=db)
-
-    return {"msg": "Fetching all sources in the background."}
+    return models.Msg(msg="Fetching all sources in the background.")

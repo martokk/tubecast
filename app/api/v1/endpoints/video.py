@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlmodel import Session
 
-from app import crud, models
+from app import crud, logger, models
 from app.api import deps
-from app.services.video import fetch_all_videos, fetch_video
+from app.services.video import fetch_all_videos, fetch_video, refresh_all_videos
 
 router = APIRouter()
 ModelClass = models.Video
@@ -100,19 +100,47 @@ async def fetch_video_endpoint(
         ) from exc
 
 
-@router.put("/fetch", response_model=list[models.VideoRead], status_code=status.HTTP_200_OK)
+@router.put("/fetch", response_model=models.Msg, status_code=status.HTTP_200_OK)
 async def fetch_all(
+    background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
-) -> list[models.Video] | None:
+) -> models.Msg:
     """
     Fetches new data from yt-dlp and updates all videos on the server.
 
     Args:
         db (Session): The database session.
+        background_tasks (BackgroundTasks): The background tasks.
         _ (Any): authenticated user.
 
     Returns:
-        list[ModelClass]: List of objects.
+        models.Msg: A message indicating that fetching has started.
     """
-    return await fetch_all_videos(db=db)
+    logger.debug("Fetching all videos...")
+    background_tasks.add_task(fetch_all_videos, db=db)
+
+    return models.Msg(msg="Fetching all videos in the background.")
+
+
+@router.put("/refresh", response_model=models.Msg, status_code=status.HTTP_200_OK)
+async def refresh_all(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> models.Msg:
+    """
+    Checks if videos needs to be fetched and fetches them if needed.
+
+    Args:
+        db (Session): The database session.
+        background_tasks (BackgroundTasks): The background tasks.
+        _ (Any): authenticated user.
+
+    Returns:
+        models.Msg: A message indicating that refresh has been started.
+    """
+    logger.debug("Refreshing all videos...")
+    background_tasks.add_task(refresh_all_videos, db=db)
+
+    return models.Msg(msg="Refreshing all videos in the background.")
