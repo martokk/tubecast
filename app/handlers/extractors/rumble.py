@@ -297,8 +297,13 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
 
         if live_status in {"is_live", "post_live"}:
             duration = None
+            formats = []
         else:
             duration = int_or_none(video.get("duration"))
+            if live_status == "was_live":
+                if duration < 61:
+                    duration = None
+                    formats = []
 
         return {
             "id": video_id,
