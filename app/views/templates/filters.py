@@ -48,7 +48,9 @@ def filter_humanize(dt: datetime) -> str:
     return str(int(day_diff / 365)) + " years ago"
 
 
-def filter_humanize_color_class(dt: datetime, warning_seconds: int, danger_seconds: int) -> str:
+def filter_humanize_color_class(
+    dt: datetime, warning_seconds: int, danger_seconds: int, success_seconds: int = 20
+) -> str:
     """
     Jinja Filter to convert datetime to color class.
     Used to colorize the "humanize" filter.
@@ -57,6 +59,7 @@ def filter_humanize_color_class(dt: datetime, warning_seconds: int, danger_secon
         dt (datetime): datetime object.
         warning_seconds (int): seconds to colorize as warning
         danger_seconds (int): seconds to colorize as danger
+        success_seconds (int): seconds to colorize as success
 
     Returns:
         str: color class like 'text-danger', 'text-body-tertiary', etc
@@ -68,7 +71,9 @@ def filter_humanize_color_class(dt: datetime, warning_seconds: int, danger_secon
         return "text-danger"
     if delta_total_seconds > warning_seconds:
         return "text-warning"
-    return "text-body-tertiary"
+    if delta_total_seconds > success_seconds:
+        return "text-body-tertiary"
+    return "text-success"
 
 
 def filter_humanize_color_class_rumble(dt: datetime) -> str:
