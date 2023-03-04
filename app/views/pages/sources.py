@@ -172,7 +172,7 @@ async def handle_create_source(
         db=db,
     )
 
-    alerts.success.append("Source successfully created")
+    alerts.success.append(f"Source '{source.name}' successfully created.")
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
@@ -256,7 +256,7 @@ async def handle_edit_source(
         response.headers["Method"] = "GET"
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
-    alerts.success.append("Source updated")
+    alerts.success.append(f"Source '{new_source.name}' updated")
     return templates.TemplateResponse(
         "source/edit.html",
         {"request": request, "source": new_source, "current_user": current_user, "alerts": alerts},
