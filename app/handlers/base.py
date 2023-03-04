@@ -10,8 +10,10 @@ from app.services.ytdlp import YDL_OPTS_BASE
 
 class ServiceHandler:
     SERVICE_NAME = "Base"
+    COLOR = "#333333"
     USE_PROXY = False
-    MAX_VIDEO_AGE_HOURS = 24
+    REFRESH_INTERVAL_HOURS = 24
+    REFRESH_RECENT_DAYS = 14
     DOMAINS: list[str] = []
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = []

@@ -105,7 +105,7 @@ def get_source_videos_from_source_info_dict(source_info_dict: dict[str, Any]) ->
     handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
     entries = source_info_dict["entries"]
 
-    if len(entries) > 0 and entries[0].get("entries"):
+    if len(entries) > 0 and entries[0]["_type"] == "playlist":
         playlists = entries
     else:
         playlists = [source_info_dict]
@@ -225,10 +225,7 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     # )
 
     # Refresh existing videos in database
-    handler = handlers.get_handler_from_string(handler_string=db_source.handler)
-    videos_needing_refresh = get_videos_needing_refresh(
-        videos=db_source.videos, older_than_hours=handler.MAX_VIDEO_AGE_HOURS
-    )
+    videos_needing_refresh = get_videos_needing_refresh(videos=db_source.videos)
     refreshed_videos = await refresh_videos(
         videos_needing_refresh=videos_needing_refresh,
         db=db,

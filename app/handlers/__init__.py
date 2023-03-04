@@ -21,8 +21,8 @@ def get_handler_from_url(url: str | ParseResult) -> ServiceHandler:
 
 
 def get_handler_from_string(handler_string: str) -> ServiceHandler:
-    if handler_string == "YoutubeHandler":
+    if handler_string == "YoutubeHandler" or handler_string == "Youtube":
         return YoutubeHandler()
-    if handler_string == "RumbleHandler":
+    if handler_string == "RumbleHandler" or handler_string == "Rumble":
         return RumbleHandler()
     raise HandlerNotFoundError(f"A handler could not be found for {handler_string=}.")

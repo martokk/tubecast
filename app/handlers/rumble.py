@@ -21,8 +21,10 @@ logger.add(_LOG_FILE, level="WARNING", rotation="10 MB")
 
 class RumbleHandler(ServiceHandler):
     SERVICE_NAME = "Rumble"
+    COLOR = "#85c742"
     USE_PROXY = False
-    MAX_VIDEO_AGE_HOURS = 48
+    REFRESH_INTERVAL_HOURS = 48
+    REFRESH_RECENT_DAYS = 21
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]

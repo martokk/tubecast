@@ -12,8 +12,10 @@ from .base import ServiceHandler
 
 class YoutubeHandler(ServiceHandler):
     SERVICE_NAME = "Youtube"
+    COLOR = "#CC0000"
     USE_PROXY = True
-    MAX_VIDEO_AGE_HOURS = 4
+    REFRESH_INTERVAL_HOURS = 4
+    REFRESH_RECENT_DAYS = 14
     DOMAINS = ["youtube.com"]
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = [".*"]
@@ -98,7 +100,7 @@ class YoutubeHandler(ServiceHandler):
             "url": source_info_dict["metadata"]["url"],
             "name": source_info_dict["title"],
             "author": source_info_dict["uploader"],
-            "logo": source_info_dict["thumbnails"][2]["url"],
+            "logo": source_info_dict["thumbnails"][-2]["url"],
             "ordered_by": "release",
             "description": source_info_dict["description"],
             "videos": source_videos,
