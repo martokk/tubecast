@@ -65,26 +65,28 @@
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                             <li><a class="dropdown-item" href="/source/{{ source.id }}/edit"><i
-                                        class="bi bi-pencil-square me-2"></i>Edit</a></li>
-                            <li><a class="dropdown-item" href="/feed/{{ source.id }}"><i class="bi bi-rss me-2"></i>Go
-                                    to Podcast
-                                    Feed</a></li>
+                                        class="fas fa-pencil-alt me-2"></i> Edit</a>
+                            </li>
+                            <li><a class="dropdown-item" href="/feed/{{ source.id }}"><i class="fas fa-rss me-2"></i> Go
+                                    to Podcast Feed</a>
+                            </li>
                             <li><a class="dropdown-item"
                                     href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}"><i
-                                        class="bi bi-plus-circle me-2"></i>Add to PocketCast</a></li>
+                                        class="fas fa-plus-circle me-2"></i> Add to PocketCast</a></li>
                             {% if current_user.is_superuser %}
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li><a class="dropdown-item" href="/source/{{ source.id }}/fetch"><i
-                                        class="bi bi-arrow-clockwise me-2"></i>Fetch Source</a></li>
+                                        class="fas fa-arrow-circle-right me-2"></i>
+                                    Fetch Source</a></li>
                             {% endif %}
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li><a class="dropdown-item text-danger" href="#"
                                     onclick="confirmDelete('/source/{{ source.id }}/delete')"><i
-                                        class="bi bi-trash me-2"></i>Delete</a></li>
+                                        class="fas fa-trash me-2"></i> Delete</a></li>
                         </ul>
                     </div>
                 </td>

@@ -90,7 +90,7 @@ async def view_source(
     Returns:
         Response: View of the source
     """
-    alerts = models.Alerts()
+    alerts = models.Alerts().from_cookies(request.cookies)
     try:
         source = await crud.source.get(db=db, id=source_id)
     except crud.RecordNotFoundError:
@@ -320,18 +320,14 @@ async def fetch_source_page(
 
     if not current_user.is_superuser:
         alerts.danger.append("You are not authorized to do that")
+    elif not source:
+        alerts.danger.append("Source not found")
     else:
-        if not source:
-            alerts.danger.append("Source not found")
-        else:
-            # Fetch the source videos in the background
-            background_tasks.add_task(
-                fetch_source,
-                id=source_id,
-                db=db,
-            )
-            alerts.success.append(f"Fetching source ('{source.name}')")
+        await fetch_source(db=db, id=source_id)
+        alerts.success.append(f"Source '{source.name}' was fetched.")
 
-    response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(
+        url=f"/source/{source.id}" if source else "/sources", status_code=status.HTTP_303_SEE_OTHER
+    )
     response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
     return response

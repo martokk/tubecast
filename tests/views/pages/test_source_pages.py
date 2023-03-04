@@ -336,7 +336,7 @@ def test_fetch_source(
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "You are not authorized to do that"  # type: ignore
-    assert response.url.path == "/sources"
+    assert response.url.path == f"/source/{source_1.id}"
 
     # Fetch source as superuser
     with patch("app.services.source.fetch_source", return_value=None):
@@ -346,8 +346,8 @@ def test_fetch_source(
         )
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
-    assert response.context["alerts"].success[0] == f"Fetching source ('{source_1.name}')"  # type: ignore
-    assert response.url.path == "/sources"
+    assert response.context["alerts"].success[0] == f"Source '{source_1.name}' was fetched."  # type: ignore
+    assert response.url.path == f"/source/{source_1.id}"
 
     # Fetch source as superuser with not found source
     with patch("app.services.source.fetch_source", return_value=None):
@@ -358,4 +358,4 @@ def test_fetch_source(
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "Source not found"  # type: ignore
-    assert response.url.path == "/sources"
+    assert response.url.path == f"/sources"

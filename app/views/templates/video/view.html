@@ -7,7 +7,7 @@
 {% block content %}
 <div class="container my-5">
     <div class="row">
-        <div class="row align-items-center mb-3">
+        <div class="row align-items-center">
             <div class="col-auto col-sm-auto">
                 <a href="/source/{{ video.source.id }}" class="text-decoration-none text-muted">{{ video.source.name
                     }}</a>
@@ -16,14 +16,27 @@
                 <span class="badge {{ video.source.service | service_badge_color }}">{{ video.source.service
                     }}</span>
             </div>
-            <div class="col-12 col-sm-12">
-                <h4 class="d-flex align-items-center mb-0">
+        </div>
+        <div class="row align-items-center mb-3">
+
+            <div class="col-9 col-sm-10">
+                <h5 class="d-flex align-items-center mb-0">
                     <a href="{{ video.url }}" class="text-decoration-none text-white">{{ video.title }}</a>
                     <a href="{{ video.url }}" target="_blank" rel="noopener" class="text-white ms-2"><i
-                            class="fas fa-external-link-alt fa-sm"></i></a>
-                </h4>
+                            class="fas fa-external-link-alt fa-sm small"></i></a>
+                </h5>
             </div>
+
+            <div class="col-3 col-sm-2 small">
+                {% if current_user.is_superuser %}
+                <a href="/video/{{ video.id }}/fetch" class="text-decoration-none text-muted me-3"><i
+                        class="fas fa-arrow-circle-right me-2"></i>Fetch</a>
+                {% endif %}
+            </div>
+
         </div>
+
+
         <div class="col-md-3">
             <div class="row">
                 <div class="col-12 col-sm-12">

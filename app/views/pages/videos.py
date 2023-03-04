@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
+from app.services.video import fetch_video
 from app.views import deps, templates
 
 router = APIRouter()
@@ -29,7 +30,7 @@ async def view_video(
     Returns:
         Response: View of the video
     """
-    alerts = models.Alerts()
+    alerts = models.Alerts().from_cookies(request.cookies)
     try:
         video = await crud.video.get(db=db, id=video_id)
     except crud.RecordNotFoundError:
@@ -42,3 +43,40 @@ async def view_video(
         "video/view.html",
         {"request": request, "video": video, "current_user": current_user, "alerts": alerts},
     )
+
+
+@router.get("/video/{video_id}/fetch", status_code=status.HTTP_202_ACCEPTED)
+async def fetch_video_page(
+    video_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Response:
+    """
+    Fetches new data from yt-dlp and updates a video on the server.
+
+    Args:
+        video_id: The ID of the video to update.
+        db(Session): The database session
+        background_tasks: The background tasks to run.
+        current_user: The current superuser.
+
+    Returns:
+        Response: Redirects to the video page.
+    """
+    alerts = models.Alerts()
+    video = await crud.video.get_or_none(id=video_id, db=db)
+
+    if not current_user.is_superuser:
+        alerts.danger.append("You are not authorized to do that")
+    elif not video:
+        alerts.danger.append("Video not found")
+    else:
+        await fetch_video(video_id=video_id, db=db)
+        alerts.success.append(f"Video '{video.title}' was fetched.")
+
+    response = RedirectResponse(
+        url=f"/video/{video.id}" if video else "/", status_code=status.HTTP_303_SEE_OTHER
+    )
+    response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
+    return response
