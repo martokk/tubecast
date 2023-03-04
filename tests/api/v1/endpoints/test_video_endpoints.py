@@ -149,5 +149,5 @@ async def test_fetch_video(
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
-    fetched_videos = response.json()
-    assert len(fetched_videos) == 2
+    response_msg = response.json()
+    assert response_msg["msg"] == "Fetching all videos in the background."
