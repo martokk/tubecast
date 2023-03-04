@@ -156,6 +156,8 @@ class RumbleHandler(ServiceHandler):
         if (
             entry_info_dict.get("live_status") == "is_live"
             or entry_info_dict.get("live_status") == "is_upcoming"
+            or entry_info_dict.get("live_status") == "post_live"
+            or entry_info_dict.get("is_live") is True
         ):
             media_filesize = 0
             media_url = None
