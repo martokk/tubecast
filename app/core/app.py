@@ -41,7 +41,18 @@ async def on_startup(db: Session = next(deps.get_db())) -> None:
     logger.info("--- Start FastAPI ---")
     logger.debug("Starting FastAPI App...")
     if settings.NOTIFY_ON_START:
-        await notify.notify(text=f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started.")
+        total_users = await crud.user.count(db=db)
+        total_sources = await crud.source.count(db=db)
+        total_videos = await crud.video.count(db=db)
+
+        await notify.notify(
+            text=(
+                f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started.\n\n"
+                f"Total Users: {total_users}\n"
+                f"Total Sources: {total_sources}\n"
+                f"Total Videos: {total_videos}\n"
+            )
+        )
 
     await init_initial_data(db=db)
 
