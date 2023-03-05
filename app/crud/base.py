@@ -1,10 +1,11 @@
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, TypeVar
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session, SQLModel, select
-
+from sqlalchemy import select as sa_select
 from app.crud.exceptions import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
+from sqlalchemy.sql.expression import func
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 ModelCreateType = TypeVar("ModelCreateType", bound=SQLModel)
@@ -187,3 +188,20 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
             db.commit()
         except Exception as exc:
             raise DeleteError("Error while deleting") from exc
+
+    async def count(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> Any:
+        """
+        Get the total count of records for the model.
+
+        Args:
+            db (Session): The database session.
+             args: Binary expressions to filter by.
+            kwargs: Keyword arguments to filter by.
+
+        Returns:
+            A list of all records, or None if there are none.
+        """
+
+        query = sa_select(func.count()).select_from(self.model).filter(*args).filter_by(**kwargs)
+        result = db.execute(query).scalar()
+        return result
