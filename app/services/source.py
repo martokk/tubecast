@@ -5,7 +5,7 @@ import asyncio
 from loguru import logger as _logger
 from sqlmodel import Session
 
-from app import crud, handlers, logger, models, settings
+from app import crud, logger, models, settings
 from app.handlers import get_handler_from_url
 from app.models.source import Source, SourceCreate
 from app.models.video import Video, VideoCreate

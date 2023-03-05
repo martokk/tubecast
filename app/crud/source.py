@@ -3,11 +3,13 @@ from typing import Any
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
-from app import crud, logger, models, settings
+from app import crud, models, handlers
 from app.crud.base import BaseCRUD
-from app.models.source import generate_source_id_from_url
 from app.services.feed import delete_rss_file
 from app.services.source import get_source_from_source_info_dict, get_source_info_dict
+from loguru import logger as _logger
+
+logger = _logger.bind(name="logger")
 
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):
@@ -34,7 +36,9 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         Raises:
             RecordAlreadyExistsError: If a source already exists for the given URL.
         """
-        source_id = await generate_source_id_from_url(url=url)
+        handler = handlers.get_handler_from_url(url=url)
+        url = handler.sanitize_source_url(url=url)
+        source_id = await models.source.generate_source_id_from_url(url=url)
 
         # Check if the source already exists
         db_source = await self.get_or_none(id=source_id, db=db)
@@ -42,14 +46,14 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             raise crud.RecordAlreadyExistsError("Record already exists for url.")
 
         # Fetch source information from yt-dlp and create the source object
+        source_info_dict_kwargs = await handler.get_source_info_dict_kwargs(url=url)
+
         source_info_dict = await get_source_info_dict(
             source_id=source_id,
             url=url,
-            extract_flat=True,
-            playlistreverse=True,
-            playlistend=settings.BUILD_FEED_RECENT_VIDEOS,
-            dateafter=settings.BUILD_FEED_DATEAFTER,
+            **source_info_dict_kwargs,
         )
+
         _source = await get_source_from_source_info_dict(
             source_info_dict=source_info_dict, user_id=user_id
         )

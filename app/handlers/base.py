@@ -6,6 +6,9 @@ from urllib.parse import urlparse
 from yt_dlp.extractor.common import InfoExtractor
 
 from app.services.ytdlp import YDL_OPTS_BASE
+from app.models.settings import Settings as _Settings
+
+settings = _Settings()
 
 
 class ServiceHandler:
@@ -84,6 +87,24 @@ class ServiceHandler:
             dict: The yt-dlp options for the source.
         """
         return YDL_OPTS_BASE
+
+    async def get_source_info_dict_kwargs(self, url: str) -> dict[str, Any]:
+        """
+
+
+        Args:
+            source_id: The ID of the source.
+            url: The URL of the source.
+
+        Returns:
+            A dictionary containing the kwargs for the source info dict.
+        """
+        return {
+            "extract_flat": True,
+            "playlistreverse": True,
+            "playlistend": settings.BUILD_FEED_RECENT_VIDEOS,
+            "dateafter": settings.BUILD_FEED_DATEAFTER,
+        }
 
     @abstractmethod
     def map_source_info_dict_to_source_dict(

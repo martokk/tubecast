@@ -11,8 +11,13 @@ from app.handlers.extractors.rumble import (
 )
 from app.paths import LOG_FILE as _LOG_FILE
 from app.services.ytdlp import YDL_OPTS_BASE
+from app.handlers.exceptions import InvalidSourceUrl
 
 from .base import ServiceHandler
+
+from app.models.settings import Settings as _Settings
+
+settings = _Settings()
 
 # Main Logger
 logger = _logger.bind(name="logger")
@@ -76,6 +81,27 @@ class RumbleHandler(ServiceHandler):
             **YDL_OPTS_BASE,
             "allowed_extractors": self.YDL_OPT_ALLOWED_EXTRACTORS,
         }
+
+    async def get_source_info_dict_kwargs(self, url: str) -> dict[str, Any]:
+        """
+
+
+        Args:
+            source_id: The ID of the source.
+            url: The URL of the source.
+
+        Returns:
+            A dictionary containing the kwargs for the source info dict.
+        """
+        if "/c/" in url:
+            return {
+                "extract_flat": True,
+                "playlistreverse": True,
+                "playlistend": settings.BUILD_FEED_RECENT_VIDEOS,
+                "dateafter": settings.BUILD_FEED_DATEAFTER,
+            }
+
+        raise InvalidSourceUrl(f"Source info dict kwargs not found for url: ({str(url)})")
 
     def map_source_info_dict_to_source_dict(
         self, source_info_dict: dict[str, Any], source_videos: list[Any]
