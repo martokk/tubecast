@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, status, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
@@ -13,6 +13,7 @@ router = APIRouter()
 async def view_video(
     request: Request,
     video_id: str,
+    source_id: str | None = Query(None, title="Source ID"),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
@@ -39,9 +40,18 @@ async def view_video(
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
     video.description = str(video.description).replace("\n", "<br>")
+
+    source = await crud.source.get_or_none(db=db, id=source_id) if source_id else None
+
     return templates.TemplateResponse(
         "video/view.html",
-        {"request": request, "video": video, "current_user": current_user, "alerts": alerts},
+        {
+            "request": request,
+            "video": video,
+            "source": source,
+            "current_user": current_user,
+            "alerts": alerts,
+        },
     )
 
 

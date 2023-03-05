@@ -143,7 +143,12 @@ async def add_new_source_videos_from_fetched_videos(
         if fetched_video.id not in db_video_ids:
             new_video = VideoCreate(**fetched_video.dict())
             added_videos.append(new_video)
-            await crud.video.create(obj_in=new_video, db=db)
+
+            db_video = await crud.video.get_or_none(db=db, id=new_video.id)
+            if not db_video:
+                db_video = await crud.video.create(obj_in=new_video, db=db)
+
+            db_source.videos.append(db_video)
 
     return added_videos
 

@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, Any
 from enum import Enum
 
 from pydantic import root_validator
-from sqlmodel import Field, Relationship, SQLModel, column, desc, text
+from sqlmodel import Field, Relationship, SQLModel, desc
 
 from app.core.uuid import generate_uuid_from_url
 from app.handlers import get_handler_from_url
+from app.models.source_video import SourceVideoLink
 
 from .common import TimestampModel
 
@@ -43,12 +44,14 @@ class SourceBase(TimestampModel, SQLModel):
 
 class Source(SourceBase, table=True):
     videos: list["Video"] = Relationship(
-        back_populates="source",
-        sa_relationship_kwargs={
-            "cascade": "all, delete",
-            "order_by": desc("released_at"),
-        },
+        back_populates="sources",
+        link_model=SourceVideoLink,
+        # sa_relationship_kwargs={
+        #     "cascade": "delete-orphan",
+        #     "order_by": desc("released_at"),
+        # },
     )
+
     created_user: "User" = Relationship(back_populates="sources")
 
 

@@ -26,7 +26,8 @@
                         class="fas fa-arrow-circle-right me-2"></i>Fetch</a>
                 {% endif %}
                 <a href="#" class="text-decoration-none text-muted me-3"
-                    onclick="confirmDelete('/source/{{ source.id }}/delete')"><i class="fas fa-trash me-2"></i>
+                    onclick="confirmDelete('/source/{{ source.id }}/delete', '{{ source.name }}')"><i
+                        class="fas fa-trash me-2"></i>
                     Delete</a>
             </div>
         </div>
@@ -70,7 +71,8 @@
             <div class="small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
                 <small><em>({{ video.released_at | humanize }})</em></small>
             </div>
-            <h5 class="mb-0"><a href="/video/{{ video.id }}" class="text-decoration-none text-white">{{ video.title
+            <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
+                    class="text-decoration-none text-white">{{ video.title
                     }}</a></h5>
             {% if not video.media_url %}
             <div class="small text-danger fw-bold">No media URL available</div>
