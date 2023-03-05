@@ -19,6 +19,4 @@ async def test_create_video_from_url_already_exists(
     await fetch_source(db=db_with_user, id=source.id)
 
     with pytest.raises(crud.RecordAlreadyExistsError):
-        await crud.video.create_video_from_url(
-            db=db_with_user, url=source.videos[0].url, source_id=source.id
-        )
+        await crud.video.create_video_from_url(db=db_with_user, url=source.videos[0].url)

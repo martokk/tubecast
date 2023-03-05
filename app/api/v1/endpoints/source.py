@@ -137,7 +137,7 @@ async def get_videos_from_source(
     """
     source = await crud.source.get(db=db, id=id)
     if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
-        return await crud.video.get_multi(db=db, source_id=id, skip=skip, limit=limit)
+        return source.videos
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 

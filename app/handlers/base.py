@@ -5,8 +5,8 @@ from urllib.parse import urlparse
 
 from yt_dlp.extractor.common import InfoExtractor
 
-from app.services.ytdlp import YDL_OPTS_BASE
 from app.models.settings import Settings as _Settings
+from app.services.ytdlp import YDL_OPTS_BASE
 
 settings = _Settings()
 

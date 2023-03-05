@@ -125,14 +125,14 @@ MOCKED_RUMBLE_SOURCE_2: dict[str, Any] = {
 }
 
 MOCKED_YOUTUBE_SOURCE_1: dict[str, Any] = {
-    "id": "iQEQPfeQ",
-    "url": "https://www.youtube.com/@breakingpoints",
+    "id": "RUF4Nbzd",
+    "url": "https://www.youtube.com/channel/UCDRIjKy6eZOvKtOELtTdeUA",
     "name": "Breaking Points",
     "author": "Breaking Points",
     "logo": "https://yt3.googleusercontent.com/zdnjHL8qsI_qgm0ahVLaGg2L0-WDSMeWuSecs-I1APcEHJIq_GXNEsDzwMAwfu3jzSmdflJ_VU4=w640-fcrop64=1,32b75a57cd48a5a8-k-c0xffffffff-no-nd-rj",
     "description": "Breaking Points with Krystal and Saagar is a fearless anti-establishment Youtube show and podcast. ",
     "ordered_by": "release",
-    "feed_url": "/feed/iQEQPfeQ",
+    "feed_url": "/feed/RUF4Nbzd",
     "extractor": "YoutubeTab",
     "handler": "YoutubeHandler",
     "created_by": "ZbFPeSXW",

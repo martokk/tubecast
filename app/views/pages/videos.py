@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Request, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 

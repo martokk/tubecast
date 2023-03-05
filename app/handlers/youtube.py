@@ -3,6 +3,7 @@ from typing import Any, Type
 import datetime
 import re
 
+from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
 
 from app.models.settings import Settings as _Settings
@@ -10,7 +11,6 @@ from app.services.ytdlp import YDL_OPTS_BASE
 
 from .base import ServiceHandler
 from .exceptions import InvalidSourceUrl
-from yt_dlp import YoutubeDL
 
 settings = _Settings()
 

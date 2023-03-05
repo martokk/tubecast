@@ -1,11 +1,12 @@
 from typing import Any, Generic, TypeVar
 
+from sqlalchemy import select as sa_select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
-from sqlmodel import Session, SQLModel, select
-from sqlalchemy import select as sa_select
-from app.crud.exceptions import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
 from sqlalchemy.sql.expression import func
+from sqlmodel import Session, SQLModel, select
+
+from app.crud.exceptions import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 ModelCreateType = TypeVar("ModelCreateType", bound=SQLModel)

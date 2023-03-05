@@ -4,18 +4,17 @@ import datetime
 
 from loguru import logger as _logger
 
+from app.handlers.exceptions import InvalidSourceUrl
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
     CustomRumbleIE,
 )
+from app.models.settings import Settings as _Settings
 from app.paths import LOG_FILE as _LOG_FILE
 from app.services.ytdlp import YDL_OPTS_BASE
-from app.handlers.exceptions import InvalidSourceUrl
 
 from .base import ServiceHandler
-
-from app.models.settings import Settings as _Settings
 
 settings = _Settings()
 
