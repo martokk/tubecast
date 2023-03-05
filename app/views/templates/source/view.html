@@ -64,7 +64,7 @@
 
 
 <div class="container">
-    {% for video in source.videos | sort(attribute='released_at') | reverse %}
+    {% for video in source.videos[0:30] %}
     <div class="row border-top py-3">
         <div class="col">
             <div class="small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
