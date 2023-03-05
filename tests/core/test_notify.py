@@ -181,6 +181,11 @@ async def test_notify_on_start(client: TestClient) -> None:
                 c.get("/'")
     assert mock_notify.called
     assert mock_notify.call_count == 1
-    assert mock_notify.call_args[1] == {
-        "text": f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started."
-    }
+
+    assert (
+        f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started."
+        in mock_notify.call_args[1]["text"]
+    )
+    assert "Total Users" in mock_notify.call_args[1]["text"]
+    assert "Total Videos" in mock_notify.call_args[1]["text"]
+    assert "Total Sources" in mock_notify.call_args[1]["text"]
