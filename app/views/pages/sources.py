@@ -6,6 +6,7 @@ from app import crud, models
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.source import fetch_all_sources, fetch_source
 from app.views import deps, templates
+from app.services.ytdlp import PlaylistNotFoundError
 
 router = APIRouter()
 
@@ -161,6 +162,11 @@ async def handle_create_source(
         return response
     except HandlerNotFoundError:
         alerts.danger.append("Handler not found for this url.")
+        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
+    except PlaylistNotFoundError as e:
+        alerts.danger.append(str(e))
         response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
