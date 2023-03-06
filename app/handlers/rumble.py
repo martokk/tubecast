@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import datetime
@@ -33,9 +34,11 @@ class RumbleHandler(ServiceHandler):
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
 
-    def sanitize_video_url(self, url: str) -> str:
+    def sanitize_source_url(self, url: str) -> str:
         """
-        Sanitizes the url to a standard format
+        Sanitizes source urls.
+        - "@channel" and "channel/" URLs to "/channel/" URLs.
+        - "playlist" URLs to "/playlist" URLs.
 
         Args:
             url: The URL to be sanitized
@@ -43,7 +46,56 @@ class RumbleHandler(ServiceHandler):
         Returns:
             The sanitized URL.
         """
-        return super().sanitize_video_url(url=url)
+        url = self.force_source_format(url=url)
+        return super().sanitize_source_url(url=url)
+
+    def force_source_format(self, url: str) -> str:
+        """
+        Sanitizes '@channel', 'channel/', and 'playlist' source URLs.
+
+        Args:
+            url: The URL to be sanitized
+
+        Returns:
+            The sanitized URL.
+        """
+        if "/c/" in url:
+            url = self.get_channel_url_from_c_url(url=url)
+        elif "/user/" in url:
+            url = self.get_channel_url_from_user_url(url=url)
+        else:
+            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+        return url.lower()
+
+    def get_channel_url_from_c_url(self, url: str) -> str:
+        """
+        Sanitizes "/c/channel" URLs to "/c/" URLs.
+
+        Args:
+            url: The URL to be sanitized
+
+        Returns:
+            The sanitized URL.
+        """
+        match = re.search(r"(?<=\/c\/)[\w-]+", url)
+        if not match:
+            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+        return "https://www.rumble.com/c/" + match.group()
+
+    def get_channel_url_from_user_url(self, url: str) -> str:
+        """
+        Sanitizes "/user/username" URLs to "/user/" URLs.
+
+        Args:
+            url: The URL to be sanitized
+
+        Returns:
+            The sanitized URL.
+        """
+        match = re.search(r"(?<=\/user\/)[\w-]+", url)
+        if not match:
+            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+        return "https://www.rumble.com/user/" + match.group()
 
     def get_source_ydl_opts(
         self, *, extract_flat: bool, playlistreverse: bool, playlistend: int, dateafter: str
@@ -92,7 +144,7 @@ class RumbleHandler(ServiceHandler):
         Returns:
             A dictionary containing the kwargs for the source info dict.
         """
-        if "/c/" in url:
+        if "/c/" in url or "/user/" in url:
             return {
                 "extract_flat": True,
                 "playlistreverse": True,
