@@ -186,6 +186,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db_obj = await self.get(db=db, *args, **kwargs)
         try:
             db.delete(db_obj)
+            db.refresh(db_obj)
             db.commit()
         except Exception as exc:
             raise DeleteError("Error while deleting") from exc

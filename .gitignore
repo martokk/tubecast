@@ -661,3 +661,5 @@ thunder-tests/thunderEnvironment.json
 app/data/feed/
 
 app/data/exports/
+
+app/views/static/logos/

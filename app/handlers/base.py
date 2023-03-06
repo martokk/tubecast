@@ -7,6 +7,7 @@ from yt_dlp.extractor.common import InfoExtractor
 
 from app.models.settings import Settings as _Settings
 from app.services.ytdlp import YDL_OPTS_BASE
+from app.models.source_video import SourceOrderBy
 
 settings = _Settings()
 
@@ -149,3 +150,6 @@ class ServiceHandler:
         Returns:
             A `Video` dictionary created from the `entry_info_dict`.
         """
+
+    def get_ordered_by(self, url: str) -> str:
+        return str(SourceOrderBy.RELEASED_AT.value)

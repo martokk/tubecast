@@ -7,7 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel, desc
 
 from app.core.uuid import generate_uuid_from_url
 from app.handlers import get_handler_from_url
-from app.models.source_video import SourceVideoLink
+from app.models.source_video import SourceVideoLink, SourceOrderBy
 
 from .common import TimestampModel
 
@@ -20,11 +20,6 @@ async def generate_source_id_from_url(url: str) -> str:
     handler = get_handler_from_url(url=url)
     sanitized_source_url = handler.sanitize_source_url(url=url)
     return generate_uuid_from_url(url=sanitized_source_url)
-
-
-class SourceOrderBy(Enum):
-    RELEASE = "release"
-    ADDED = "added"
 
 
 class SourceBase(TimestampModel, SQLModel):
@@ -46,13 +41,17 @@ class Source(SourceBase, table=True):
     videos: list["Video"] = Relationship(
         back_populates="sources",
         link_model=SourceVideoLink,
-        # sa_relationship_kwargs={
-        #     "cascade": "delete-orphan",
-        #     "order_by": desc("released_at"),
-        # },
+        sa_relationship_kwargs={"order_by": desc("released_at"), "cascade": "delete"},
     )
-
     created_user: "User" = Relationship(back_populates="sources")
+
+    def videos_sorted(self) -> list["Video"]:
+        if self.ordered_by == SourceOrderBy.RELEASED_AT.value:
+            return sorted(self.videos, key=lambda video: video.released_at, reverse=True)
+        elif self.ordered_by == SourceOrderBy.CREATED_AT.value:
+            return sorted(self.videos, key=lambda video: video.created_at, reverse=True)
+        else:
+            raise ValueError(f"Invalid order_by value: {self.ordered_by}")
 
 
 class SourceCreate(SourceBase):
@@ -64,6 +63,7 @@ class SourceCreate(SourceBase):
         sanitized_url = handler.sanitize_source_url(url=values["url"])
         source_id = generate_uuid_from_url(url=sanitized_url)
         feed_url = f"/feed/{source_id}"
+        ordered_by = handler.get_ordered_by(url=sanitized_url)
         return {
             **values,
             "handler": handler.name,
@@ -71,7 +71,7 @@ class SourceCreate(SourceBase):
             "url": sanitized_url,
             "id": source_id,
             "feed_url": feed_url,
-            "ordered_by": SourceOrderBy.RELEASE.value,
+            "ordered_by": ordered_by,
         }
 
 

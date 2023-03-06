@@ -14,6 +14,7 @@ from app.handlers.extractors.rumble import (
 from app.models.settings import Settings as _Settings
 from app.paths import LOG_FILE as _LOG_FILE
 from app.services.ytdlp import YDL_OPTS_BASE
+from app.core.uuid import generate_uuid_from_url
 
 from .base import ServiceHandler
 
@@ -167,11 +168,15 @@ class RumbleHandler(ServiceHandler):
         Returns:
             A Source object.
         """
+        logo = source_info_dict.get("thumbnail")
+        if not logo:
+            source_id = generate_uuid_from_url(url=source_info_dict["url"])
+            logo = f"/static/logos/{source_id}.png"
         return {
             "url": source_info_dict["url"],
             "name": source_info_dict["title"],
             "author": source_info_dict["uploader"],
-            "logo": source_info_dict["thumbnail"],
+            "logo": logo,
             "ordered_by": "release",
             "description": f"{source_info_dict.get('description', source_info_dict['uploader'])}",
             "videos": source_videos,

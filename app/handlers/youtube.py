@@ -8,6 +8,8 @@ from yt_dlp.extractor.common import InfoExtractor
 
 from app.models.settings import Settings as _Settings
 from app.services.ytdlp import YDL_OPTS_BASE, Http410Error
+from app.models.source_video import SourceOrderBy
+from app.core.uuid import generate_uuid_from_url
 
 from .base import ServiceHandler
 from .exceptions import InvalidSourceUrl
@@ -227,12 +229,21 @@ class YoutubeHandler(ServiceHandler):
         Returns:
             A Source object.
         """
+        url = source_info_dict["metadata"]["url"]
+
+        if "/playlist" in url:
+            source_id = generate_uuid_from_url(url=url)
+            logo = f"/static/logos/{source_id}.png"
+            ordered_by = "created_at"
+        else:
+            logo = source_info_dict["thumbnails"][-2]["url"]
+            ordered_by = "released_at"
         return {
-            "url": source_info_dict["metadata"]["url"],
+            "url": url,
             "name": source_info_dict["title"],
             "author": source_info_dict["uploader"],
-            "logo": source_info_dict["thumbnails"][-2]["url"],
-            "ordered_by": "release",
+            "logo": logo,
+            "ordered_by": ordered_by,
             "description": source_info_dict["description"],
             "videos": source_videos,
             "extractor": source_info_dict["extractor_key"],
@@ -344,3 +355,8 @@ class YoutubeHandler(ServiceHandler):
             raise ValueError(
                 f"Format '{str(format_number)}' was not found in the entry_info_dict['formats']."
             ) from exc
+
+    def get_ordered_by(self, url: str) -> str:
+        if "/playlist" in url:
+            return str(SourceOrderBy.CREATED_AT.value)
+        return str(SourceOrderBy.RELEASED_AT.value)

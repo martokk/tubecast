@@ -46,13 +46,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             raise crud.RecordAlreadyExistsError("Record already exists for url.")
 
         # Fetch source information from yt-dlp and create the source object
-        source_info_dict_kwargs = await handler.get_source_info_dict_kwargs(url=url)
-
-        source_info_dict = await get_source_info_dict(
-            source_id=source_id,
-            url=url,
-            **source_info_dict_kwargs,
-        )
+        source_info_dict = await get_source_info_dict(source_id=source_id, url=url)
 
         _source = await get_source_from_source_info_dict(
             source_info_dict=source_info_dict, user_id=user_id

@@ -35,7 +35,7 @@ class VideoBase(TimestampModel, SQLModel):
     media_url: str | None = Field(default=None)
     feed_media_url: str | None = Field(default=None)
     media_filesize: int | None = Field(default=None)
-    released_at: datetime.datetime | None = Field(default=None)
+    released_at: datetime.datetime = Field(default=None)
 
 
 class Video(VideoBase, table=True):
