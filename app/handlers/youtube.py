@@ -7,7 +7,7 @@ from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
 
 from app.models.settings import Settings as _Settings
-from app.services.ytdlp import YDL_OPTS_BASE
+from app.services.ytdlp import YDL_OPTS_BASE, Http410Error
 
 from .base import ServiceHandler
 from .exceptions import InvalidSourceUrl
@@ -283,6 +283,14 @@ class YoutubeHandler(ServiceHandler):
         Returns:
             A `Video` dictionary created from the `entry_info_dict`.
         """
+        if (
+            not entry_info_dict.get("formats")
+            and not entry_info_dict.get("uploader")
+            and not entry_info_dict.get("release_timestamp")
+            and not entry_info_dict.get("upload_date")
+        ):
+            raise Http410Error("Youtube video has been deleted.")
+
         format_info_dict = self._get_format_info_dict_from_entry_info_dict(
             entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
         )
