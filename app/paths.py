@@ -18,6 +18,7 @@ TEMPLATES_PATH = VIEWS_PATH / "templates"
 LOGS_PATH = DATA_PATH / "logs"
 CACHE_PATH = DATA_PATH / "cache"
 FEEDS_PATH = DATA_PATH / "feed"
+EXPORTS_PATH = DATA_PATH / "exports"
 
 # Cache Folders
 SOURCE_INFO_CACHE_PATH = CACHE_PATH / "source_info"
@@ -31,3 +32,4 @@ ERROR_LOG_FILE = LOGS_PATH / "error_log.log"
 FETCH_LOG_FILE = LOGS_PATH / "fetch_log.log"
 YTDLP_LOG_FILE = LOGS_PATH / "ytdlp_log.log"
 TEMP_LOG_FILE = LOGS_PATH / "temp_log.log"
+SOURCES_EXPORT_FILE = EXPORTS_PATH / "sources.yaml"

@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from app import crud, logger, settings, version
+from app import crud, logger, settings
 from app.api import deps
 from app.api.v1.api import api_router
 from app.core import notify
@@ -12,6 +12,7 @@ from app.paths import FEEDS_PATH, STATIC_PATH
 from app.services.source import fetch_all_sources
 from app.services.video import refresh_all_videos
 from app.views.router import views_router
+from app.services.import_export import export_sources, import_sources
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -79,3 +80,25 @@ async def repeating_refresh_videos() -> None:  # pragma: no cover
     db: Session = next(deps.get_db())
     refreshed_videos = await refresh_all_videos(db=db)
     logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")
+
+
+# @app.on_event("startup")  # type: ignore
+# async def on_startup_export(db: Session = next(deps.get_db())) -> None:
+#     """
+#     On startup, export all Sources to a YAML file.
+
+#     Args:
+#         db (Session): Database session.
+#     """
+#     await export_sources(db=db)
+
+
+# @app.on_event("startup")  # type: ignore
+# async def on_startup_import(db: Session = next(deps.get_db())) -> None:
+#     """
+#     On startup, import all Sources from a YAML file.
+
+#     Args:
+#         db (Session): Database session.
+#     """
+#     await import_sources(db=db)
