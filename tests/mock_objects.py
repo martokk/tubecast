@@ -91,7 +91,7 @@ MOCKED_YOUTUBE_VIDEO_2: dict[str, Any] = {
 
 MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
     "id": "7hyhcvzT",
-    "url": "https://rumble.com/c/Styxhexenhammer666",
+    "url": "https://www.rumble.com/c/styxhexenhammer666",
     "name": "Styxhexenhammer666",
     "logo": "https://sp.rmbl.ws/z8/t/j/s/b/tjsba.baa.1-Styxhexenhammer666-qyv16v.png",
     "ordered_by": "release",
@@ -109,7 +109,7 @@ MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
 
 MOCKED_RUMBLE_SOURCE_2: dict[str, Any] = {
     "id": "mLC5c5NH",
-    "url": "https://rumble.com/c/KimIversen",
+    "url": "https://www.rumble.com/c/kimiversen",
     "name": "Kim Iversen",
     "author": "Kim Iversen",
     "logo": "https://sp.rmbl.ws/z8/k/N/n/f/kNnfa.baa-KimIversen-r6nek8.png",

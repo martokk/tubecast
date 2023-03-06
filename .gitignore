@@ -659,3 +659,5 @@ thunder-tests/thunderEnvironment.json
 **/data/.env
 
 app/data/feed/
+
+app/data/exports/

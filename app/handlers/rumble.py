@@ -1,7 +1,7 @@
-import re
 from typing import Any
 
 import datetime
+import re
 
 from loguru import logger as _logger
 

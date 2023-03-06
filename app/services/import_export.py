@@ -1,8 +1,8 @@
 import yaml
-
-from app.paths import SOURCES_EXPORT_FILE
-from app import crud
 from sqlmodel import Session
+
+from app import crud
+from app.paths import SOURCES_EXPORT_FILE
 
 
 async def export_sources(db: Session) -> None:
