@@ -11,12 +11,15 @@
             <h4 class="col-auto">
                 <a href="{{ source.url }}" class="text-decoration-none text-white">
                     {{ source.name }}
-                    <i class="fas fa-external-link-alt fa-sm small"></i>
+                    <span class="small mx-1"> <i class="fas fa-external-link-alt fa-sm small"></i>
+                    </span>
                 </a>
             </h4>
-            <div class="col-auto small">
+            <div class="col-auto small p-1">
                 <a href="/source/{{ source.id }}/edit" class="text-decoration-none  text-muted me-3"><i
                         class="fas fa-pencil-alt me-2"></i>Edit</a>
+                <a href="/filter/create?source={{ source.id }}" class="text-decoration-none text-muted me-3"><i
+                        class="fas fa-plus-circle me-2"></i>Filter</a>
                 <a href="/feed/{{ source.id }}" class="text-decoration-none text-muted me-3"><i
                         class="fas fa-rss me-2"></i>Feed</a>
                 <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}"
@@ -63,43 +66,55 @@
 
 
 
-
 <div class="container">
     {% for video in source.videos_sorted()[0:30] %}
-    <div class="row border-top py-3">
-        <div class="col">
-            <div class="small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
-                <small><em>({{ video.released_at | humanize }})</em></small>
-            </div>
-            <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
-                    class="text-decoration-none text-white">{{ video.title
-                    }}</a></h5>
-            {% if not video.media_url %}
-            <div class="small text-danger fw-bold">No media URL available</div>
-            {% endif %}
+    <div class="row border-top py-1">
 
-            <div class="">
-                {% if video.duration %}
-                <div class="small">{{ (video.duration / 60) | int }} minutes.</div>
+
+
+        <div class="d-flex align-items-top">
+            <div class="me-3 d-flex align-items-center">
+                <img src="{{ video.thumbnail }}" class="cropped-image" alt="" height="90" width="125">
+            </div>
+            <div class="col">
+                <div class="col-12 small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
+                    <small><em>({{ video.released_at | humanize }})</em></small>
+                </div>
+                <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
+                        class="text-decoration-none text-white">{{ video.title }}</a></h5>
+                {% if not video.media_url %}
+                <div class="small text-danger fw-bold">No media URL available</div>
                 {% endif %}
-            </div>
-
-            <div class="text-end">
-                {% if video.handler == "YoutubeHandler" %}
-                <div class="{{ video.updated_at | humanize_color_class_youtube }} small">
-                    {% elif video.handler == "RumbleHandler" %}
-                    <div class="{{ video.updated_at | humanize_color_class_rumble }} small">
-                        {% else %}
-                        <div class="{{ video.updated_at | humanize_color_class_youtube }} small">
-
-                            {% endif %}
-                            <em>Updated: {{ video.updated_at | humanize }}</em>
+                <div class="">
+                    {% if video.duration %}
+                    <div class="small">{{ (video.duration / 60) | int }} minutes.</div>
+                    {% endif %}
+                </div>
+                {% if current_user.is_superuser %}
+                <div class="text-end small ms-auto">
+                    {% if video.handler == "YoutubeHandler" %}
+                    <div class="{{ video.updated_at | humanize_color_class_youtube }} small ms-auto">
+                        {% elif video.handler == "RumbleHandler" %}
+                        <div class="{{ video.updated_at | humanize_color_class_rumble }} small ms-auto">
+                            {% else %}
+                            <div class="{{ video.updated_at | humanize_color_class_youtube }} small ms-auto">
+                                {% endif %}
+                                <em>Updated: {{ video.updated_at | humanize }}</em>
+                            </div>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+
             {% endfor %}
         </div>
+
+
+
+
+
+
 
         <script>
             function confirmDelete(url, source_name) {
@@ -108,5 +123,7 @@
                 }
             }
         </script>
+
+
 
         {% endblock content %}
