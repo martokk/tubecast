@@ -5,6 +5,7 @@ import re
 
 from loguru import logger as _logger
 
+from app.core.uuid import generate_uuid_from_url
 from app.handlers.exceptions import InvalidSourceUrl
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
@@ -14,7 +15,6 @@ from app.handlers.extractors.rumble import (
 from app.models.settings import Settings as _Settings
 from app.paths import LOG_FILE as _LOG_FILE
 from app.services.ytdlp import YDL_OPTS_BASE
-from app.core.uuid import generate_uuid_from_url
 
 from .base import ServiceHandler
 

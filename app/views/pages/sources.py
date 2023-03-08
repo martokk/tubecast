@@ -5,8 +5,8 @@ from sqlmodel import Session
 from app import crud, models
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.source import fetch_all_sources, fetch_source
-from app.views import deps, templates
 from app.services.ytdlp import PlaylistNotFoundError
+from app.views import deps, templates
 
 router = APIRouter()
 

@@ -6,10 +6,10 @@ import re
 from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
 
-from app.models.settings import Settings as _Settings
-from app.services.ytdlp import YDL_OPTS_BASE, Http410Error
-from app.models.source_video import SourceOrderBy
 from app.core.uuid import generate_uuid_from_url
+from app.models.settings import Settings as _Settings
+from app.models.source_video import SourceOrderBy
+from app.services.ytdlp import YDL_OPTS_BASE, Http410Error
 
 from .base import ServiceHandler
 from .exceptions import InvalidSourceUrl

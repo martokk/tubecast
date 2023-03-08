@@ -1,4 +1,5 @@
 from enum import Enum
+
 from sqlmodel import Field, SQLModel
 
 from app.models.common import TimestampModel

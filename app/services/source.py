@@ -9,11 +9,11 @@ from app import crud, logger, models
 from app.handlers import get_handler_from_url
 from app.models.source import Source, SourceCreate
 from app.models.video import Video, VideoCreate
+from app.paths import LOGOS_PATH
 from app.services.feed import build_rss_file
+from app.services.logo import create_logo_from_text
 from app.services.video import get_videos_needing_refresh, refresh_videos
 from app.services.ytdlp import get_info_dict
-from app.paths import LOGOS_PATH
-from app.services.logo import create_logo_from_text
 
 fetch_logger = _logger.bind(name="fetch_logger")
 

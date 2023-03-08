@@ -7,7 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel, desc
 
 from app.core.uuid import generate_uuid_from_url
 from app.handlers import get_handler_from_url
-from app.models.source_video import SourceVideoLink, SourceOrderBy
+from app.models.source_video import SourceOrderBy, SourceVideoLink
 
 from .common import TimestampModel
 

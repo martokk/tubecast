@@ -93,7 +93,7 @@ def test_create_duplicate_source(
         data=MOCKED_RUMBLE_SOURCE_1,
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/create.html"  # type: ignore
+    assert response.template.name == "source/list.html"  # type: ignore
     assert response.context["alerts"].danger[0] == "Source already exists"  # type: ignore
 
 

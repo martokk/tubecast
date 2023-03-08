@@ -1,8 +1,10 @@
-from pathlib import Path
-from app.paths import FONTS_PATH
-from PIL import ImageDraw, ImageFont, Image
-import textwrap
 import random
+import textwrap
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+from app.paths import FONTS_PATH
 
 dark_colors = [
     (51, 17, 0),
