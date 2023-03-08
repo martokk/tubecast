@@ -157,7 +157,7 @@ async def handle_create_source(
         source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Source already exists")
-        response = RedirectResponse("/sources/create", status_code=status.HTTP_302_FOUND)
+        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
     except HandlerNotFoundError:
@@ -178,7 +178,7 @@ async def handle_create_source(
         db=db,
     )
 
-    alerts.success.append(f"Source '{source.name}' successfully created.")
+    alerts.success.append(f"{source.service.title()} source '{source.name}' successfully created.")
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)

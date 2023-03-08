@@ -26,6 +26,8 @@ class YoutubeHandler(ServiceHandler):
     DOMAINS = ["youtube.com"]
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = [".*"]
+    YDL_OPT_PLAYLISTEND = 20
+    YDL_OPT_DATEAFTER = "now-1y"
 
     def sanitize_source_url(self, url: str) -> str:
         """
@@ -202,15 +204,15 @@ class YoutubeHandler(ServiceHandler):
             return {
                 "extract_flat": True,
                 "playlistreverse": True,
-                "playlistend": settings.BUILD_FEED_RECENT_VIDEOS,
-                "dateafter": settings.BUILD_FEED_DATEAFTER,
+                "playlistend": self.YDL_OPT_PLAYLISTEND,
+                "dateafter": self.YDL_OPT_DATEAFTER,
             }
 
         if "/playlist" in url:
             return {
                 "extract_flat": True,
                 "playlistreverse": False,
-                "playlistend": 20,
+                "playlistend": 100,
                 "dateafter": "now-20y",
             }
 

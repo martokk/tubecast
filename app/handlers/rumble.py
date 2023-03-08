@@ -149,8 +149,8 @@ class RumbleHandler(ServiceHandler):
             return {
                 "extract_flat": True,
                 "playlistreverse": True,
-                "playlistend": settings.BUILD_FEED_RECENT_VIDEOS,
-                "dateafter": settings.BUILD_FEED_DATEAFTER,
+                "playlistend": 50,
+                "dateafter": "now-20y",
             }
 
         raise InvalidSourceUrl(f"Source info dict kwargs not found for url: ({str(url)})")
