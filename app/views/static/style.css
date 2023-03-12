@@ -56,3 +56,12 @@ body {
 .container-fluid.mt-3.mb-5 {
     flex: 1;
 }
+
+.form-control {
+    font-size: 0.9rem !important;
+    padding: .375rem .75rem !important;
+}
+
+.btn {
+    font-size: 0.9rem !important;
+}

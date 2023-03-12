@@ -87,8 +87,8 @@ def filter_humanize_color_class_rumble(dt: datetime) -> str:
         str: color class like 'text-danger', 'text-body-tertiary', etc
     """
     handler = get_handler_from_string("RumbleHandler")
-    warning_hours = int(handler.REFRESH_INTERVAL_HOURS - 12)
-    danger_hours = int(handler.REFRESH_INTERVAL_HOURS)
+    warning_hours = int(handler.REFRESH_UPDATE_INTERVAL_HOURS - 12)
+    danger_hours = int(handler.REFRESH_UPDATE_INTERVAL_HOURS)
 
     return filter_humanize_color_class(
         dt=dt,
@@ -108,8 +108,8 @@ def filter_humanize_color_class_youtube(dt: datetime) -> str:
         str: color class like 'text-danger', 'text-body-tertiary', etc
     """
     handler = get_handler_from_string("YoutubeHandler")
-    warning_hours = int(handler.REFRESH_INTERVAL_HOURS - 1)
-    danger_hours = int(handler.REFRESH_INTERVAL_HOURS + 1)
+    warning_hours = int(handler.REFRESH_UPDATE_INTERVAL_HOURS - 1)
+    danger_hours = int(handler.REFRESH_UPDATE_INTERVAL_HOURS + 1)
 
     return filter_humanize_color_class(
         dt=dt,

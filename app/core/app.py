@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from app import crud, logger, settings
+from app import crud, logger, models, settings
 from app.api import deps
 from app.api.v1.api import api_router
 from app.core import notify
@@ -102,3 +102,16 @@ async def repeating_refresh_videos() -> None:  # pragma: no cover
 #         db (Session): Database session.
 #     """
 #     await import_sources(db=db)
+
+
+# @app.on_event("startup")  # type: ignore
+# async def on_startup_temp(db: Session = next(deps.get_db())) -> None:
+#     """
+#     TODO: DELETE THIS FUNCTION
+#     """
+#     user: models.User = await crud.user.get(db=db, username="martokk")
+
+#     sources = await crud.source.get_all(db=db)
+
+#     for source in sources:
+#         await crud.source.add_default_filters(db=db, source=source, user_id=user.id)

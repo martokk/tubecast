@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 from yt_dlp.extractor.common import InfoExtractor
 
 from app.models.settings import Settings as _Settings
-from app.models.source_video import SourceOrderBy
+from app.models.source_video_link import SourceOrderBy
 from app.services.ytdlp import YDL_OPTS_BASE
 
 settings = _Settings()
@@ -16,8 +16,8 @@ class ServiceHandler:
     SERVICE_NAME = "Base"
     COLOR = "#333333"
     USE_PROXY = False
-    REFRESH_INTERVAL_HOURS = 24
-    REFRESH_RECENT_DAYS = 14
+    REFRESH_UPDATE_INTERVAL_HOURS = 24
+    REFRESH_RELEASED_RECENT_DAYS = 14
     DOMAINS: list[str] = []
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = []

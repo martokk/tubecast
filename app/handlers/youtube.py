@@ -8,7 +8,7 @@ from yt_dlp.extractor.common import InfoExtractor
 
 from app.core.uuid import generate_uuid_from_url
 from app.models.settings import Settings as _Settings
-from app.models.source_video import SourceOrderBy
+from app.models.source_video_link import SourceOrderBy
 from app.services.ytdlp import YDL_OPTS_BASE, Http410Error
 
 from .base import ServiceHandler
@@ -21,8 +21,8 @@ class YoutubeHandler(ServiceHandler):
     SERVICE_NAME = "Youtube"
     COLOR = "#CC0000"
     USE_PROXY = True
-    REFRESH_INTERVAL_HOURS = 4
-    REFRESH_RECENT_DAYS = 14
+    REFRESH_UPDATE_INTERVAL_HOURS = 4
+    REFRESH_RELEASED_RECENT_DAYS = 14
     DOMAINS = ["youtube.com"]
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = [".*"]

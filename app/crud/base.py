@@ -105,7 +105,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         statement = select(self.model).filter(*args).filter_by(**kwargs).offset(skip).limit(limit)
         return db.exec(statement).fetchmany()
 
-    async def create(self, db: Session, *, obj_in: ModelCreateType) -> ModelType:
+    async def create(self, db: Session, *, obj_in: ModelCreateType, **kwargs: Any) -> ModelType:
         """
         Create a new record.
 
@@ -119,7 +119,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         Raises:
             RecordAlreadyExistsError: If the record already exists.
         """
-        out_obj = self.model(**obj_in.dict())
+        out_obj = self.model(**{**obj_in.dict(), **kwargs})
 
         db.add(out_obj)
         try:
@@ -197,7 +197,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
 
         Args:
             db (Session): The database session.
-             args: Binary expressions to filter by.
+            args: Binary expressions to filter by.
             kwargs: Keyword arguments to filter by.
 
         Returns:

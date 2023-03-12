@@ -59,6 +59,7 @@
 		"beautifulsoup",
 		"buildx",
 		"cookiecutter",
+		"criterias",
 		"cssselect",
 		"darglint",
 		"dateafter",

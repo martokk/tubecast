@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Any
 
-from enum import Enum
-
 from pydantic import root_validator
 from sqlmodel import Field, Relationship, SQLModel, desc
 
 from app.core.uuid import generate_uuid_from_url
 from app.handlers import get_handler_from_url
-from app.models.source_video import SourceOrderBy, SourceVideoLink
+from app.models.source_video_link import SourceOrderBy, SourceVideoLink
+from app.models.user_source_link import UserSourceLink
 
 from .common import TimestampModel
 
 if TYPE_CHECKING:
+    from .filter import Filter  # pragma: no cover
     from .user import User  # pragma: no cover
     from .video import Video  # pragma: no cover
 
@@ -31,7 +31,6 @@ class SourceBase(TimestampModel, SQLModel):
     logo: str = Field(default=None)
     description: str = Field(default=None)
     ordered_by: str = Field(default=None)
-    feed_url: str = Field(default=None)
     extractor: str = Field(default=None)
     handler: str = Field(default=None)
     service: str = Field(default=None)
@@ -43,7 +42,12 @@ class Source(SourceBase, table=True):
         link_model=SourceVideoLink,
         sa_relationship_kwargs={"order_by": desc("released_at"), "cascade": "delete"},
     )
-    created_user: "User" = Relationship(back_populates="sources")
+    filters: list["Filter"] = Relationship(
+        back_populates="source",
+        sa_relationship_kwargs={"cascade": "delete"},
+    )
+    created_user: "User" = Relationship()
+    users: list["User"] = Relationship(back_populates="sources", link_model=UserSourceLink)
 
     def videos_sorted(self) -> list["Video"]:
         if self.ordered_by == SourceOrderBy.RELEASED_AT.value:
@@ -52,6 +56,10 @@ class Source(SourceBase, table=True):
             return sorted(self.videos, key=lambda video: video.created_at, reverse=True)
         else:
             raise ValueError(f"Invalid order_by value: {self.ordered_by}")
+
+    @property
+    def feed_url(self) -> str:
+        return f"/source/{self.id}/feed"
 
 
 class SourceCreate(SourceBase):
@@ -62,7 +70,6 @@ class SourceCreate(SourceBase):
         service = handler.SERVICE_NAME
         sanitized_url = handler.sanitize_source_url(url=values["url"])
         source_id = generate_uuid_from_url(url=sanitized_url)
-        feed_url = f"/feed/{source_id}"
         ordered_by = handler.get_ordered_by(url=sanitized_url)
         return {
             **values,
@@ -70,7 +77,6 @@ class SourceCreate(SourceBase):
             "service": service,
             "url": sanitized_url,
             "id": source_id,
-            "feed_url": feed_url,
             "ordered_by": ordered_by,
         }
 

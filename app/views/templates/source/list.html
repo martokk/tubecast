@@ -21,19 +21,26 @@
 <div class="container mt-4">
     <div class="col-auto small text-end"">
         {% if current_user.is_superuser %}
-        <a href=" /sources/fetch" class="text-decoration-none text-muted me-3"><i
-            class="fas fa-arrow-circle-right me-2"></i>Fetch All</a>
+        <a href=" /sources/fetch" class="text-decoration-none text-muted me-3">
+        <i class="fas fa-arrow-circle-right me-2"></i>
+        Fetch All
+        </a>
         {% endif %}
     </div>
     <table class="table table-hover table-sm">
         <thead>
             <tr>
-                <th scope="col" class="w-65 small">Sources ({{ sources|length }})</th>
+                <th scope="col" class="small fw-bold w-auto d-flex justify-content-start">
+                    Sources ({{ sources|length }})
+                </th>
                 {% if current_user.is_superuser %}
-                <th scope="col" class="d-none d-md-table-cell w-15 small"></th>
+                <th scope="col" class="d-table-cell small fw-bold w-auto text-center">
+                    Users
+                </th>
                 {% endif %}
-                <th scope="col" class="w-auto"></th>
+                <th scope="col" class="text-end"></th>
             </tr>
+
         </thead>
         <tbody>
             {% for source in sources | sort(attribute='name') %}
@@ -57,12 +64,12 @@
                 </td>
 
                 {% if current_user.is_superuser %}
-                <td>
-                    <div class="small text-muted">{{ source.created_user.username }}</div>
+                <td class="text-center">
+                    <div class="small text-muted">{{ source.users | length }}</div>
                 </td>
                 {% endif %}
 
-                <td>
+                <td class=" text-end">
                     <div class="dropdown mt-2">
                         <button class="btn btn-dark" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -70,29 +77,43 @@
 
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <li><a class="dropdown-item" href="/source/{{ source.id }}/edit"><i
-                                        class="fas fa-pencil-alt me-2"></i> Edit</a>
-                            </li>
-                            <li><a class="dropdown-item" href="/feed/{{ source.id }}"><i class="fas fa-rss me-2"></i> Go
-                                    to Podcast Feed</a>
-                            </li>
-                            <li><a class="dropdown-item"
-                                    href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}"><i
-                                        class="fas fa-plus-circle me-2"></i> Add to PocketCast</a></li>
                             {% if current_user.is_superuser %}
                             <li>
-                                <hr class="dropdown-divider">
+                                <a class="dropdown-item" href="/source/{{ source.id }}/edit">
+                                    <i class="fas fa-pencil-alt me-2"></i>
+                                    Edit
+                                </a>
                             </li>
-                            <li><a class="dropdown-item" href="/source/{{ source.id }}/fetch"><i
-                                        class="fas fa-arrow-circle-right me-2"></i>
-                                    Fetch Source</a></li>
+
+                            <li>
+                                <a class="dropdown-item" href="/source/{{ source.id }}/fetch">
+                                    <i class="fas fa-arrow-circle-right me-2"></i>
+                                    Fetch Source
+                                </a>
+                            </li>
+                            <hr class="dropdown-divider">
                             {% endif %}
                             <li>
-                                <hr class="dropdown-divider">
+                                <a class="dropdown-item" href="{{ source.feed_url }}">
+                                    <i class="fas fa-rss me-2"></i>
+                                    Go to Podcast Feed
+                                </a>
                             </li>
-                            <li><a class="dropdown-item text-danger" href="#"
-                                    onclick="confirmDelete('/source/{{ source.id }}/delete', '{{ source.name }}')"><i
-                                        class="fas fa-trash me-2"></i> Delete</a></li>
+                            <li>
+                                <a class="dropdown-item" href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    Add to PocketCast
+                                </a>
+                            </li>
+                            <li>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="#"
+                                    onclick="confirmDelete('/source/{{ source.id }}/delete', '{{ source.name }}')">
+                                    <i class="fas fa-trash me-2"></i>
+                                    Delete
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </td>

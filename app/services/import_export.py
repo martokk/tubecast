@@ -20,6 +20,7 @@ async def export_sources(db: Session) -> None:
         source_output = {
             "url": source.url,
             "created_by": source.created_by,
+            "users": [user.id for user in source.users],
         }
         output.append(source_output)
 

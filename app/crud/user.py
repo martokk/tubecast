@@ -52,10 +52,66 @@ class UserCRUD(BaseCRUD[models.User, models.UserCreate, models.UserUpdate]):
         return _user
 
     def is_active(self, _user: models.User) -> bool:
+        """
+        Check if a user is active.
+
+        Args:
+            _user (models.User): The user to check.
+
+        Returns:
+            bool: True if the user is active, False otherwise.
+        """
         return _user.is_active
 
     def is_superuser(self, *, user_: models.User) -> bool:
+        """
+        Check if a user is a superuser.
+
+        Args:
+            user_ (models.User): The user to check.
+
+        Returns:
+            bool: True if the user is a superuser, False otherwise.
+        """
         return user_.is_superuser
+
+    async def add_source(self, db: Session, user_id: str, source: models.Source) -> models.User:
+        """
+        Add a source to a user.
+
+        Args:
+            db (Session): The database session.
+            user_id (str): The id of the user to add the source to.
+            source (models.Source): The source to add to the user.
+
+        Returns:
+            user (models.User): The updated user.
+        """
+        user = await self.get(id=user_id, db=db)
+        user.sources.append(source)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    async def remove_source(self, db: Session, user_id: str, source: models.Source) -> models.User:
+        """
+        Remove a source from a user.
+
+        Args:
+            db (Session): The database session.
+            user_id (str): The id of the user to remove the source from.
+            source (models.Source): The source to remove from the user.
+
+        Returns:
+            user (models.User): The updated user.
+        """
+        user = await self.get(id=user_id, db=db)
+
+        if source in user.sources:
+            user.sources.remove(source)
+            db.commit()
+            db.refresh(user)
+        return user
 
 
 user = UserCRUD(model=models.User)

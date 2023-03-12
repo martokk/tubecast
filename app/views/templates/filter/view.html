@@ -1,0 +1,326 @@
+{% extends "base/base.html" %}
+
+{% block title %}Filter: {{ filter.name }}{% endblock %}
+
+{% block content %}
+
+<div class="container my-0">
+
+    <!-- Filter Name and Source -->
+    <div class="row d-flex flex-wrap ">
+
+        <!-- Filter Actions -->
+        <div class="col-12 col-lg-5 small ms-auto text-end mb-3">
+            <div class="col">
+
+                <a href="/filter/{{ filter.id }}/edit" class="text-decoration-none text-muted me-3">
+                    <i class="fas fa-pencil-alt me-2"></i>
+                    Edit
+                </a>
+
+                <a href="#" class="text-decoration-none text-muted me-3"
+                    onclick="confirmDelete('/filter/{{ filter.id }}/delete', 'Filter: {{ filter.name }}')">
+                    <i class="fas fa-trash me-2"></i>
+                    Delete
+                </a>
+
+                <a href="{{ filter.feed_url }}" class="text-decoration-none text-muted me-3">
+                    <i class="fas fa-rss me-2"></i>
+                    Feed
+                </a>
+
+                <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ filter.id }}"
+                    class="text-decoration-none text-muted me-3">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    PocketCast
+                </a>
+
+                {% if current_user.is_superuser %}
+                <a href="/filter/{{ filter.id }}/fetch" class="text-decoration-none text-muted me-3">
+                    <i class="fas fa-arrow-circle-right me-2"></i>
+                    Fetch
+                </a>
+                {% endif %}
+
+            </div>
+        </div>
+
+        <!-- Filter Source -->
+        <div class="row align-items-center">
+            <div class="col-auto col-sm-auto">
+                <a href="/source/{{ filter.source.id }}" class="text-decoration-none text-muted">{{ filter.source.name
+                    }}</a>
+            </div>
+            <div class="col-auto col-sm-auto small">
+                <span class="badge {{ filter.source.service | service_badge_color }}">{{ filter.source.service
+                    }}</span>
+            </div>
+        </div>
+
+
+
+        <!-- Filter Name -->
+        <div class="col-12">
+            <h3>Filter: {{ filter.name }}</h3>
+        </div>
+
+
+    </div>
+
+
+
+
+
+
+    <!-- Filter Criteria and Settings -->
+    <div class="row ">
+
+        <!-- Criteria Card -->
+        <div class="col-12 col-lg-6 my-3">
+            <div class="card h-100">
+
+                {% if filter.criterias %}
+                <div class="card-header">
+                    <strong>Criteria</strong>
+                </div>
+
+                <div class="card-body">
+
+                    <ul class="list-unstyled">
+                        {% for criteria in filter.criterias %}
+                        <li>
+                            <div class="row my-2">
+                                <div class="col-auto col-sm-auto">
+                                    <span class="badge bg-secondary">{{ criteria.field }}</span>
+                                    <span class="badge bg-secondary">{{ criteria.operator }}</span>
+                                    <span class="badge bg-primary">{{ criteria.value }}</span>
+                                    {% if criteria.unit_of_measure %}
+                                    <span class="badge bg-secondary">{{ criteria.unit_of_measure }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-auto align-items-center mt-1 ms-auto text-end">
+                                    <div class="col small">
+                                        <a href="/filter/{{ filter.id }}/criteria/{{ criteria.id }}/edit"
+                                            class="text-decoration-none text-muted me-2">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                        <a href="#" class="text-decoration-none text-muted me-2"
+                                            onclick="confirmDelete('/filter/{{ filter.id }}/criteria/{{ criteria.id }}/delete',
+                                            '{{ criteria.field }} {{ criteria.operator }} {{ criteria.value }}{% if criteria.unit_of_measure %} {{ criteria.unit_of_measure }} {% endif %}')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </li>
+                        {% endfor %}
+
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- New Criteria Card -->
+                <div class="card {% if not filter.criterias %} border-warning{% endif %}">
+                    <div class="card-header {% if not filter.criterias %} text-warning{% endif %}">
+                        <strong>New Criteria</strong>
+                    </div>
+
+                    <div class="card-body">
+
+                        {% if not filter.criterias %}
+                        <div class="alert alert-warning d-flex align-items-center justify-content-center" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <div>No criteria found. Add a new criteria below:</div>
+                        </div>
+                        {% endif %}
+
+
+                        <div class="row">
+                            <form method="POST" class="form-group" action="/filter/{{ filter.id }}/criteria/create">
+                                <div class="d-flex">
+                                    <div class=" col-3 form-group pe-1">
+                                        <select class="form-control" id="fieldInput" name="field">
+                                            {% for select in criteria_field_select %}
+                                            <option value="{{ select }}">{{ select }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-3 form-group pe-1">
+                                        <select class="form-control" id="operatorInput" name="operator">
+                                            <option value="">Criteria</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-2 form-group pe-1">
+                                        <input type="text" class="form-control" id="valueInput" name="value"
+                                            placeholder="Value">
+                                    </div>
+                                    <div class="col-2 form-group pe-1">
+                                        <select class="form-control" id="uomInput" name="unit_of_measure">
+                                            <option value="">Unit</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-2 form-group text-end ">
+                                        <button type="submit"
+                                            class="btn {% if not filter.criterias %} btn-warning{% else %}btn-primary{% endif %} w-100">Add</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Filter Settings Card -->
+        <div class="col-12 col-lg-6 my-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Filter Settings</strong>
+                </div>
+                <form method="POST" action="/filter/{{ filter.id }}/edit">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-3 form-group mt-2 form-group small">
+                                <strong>Order By:</strong>
+                            </div>
+                            <div class="col-9 form-group">
+                                <select class="form-control" id="orderedByInput" name="ordered_by">
+                                    {% for select in ordered_by_select %}
+                                    <option value="{{ select }}" {% if select==filter.ordered_by %} selected{% endif %}>
+                                        {{ select }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body text-end">
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+    </div>
+
+
+
+
+
+    <div class="container mt-3">
+        {% for video in filter.videos()[0:30] %}
+        <div class="row border-top py-1">
+
+
+
+            <div class="d-flex align-items-top">
+                <div class="me-3 d-flex align-items-center">
+                    <img src="{{ video.thumbnail }}" class="cropped-image" alt="" height="90" width="125">
+                </div>
+                <div class="col">
+                    <div class="col-12 small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
+                        <small><em>({{ video.released_at | humanize }})</em></small>
+                    </div>
+                    <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
+                            class="text-decoration-none text-muted">{{ video.title }}</a></h5>
+                    {% if not video.media_url %}
+                    <div class="small text-danger fw-bold">No media URL available</div>
+                    {% endif %}
+                    <div class="">
+                        {% if video.duration %}
+                        <div class="small">{{ (video.duration / 60) | int }} minutes.</div>
+                        {% endif %}
+                    </div>
+                    {% if current_user.is_superuser %}
+                    <div class="text-end small ms-auto">
+                        {% if video.handler == "YoutubeHandler" %}
+                        <div class="{{ video.updated_at | humanize_color_class_youtube }} small ms-auto">
+                            {% elif video.handler == "RumbleHandler" %}
+                            <div class="{{ video.updated_at | humanize_color_class_rumble }} small ms-auto">
+                                {% else %}
+                                <div class="{{ video.updated_at | humanize_color_class_youtube }} small ms-auto">
+                                    {% endif %}
+                                    <em>Updated: {{ video.updated_at | humanize }}</em>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% endfor %}
+            </div>
+
+
+
+
+
+
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- jinja-js -->
+        <script type="text/javascript">
+            // Define the options for each field
+            const fieldOperatorOptions = {
+                "released": {{ created_release_operators_select | tojson }},
+                "created": {{ created_release_operators_select | tojson }},
+                "duration": {{ duration_operators_select | tojson }},
+                "keyword": {{ keyword_operators_select | tojson }}
+            };
+            const fieldUOMOptions = {
+                "released": ["hours", "days"],
+                "created": ["hours", "days"],
+                "duration": ["minutes"],
+                "keyword": ["keyword"]
+            };
+
+            function updateOperatorAndUOM() {
+                // Get the selected field value
+                const field = $("#fieldInput").val();
+                const operator = $("#fieldOperator").val();
+                const uom = $("#uomInput").val();
+
+                // Get the corresponding operator options
+                const operatorOptions = fieldOperatorOptions[field];
+                const uOMOptions = fieldUOMOptions[field];
+
+                // Add the Operator options
+                $("#operatorInput").empty();
+                for (const option of operatorOptions) {
+                    const isSelected = (option === operator) ? 'selected' : '';
+                    $("#operatorInput").append(`<option value="${option}" ${isSelected}>${option}</option>`);
+                }
+
+                // Add the UOM options
+                $("#uomInput").empty();
+                for (const option of uOMOptions) {
+                    const isSelected = (option === uom) ? 'selected' : '';
+                    $("#uomInput").append(`<option value="${option}" ${isSelected}>${option}</option>`);
+                }
+            }
+
+            // Call the updateOperatorAndUOM function on load
+            $(document).ready(function () {
+                updateOperatorAndUOM();
+            });
+
+            // When the field select is changed, call the updateOperatorAndUOM function
+            $("#fieldInput").on("change", function () {
+                updateOperatorAndUOM();
+            });
+        </script>
+        <script>
+            function confirmDelete(url, object_title) {
+                if (confirm("Are you sure you want to delete '" + object_title + "'?")) {
+                    window.location.href = url;
+                }
+            }
+        </script>
+        {% endblock content %}

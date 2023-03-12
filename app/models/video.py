@@ -7,7 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.uuid import generate_uuid_from_url
 from app.handlers import get_handler_from_url
-from app.models.source_video import SourceVideoLink
+from app.models.source_video_link import SourceVideoLink
 
 from .common import TimestampModel
 
@@ -45,6 +45,14 @@ class Video(VideoBase, table=True):
 
     def __repr__(self) -> str:
         return f"Video(id={self.id}, title={self.title[:20] if self.title else ''}, handler={self.handler})"
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, Video):
+            return self.id == other.id
+        return False
 
 
 class VideoCreate(VideoBase):

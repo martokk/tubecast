@@ -5,7 +5,7 @@ from feedgen.feed import FeedGenerator
 
 from app import logger, settings
 from app.core.notify import notify
-from app.models.source import Source
+from app.models import Filter, Source
 from app.paths import FEEDS_PATH
 
 
@@ -31,29 +31,55 @@ def get_published_date(
 
 
 class SourceFeedGenerator(FeedGenerator):
-    def __init__(self, source: Source):
+    def __init__(self, source: Source | None = None, filter: Filter | None = None):
         """
         Initialize the SourceFeedGenerator object.
 
         Args:
             source: The source to retrieve data from.
+            filter: The filter to retrieve data from.
         """
         super().__init__()
         self.load_extension("podcast")
-        self.rss_file_path = get_rss_file_path(source_id=source.id)
 
-        self._generate_feed(source=source)
+        if source:
+            self.rss_file_path = get_rss_file_path(id=source.id)
+            self._generate_feed(source=source)
+        elif filter:
+            self.rss_file_path = get_rss_file_path(id=filter.id)
+            self._generate_feed(filter=filter)
+        else:
+            raise ValueError("Either source or filter must be provided")
 
-    def _generate_feed(self, source: Source) -> None:
+    def _generate_feed(self, source: Source | None = None, filter: Filter | None = None) -> None:
         """
         Generate the feed data.
 
         Args:
             source: The source to retrieve data from.
+            filter: The filter to retrieve data from.
         """
-        self.title(source.name)
-        self.link(href=f"{settings.BASE_URL}{source.feed_url}", rel="self")
-        self.id(source.id)
+        if filter:
+            id = filter.id
+            source = filter.source
+            title = f"{source.name} - [{filter.name}]"
+            link = f"{settings.BASE_URL}{filter.feed_url}"
+            videos = filter.videos()
+
+        elif source:
+            id = source.id
+            title = source.name
+            link = f"{settings.BASE_URL}{source.feed_url}"
+            videos = source.videos
+        else:
+            raise ValueError("Either source or filter must be provided")
+
+        # Filter/Source Unique Data
+        self.title(title)
+        self.link(href=link, rel="self")
+        self.id(id)
+
+        # Shared Data
         self.author({"name": source.author})
         self.link(href=settings.BASE_URL, rel="alternate")
         self.logo(f"{source.logo}?=.jpg")
@@ -68,7 +94,7 @@ class SourceFeedGenerator(FeedGenerator):
         )
 
         # Generate Feed Posts
-        for video in source.videos:
+        for video in videos:
 
             published_at = get_published_date(
                 created_at=video.created_at, released_at=video.released_at
@@ -106,25 +132,25 @@ class SourceFeedGenerator(FeedGenerator):
 
 
 # RSS File
-def get_rss_file_path(source_id: str) -> Path:
+def get_rss_file_path(id: str) -> Path:
     """
-    Returns the file path for a 'source_id' rss file.
+    Returns the file path for a rss file.
 
     Args:
-        source_id: The source id to retrieve the file path for.
+        id: The source/filter id to retrieve the file path for.
 
     Returns:
         The path to the rss file.
     """
-    return FEEDS_PATH / f"{source_id}.rss"
+    return FEEDS_PATH / f"{id}.rss"
 
 
-async def get_rss_file(source_id: str) -> Path:
+async def get_rss_file(id: str) -> Path:
     """
     Returns a validated rss file.
 
     Args:
-        source_id: The source id to retrieve the file path for.
+        id: The source/filter id to retrieve the file path for.
 
     Returns:
         The path to the rss file.
@@ -132,38 +158,39 @@ async def get_rss_file(source_id: str) -> Path:
     Raises:
         FileNotFoundError: If the rss file does not exist.
     """
-    rss_file = get_rss_file_path(source_id=source_id)
+    rss_file = get_rss_file_path(id=id)
 
     # Validate RSS File exists
     if not rss_file.exists():
-        err_msg = f"RSS file ({source_id}.rss) does not exist for ({source_id=})"
+        err_msg = f"RSS file ({id}.rss) does not exist for ({id=})"
         logger.critical(err_msg)
         await notify(telegram=True, email=False, text=err_msg)
         raise FileNotFoundError(err_msg)
     return rss_file
 
 
-async def delete_rss_file(source_id: str) -> None:
+async def delete_rss_file(id: str) -> None:
     """
     Deletes a rss file.
 
     Args:
-        source_id: The source id to delete the file for.
+        id: The source/filter id to delete the file for.
     """
-    rss_file = get_rss_file_path(source_id=source_id)
+    rss_file = get_rss_file_path(id=id)
     rss_file.unlink()
 
 
-async def build_rss_file(source: Source) -> Path:
+async def build_rss_file(source: Source | None = None, filter: Filter | None = None) -> Path:
     """
-    Builds a .rss file for source_id, saves it to disk.
+    Builds a .rss file, saves it to disk.
 
     Args:
         source: The source to build the rss file for.
+        filter: The filter to build the rss file for.
 
     Returns:
         The path to the rss file.
     """
-    feed = SourceFeedGenerator(source=source)
+    feed = SourceFeedGenerator(source=source, filter=filter)
     rss_file = await feed.save()
     return rss_file

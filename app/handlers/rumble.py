@@ -29,8 +29,8 @@ class RumbleHandler(ServiceHandler):
     SERVICE_NAME = "Rumble"
     COLOR = "#85c742"
     USE_PROXY = False
-    REFRESH_INTERVAL_HOURS = 48
-    REFRESH_RECENT_DAYS = 21
+    REFRESH_UPDATE_INTERVAL_HOURS = 24 * 30
+    REFRESH_RELEASED_RECENT_DAYS = 90
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]

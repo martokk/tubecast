@@ -79,14 +79,14 @@ async def get_source_info_dict(
 
 
 async def get_source_from_source_info_dict(
-    source_info_dict: dict[str, Any], user_id: str
+    source_info_dict: dict[str, Any], created_by_user_id: str
 ) -> SourceCreate:
     """
     Get a `Source` object from a source_info_dict.
 
     Parameters:
         source_info_dict (dict): The source_info_dict.
-        user_id (str): user_id of authenticated user.
+        created_by (str): user_id of authenticated user.
 
     Returns:
         SourceCreate: The `SourceCreate` object.
@@ -94,7 +94,7 @@ async def get_source_from_source_info_dict(
     handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
     source_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
     return SourceCreate(
-        created_by=user_id,
+        created_by=created_by_user_id,
         **handler.map_source_info_dict_to_source_dict(
             source_info_dict=source_info_dict, source_videos=source_videos
         ),
@@ -214,7 +214,7 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
         url=db_source.url,
     )
     _source = await get_source_from_source_info_dict(
-        source_info_dict=source_info_dict, user_id=db_source.created_by
+        source_info_dict=source_info_dict, created_by_user_id=db_source.created_by
     )
     db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
@@ -247,8 +247,10 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
         if not logo_path.exists():
             create_logo_from_text(text=db_source.name, file_path=logo_path)
 
-    # Build RSS File
+    # Build RSS Files
     await build_rss_file(source=db_source)
+    for filter in db_source.filters:
+        await build_rss_file(filter=filter)
 
     success_message = (
         f"Completed fetching Source(id='{db_source.id}', name='{db_source.name}'). "

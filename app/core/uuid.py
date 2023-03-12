@@ -30,3 +30,16 @@ def generate_uuid_from_string(string: str) -> str:
         str: First 8 characters of UUID generated.
     """
     return shortuuid.uuid(string)[:8]
+
+
+def generate_uuid_random() -> str:
+    """
+    Generates a random UUID and returns the first 8 characters of the UUID.
+
+    Args:
+        None
+
+    Returns:
+        str: First 8 characters of UUID generated.
+    """
+    return shortuuid.uuid()[:8]

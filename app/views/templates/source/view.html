@@ -18,9 +18,7 @@
             <div class="col-auto small p-1">
                 <a href="/source/{{ source.id }}/edit" class="text-decoration-none  text-muted me-3"><i
                         class="fas fa-pencil-alt me-2"></i>Edit</a>
-                <a href="/filter/create?source={{ source.id }}" class="text-decoration-none text-muted me-3"><i
-                        class="fas fa-plus-circle me-2"></i>Filter</a>
-                <a href="/feed/{{ source.id }}" class="text-decoration-none text-muted me-3"><i
+                <a href="{{ source.feed_url }}" class="text-decoration-none text-muted me-3"><i
                         class="fas fa-rss me-2"></i>Feed</a>
                 <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}"
                     class="text-decoration-none text-muted me-3"><i class="fas fa-plus-circle me-2"></i>PocketCast</a>
@@ -53,24 +51,130 @@
                     <div class="col-12 mt-1">{{ source.description | safe }}</div>
                 </div>
 
-                <div class="row mt-3">
-                    <div class="col small text-muted">
-                        <em>Source ({{ source.id }}) created by {{ source.created_user.username }}.</em>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
+
+
+
+
+    <!-- Filters and Info -->
+    <div class="row">
+
+        <!-- Filters Card -->
+        <div class="col-12 col-lg-6 my-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Filters</strong>
+                </div>
+
+
+
+                <div class="card border-0">
+                    <div class="card-body">
+                        {% if source.filters %}
+                        <ul class="list-group list-group-flush">
+                            {% for filter in source.filters %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="/filter/{{ filter.id }}" class="text-decoration-none text-white">
+                                    {{ filter.name }}
+                                </a>
+                                <div class="btn-group" role="group">
+                                    <a href="/filter/{{ filter.id }}/edit" class="btn btn-outline-secondary btn-sm me-2"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-secondary btn-sm me-2"
+                                        onclick="confirmDelete('/filter/{{ filter.id }}/delete', 'Filter: {{ filter.name }}')"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    <a href="{{ filter.feed_url }}" class="btn btn-outline-secondary btn-sm me-2"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Feed">
+                                        <i class="fas fa-rss"></i>
+                                    </a>
+                                    <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ filter.feed_url }}"
+                                        class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+                                        data-bs-placement="top" title="PocketCast">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </a>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No filters found.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+
+                <div class="card-header">
+                    <strong>New Filter</strong>
+                </div>
+
+                <div class="card-body">
+                    <!-- Add Criteria Card -->
+                    <div class="row">
+                        <form method="POST" class="form-group" action="/filter/create?source_id={{ source.id }}">
+                            <div class="d-flex">
+
+                                <div class="col-10 form-group pe-1">
+                                    <input type="text" class="form-control" id="nameInput" name="name"
+                                        placeholder="Filter Name">
+                                </div>
+
+                                <div class="col-2 form-group text-end ">
+                                    <button type="submit" class="btn btn-primary w-100">Create</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        {% if current_user.is_superuser %}
+        <div class="col-12 col-lg-6 my-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Info</strong>
+                </div>
+
+                <div class="card-body text-muted">
+                    <ul>
+                        {% if current_user.is_superuser %}
+
+                        <li>
+                            Source ({{ source.id }}) created by user {{ source.created_user.id }} {% if
+                            current_user.is_superuser %}({{ source.created_user.username }}){% endif %}.
+                        </li>
+
+                        <li>
+                            ({{ source.videos | length }}) Videos. ({{ source.filters | length }}) Filters.
+                        </li>
+
+                        {% endif %}
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
 </div>
-
-
 
 
 <div class="container">
     {% for video in source.videos_sorted()[0:30] %}
     <div class="row border-top py-1">
-
-
 
         <div class="d-flex align-items-top">
             <div class="me-3 d-flex align-items-center">
@@ -81,7 +185,7 @@
                     <small><em>({{ video.released_at | humanize }})</em></small>
                 </div>
                 <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
-                        class="text-decoration-none text-white">{{ video.title }}</a></h5>
+                        class="text-decoration-none text-muted">{{ video.title }}</a></h5>
                 {% if not video.media_url %}
                 <div class="small text-danger fw-bold">No media URL available</div>
                 {% endif %}
@@ -110,12 +214,6 @@
             {% endfor %}
         </div>
 
-
-
-
-
-
-
         <script>
             function confirmDelete(url, source_name) {
                 if (confirm("Are you sure you want to delete '" + source_name + "' source?")) {
@@ -123,7 +221,5 @@
                 }
             }
         </script>
-
-
 
         {% endblock content %}
