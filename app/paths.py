@@ -10,12 +10,12 @@ DATA_PATH = BASE_PATH / "data"
 VIEWS_PATH = BASE_PATH / "views"
 
 # Views Folder
-STATIC_PATH = VIEWS_PATH / "static"
 EMAIL_TEMPLATES_PATH = VIEWS_PATH / "email-templates" / "src"
 TEMPLATES_PATH = VIEWS_PATH / "templates"
 
 # Data Folder
 LOGS_PATH = DATA_PATH / "logs"
+STATIC_PATH = DATA_PATH / "static"
 CACHE_PATH = DATA_PATH / "cache"
 FEEDS_PATH = DATA_PATH / "feed"
 EXPORTS_PATH = DATA_PATH / "exports"
