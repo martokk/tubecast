@@ -48,12 +48,9 @@ async def get_video_info_dict(
     return await info_dict
 
 
-def get_video_from_video_info_dict(
-    video_info_dict: dict[str, Any], source_id: str
-) -> models.VideoCreate:
+def get_video_from_video_info_dict(video_info_dict: dict[str, Any]) -> models.VideoCreate:
     handler = get_handler_from_url(url=video_info_dict["webpage_url"])
     video_dict = handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=video_info_dict)
-    video_dict["source_id"] = source_id
     return models.VideoCreate(**video_dict)
 
 
@@ -84,11 +81,10 @@ async def fetch_video(video_id: str, db: Session) -> models.Video:
     """
     # Get the video from the database
     db_video = await crud.video.get(id=video_id, db=db)
-    source_id = db_video.source_id
 
     # Fetch video information from yt-dlp and create the video object
     video_info_dict = await get_video_info_dict(url=db_video.url)
-    _video = get_video_from_video_info_dict(video_info_dict=video_info_dict, source_id=source_id)
+    _video = get_video_from_video_info_dict(video_info_dict=video_info_dict)
 
     # Update the video in the database and return it
     return await crud.video.update(obj_in=models.VideoUpdate(**_video.dict()), id=_video.id, db=db)
@@ -179,17 +175,17 @@ def get_videos_needing_refresh(videos: list[models.Video]) -> list[models.Video]
     videos_needing_refresh = []
     for video in videos:
         handler = get_handler_from_string(handler_string=video.handler)
-        refresh_interval_age_threshold = datetime.utcnow() - timedelta(
-            hours=handler.REFRESH_INTERVAL_HOURS
+        updated_at_threshold = datetime.utcnow() - timedelta(
+            hours=handler.REFRESH_UPDATE_INTERVAL_HOURS
         )
-        refresh_recent_days_threshold = datetime.utcnow() - timedelta(
-            days=handler.REFRESH_RECENT_DAYS
+        released_recently_threshold = datetime.utcnow() - timedelta(
+            days=handler.REFRESH_RELEASED_RECENT_DAYS
         )
 
         missing_required_data = video.media_url is None or video.released_at is None
-        expired_data = video.updated_at < refresh_interval_age_threshold
+        expired_data = video.updated_at < updated_at_threshold
         recently_released = (
-            True if not video.released_at else video.released_at > refresh_recent_days_threshold
+            True if not video.released_at else video.released_at > released_recently_threshold
         )
 
         needs_refresh = expired_data and recently_released

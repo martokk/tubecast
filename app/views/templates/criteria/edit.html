@@ -1,0 +1,157 @@
+{% extends "base/base.html" %}
+
+{% block title %}Edit Criteria{% endblock %}
+
+{% block content %}
+
+<div class="container my-0">
+
+    <!-- Filter Name and Source -->
+    <div class="row d-flex flex-wrap ">
+
+        <!-- Filter Actions -->
+        <div class="col-12 col-lg-5 small ms-auto text-end mb-3">
+            <div class="col">
+                <a href="#" class="text-decoration-none text-muted me-3"
+                    onclick="confirmDelete('/filter/{{ criteria.filter.id }}/criteria/{{ criteria.id }}/delete', 'Criteria: {{ criteria.id }}')">
+                    <i class="fas fa-trash me-2"></i>Delete
+                </a>
+            </div>
+        </div>
+
+        <!-- Filter Source -->
+        <div class="row align-items-center">
+            <div class="col-auto col-sm-auto">
+                <a href="/source/{{ criteria.filter.source.id }}" class="text-decoration-none text-muted">{{
+                    criteria.filter.source.name
+                    }}</a>
+            </div>
+            <div class="col-auto col-sm-auto small">
+                <span class="badge {{ criteria.filter.source.service | service_badge_color }}">{{
+                    criteria.filter.source.service
+                    }}</span>
+            </div>
+        </div>
+
+        <!-- Filter Name -->
+        <div class="col-12">
+            <a href="/filter/{{ criteria.filter.id }}" class="text-decoration-none">
+                <h4 class="text-muted">Filter: {{ criteria.filter.name }}</h4>
+            </a>
+            <h5 class="mt-0">Criteria: '{{ criteria.name }}'</h5>
+        </div>
+
+    </div>
+
+
+    <!-- Add Criteria Card -->
+    <div class="justify-content-center">
+        <div class="card my-3">
+            <div class="card-header">
+                <strong>Edit Criteria:</strong>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="justify-content-center"
+                    action="/filter/{{ criteria.filter.id }}/criteria/{{ criteria.id }}/edit">
+                    <div class="d-flex flex-wrap justify-content-center">
+                        <div class="col-lg-2 col-12 form-group m-2">
+                            <select class="form-control" id="fieldInput" name="field">
+                                <option value="{{ criteria.field }}">{{ criteria.field}}</option>
+                                {% for select in criteria_field_select %}
+                                <option value="{{ select }}">{{ select }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-12 form-group m-2">
+                            <select class="form-control" id="operatorInput" name="operator">
+                                <option value="{{ criteria.operator }}">{{ criteria.operator}}</option>
+                                {% for select in criteria_operator_select %}
+                                <option value="{{ select }}">{{ select }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-2 col-12 form-group m-2">
+                            <input type="text" class="form-control" id="valueInput" name="value"
+                                value="{{ criteria.value }}">
+                        </div>
+                        <div class="col-lg-2 col-12 form-group m-2">
+                            <select class="form-control" id="uomInput" name="unit_of_measure">
+                                <option value="{{ criteria.unit_of_measure }}">{{ criteria.unit_of_measure}}</option>
+                                {% for select in criteria_uom_select %}
+                                <option value="{{ select }}">{{ select }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-auto col-12 form-group m-2 text-end">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- jinja-js -->
+<script type="text/javascript">
+    // Define the options for each field
+    const fieldOperatorOptions = {
+        "released": {{ created_release_operators_select | tojson }},
+    "created": { { created_release_operators_select | tojson } },
+    "duration": { { duration_operators_select | tojson } },
+    "keyword": { { keyword_operators_select | tojson } }
+    };
+    const fieldUOMOptions = {
+        "released": ["hours", "days"],
+        "created": ["hours", "days"],
+        "duration": ["seconds", "minutes"],
+        "keyword": ["keyword"]
+    };
+
+    function updateOperatorAndUOM() {
+        // Get the selected field value
+        const field = $("#fieldInput").val();
+        const operator = $("#fieldOperator").val();
+        const uom = $("#uomInput").val();
+
+        // Get the corresponding operator options
+        const operatorOptions = fieldOperatorOptions[field];
+        const uOMOptions = fieldUOMOptions[field];
+
+        // Add the Operator options
+        $("#operatorInput").empty();
+        for (const option of operatorOptions) {
+            const isSelected = (option === operator) ? 'selected' : '';
+            $("#operatorInput").append(`<option value="${option}" ${isSelected}>${option}</option>`);
+        }
+
+        // Add the UOM options
+        $("#uomInput").empty();
+        for (const option of uOMOptions) {
+            const isSelected = (option === uom) ? 'selected' : '';
+            $("#uomInput").append(`<option value="${option}" ${isSelected}>${option}</option>`);
+        }
+    }
+
+    // Call the updateOperatorAndUOM function on load
+    $(document).ready(function () {
+        updateOperatorAndUOM();
+    });
+
+    // When the field select is changed, call the updateOperatorAndUOM function
+    $("#fieldInput").on("change", function () {
+        updateOperatorAndUOM();
+    });
+</script>
+<script>
+    function confirmDelete(url, object_title) {
+        if (confirm("Are you sure you want to delete '" + object_title + "'?")) {
+            window.location.href = url;
+        }
+    }
+</script>
+{% endblock content %}

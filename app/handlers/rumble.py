@@ -1,18 +1,24 @@
 from typing import Any
 
 import datetime
+import re
 
 from loguru import logger as _logger
 
+from app.core.uuid import generate_uuid_from_url
+from app.handlers.exceptions import InvalidSourceUrl
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
     CustomRumbleIE,
 )
+from app.models.settings import Settings as _Settings
 from app.paths import LOG_FILE as _LOG_FILE
 from app.services.ytdlp import YDL_OPTS_BASE
 
 from .base import ServiceHandler
+
+settings = _Settings()
 
 # Main Logger
 logger = _logger.bind(name="logger")
@@ -23,15 +29,17 @@ class RumbleHandler(ServiceHandler):
     SERVICE_NAME = "Rumble"
     COLOR = "#85c742"
     USE_PROXY = False
-    REFRESH_INTERVAL_HOURS = 48
-    REFRESH_RECENT_DAYS = 21
+    REFRESH_UPDATE_INTERVAL_HOURS = 24 * 30
+    REFRESH_RELEASED_RECENT_DAYS = 90
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
 
-    def sanitize_video_url(self, url: str) -> str:
+    def sanitize_source_url(self, url: str) -> str:
         """
-        Sanitizes the url to a standard format
+        Sanitizes source urls.
+        - "@channel" and "channel/" URLs to "/channel/" URLs.
+        - "playlist" URLs to "/playlist" URLs.
 
         Args:
             url: The URL to be sanitized
@@ -39,7 +47,56 @@ class RumbleHandler(ServiceHandler):
         Returns:
             The sanitized URL.
         """
-        return super().sanitize_video_url(url=url)
+        url = self.force_source_format(url=url)
+        return super().sanitize_source_url(url=url)
+
+    def force_source_format(self, url: str) -> str:
+        """
+        Sanitizes '@channel', 'channel/', and 'playlist' source URLs.
+
+        Args:
+            url: The URL to be sanitized
+
+        Returns:
+            The sanitized URL.
+        """
+        if "/c/" in url:
+            url = self.get_channel_url_from_c_url(url=url)
+        elif "/user/" in url:
+            url = self.get_channel_url_from_user_url(url=url)
+        else:
+            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+        return url.lower()
+
+    def get_channel_url_from_c_url(self, url: str) -> str:
+        """
+        Sanitizes "/c/channel" URLs to "/c/" URLs.
+
+        Args:
+            url: The URL to be sanitized
+
+        Returns:
+            The sanitized URL.
+        """
+        match = re.search(r"(?<=\/c\/)[\w-]+", url)
+        if not match:
+            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+        return "https://www.rumble.com/c/" + match.group()
+
+    def get_channel_url_from_user_url(self, url: str) -> str:
+        """
+        Sanitizes "/user/username" URLs to "/user/" URLs.
+
+        Args:
+            url: The URL to be sanitized
+
+        Returns:
+            The sanitized URL.
+        """
+        match = re.search(r"(?<=\/user\/)[\w-]+", url)
+        if not match:
+            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+        return "https://www.rumble.com/user/" + match.group()
 
     def get_source_ydl_opts(
         self, *, extract_flat: bool, playlistreverse: bool, playlistend: int, dateafter: str
@@ -77,6 +134,27 @@ class RumbleHandler(ServiceHandler):
             "allowed_extractors": self.YDL_OPT_ALLOWED_EXTRACTORS,
         }
 
+    async def get_source_info_dict_kwargs(self, url: str) -> dict[str, Any]:
+        """
+
+
+        Args:
+            source_id: The ID of the source.
+            url: The URL of the source.
+
+        Returns:
+            A dictionary containing the kwargs for the source info dict.
+        """
+        if "/c/" in url or "/user/" in url:
+            return {
+                "extract_flat": True,
+                "playlistreverse": True,
+                "playlistend": 50,
+                "dateafter": "now-20y",
+            }
+
+        raise InvalidSourceUrl(f"Source info dict kwargs not found for url: ({str(url)})")
+
     def map_source_info_dict_to_source_dict(
         self, source_info_dict: dict[str, Any], source_videos: list[Any]
     ) -> dict[str, Any]:
@@ -90,11 +168,15 @@ class RumbleHandler(ServiceHandler):
         Returns:
             A Source object.
         """
+        logo = source_info_dict.get("thumbnail")
+        if not logo:
+            source_id = generate_uuid_from_url(url=source_info_dict["url"])
+            logo = f"/static/logos/{source_id}.png"
         return {
             "url": source_info_dict["url"],
             "name": source_info_dict["title"],
             "author": source_info_dict["uploader"],
-            "logo": source_info_dict["thumbnail"],
+            "logo": logo,
             "ordered_by": "release",
             "description": f"{source_info_dict.get('description', source_info_dict['uploader'])}",
             "videos": source_videos,

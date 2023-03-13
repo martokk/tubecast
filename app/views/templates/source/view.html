@@ -7,12 +7,31 @@
 {% block content %}
 <div class="container my-5">
     <div>
-        <h3 class="d-flex align-items-center">
-            <a href="{{ source.url }}" class="text-decoration-none text-white">
-                {{ source.name }}
-                <i class="fas fa-external-link-alt ms-2 fa-sm"></i>
-            </a>
-        </h3>
+        <div class="row justify-content-between align-items-center">
+            <h4 class="col-auto">
+                <a href="{{ source.url }}" class="text-decoration-none text-white">
+                    {{ source.name }}
+                    <span class="small mx-1"> <i class="fas fa-external-link-alt fa-sm small"></i>
+                    </span>
+                </a>
+            </h4>
+            <div class="col-auto small p-1">
+                <a href="/source/{{ source.id }}/edit" class="text-decoration-none  text-muted me-3"><i
+                        class="fas fa-pencil-alt me-2"></i>Edit</a>
+                <a href="{{ source.feed_url }}" class="text-decoration-none text-muted me-3"><i
+                        class="fas fa-rss me-2"></i>Feed</a>
+                <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ source.feed_url }}"
+                    class="text-decoration-none text-muted me-3"><i class="fas fa-plus-circle me-2"></i>PocketCast</a>
+                {% if current_user.is_superuser %}
+                <a href="/source/{{ source.id }}/fetch" class="text-decoration-none text-muted me-3"><i
+                        class="fas fa-arrow-circle-right me-2"></i>Fetch</a>
+                {% endif %}
+                <a href="#" class="text-decoration-none text-muted me-3"
+                    onclick="confirmDelete('/source/{{ source.id }}/delete', '{{ source.name }}')"><i
+                        class="fas fa-trash me-2"></i>
+                    Delete</a>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-auto">
@@ -32,54 +51,175 @@
                     <div class="col-12 mt-1">{{ source.description | safe }}</div>
                 </div>
 
-                <div class="row mt-3">
-                    <div class="col small text-muted">
-                        <em>Source ({{ source.id }}) created by {{ source.created_user.username }}.</em>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <!-- Filters and Info -->
+    <div class="row">
+
+        <!-- Filters Card -->
+        <div class="col-12 col-lg-6 my-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Filters</strong>
+                </div>
+
+
+
+                <div class="card border-0">
+                    <div class="card-body">
+                        {% if source.filters %}
+                        <ul class="list-group list-group-flush">
+                            {% for filter in source.filters %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <a href="/filter/{{ filter.id }}" class="text-decoration-none text-white">
+                                    {{ filter.name }}
+                                </a>
+                                <div class="btn-group" role="group">
+                                    <a href="/filter/{{ filter.id }}/edit" class="btn btn-outline-secondary btn-sm me-2"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-secondary btn-sm me-2"
+                                        onclick="confirmDelete('/filter/{{ filter.id }}/delete', 'Filter: {{ filter.name }}')"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    <a href="{{ filter.feed_url }}" class="btn btn-outline-secondary btn-sm me-2"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Feed">
+                                        <i class="fas fa-rss"></i>
+                                    </a>
+                                    <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ filter.feed_url }}"
+                                        class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
+                                        data-bs-placement="top" title="PocketCast">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </a>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No filters found.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+
+                <div class="card-header">
+                    <strong>New Filter</strong>
+                </div>
+
+                <div class="card-body">
+                    <!-- Add Criteria Card -->
+                    <div class="row">
+                        <form method="POST" class="form-group" action="/filter/create?source_id={{ source.id }}">
+                            <div class="d-flex">
+
+                                <div class="col-10 form-group pe-1">
+                                    <input type="text" class="form-control" id="nameInput" name="name"
+                                        placeholder="Filter Name">
+                                </div>
+
+                                <div class="col-2 form-group text-end ">
+                                    <button type="submit" class="btn btn-primary w-100">Create</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
             </div>
-
         </div>
+
+        <!-- Info Card -->
+        {% if current_user.is_superuser %}
+        <div class="col-12 col-lg-6 my-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <strong>Info</strong>
+                </div>
+
+                <div class="card-body text-muted">
+                    <ul>
+                        {% if current_user.is_superuser %}
+
+                        <li>
+                            Source ({{ source.id }}) created by user {{ source.created_user.id }} {% if
+                            current_user.is_superuser %}({{ source.created_user.username }}){% endif %}.
+                        </li>
+
+                        <li>
+                            ({{ source.videos | length }}) Videos. ({{ source.filters | length }}) Filters.
+                        </li>
+
+                        {% endif %}
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+        {% endif %}
+
     </div>
+
 </div>
 
 
-
 <div class="container">
-    {% for video in source.videos | sort(attribute='released_at') | reverse %}
-    <div class="row border-top py-3">
-        <div class="col">
-            <div class="small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
-                <small><em>({{ video.released_at | humanize }})</em></small>
-            </div>
-            <h5 class="mb-0"><a href="/video/{{ video.id }}" class="text-decoration-none text-white">{{ video.title
-                    }}</a></h5>
-            {% if not video.media_url %}
-            <div class="small text-danger fw-bold">No media URL available</div>
-            {% endif %}
+    {% for video in source.videos_sorted()[0:30] %}
+    <div class="row border-top py-1">
 
-            <div class="">
-                {% if video.duration %}
-                <div class="small">{{ (video.duration / 60) | int }} minutes.</div>
+        <div class="d-flex align-items-top">
+            <div class="me-3 d-flex align-items-center">
+                <img src="{{ video.thumbnail }}" class="cropped-image" alt="" height="90" width="125">
+            </div>
+            <div class="col">
+                <div class="col-12 small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
+                    <small><em>({{ video.released_at | humanize }})</em></small>
+                </div>
+                <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
+                        class="text-decoration-none text-muted">{{ video.title }}</a></h5>
+                {% if not video.media_url %}
+                <div class="small text-danger fw-bold">No media URL available</div>
                 {% endif %}
-            </div>
-
-            <div class="text-end">
-                {% if video.handler == "YoutubeHandler" %}
-                <div class="{{ video.updated_at | humanize_color_class_youtube }} small">
-                    {% elif video.handler == "RumbleHandler" %}
-                    <div class="{{ video.updated_at | humanize_color_class_rumble }} small">
-                        {% else %}
-                        <div class="{{ video.updated_at | humanize_color_class_youtube }} small">
-
-                            {% endif %}
-                            <em>Updated: {{ video.updated_at | humanize }}</em>
+                <div class="">
+                    {% if video.duration %}
+                    <div class="small">{{ (video.duration / 60) | int }} minutes.</div>
+                    {% endif %}
+                </div>
+                {% if current_user.is_superuser %}
+                <div class="text-end small ms-auto">
+                    {% if video.handler == "YoutubeHandler" %}
+                    <div class="{{ video.updated_at | humanize_color_class_youtube }} small ms-auto">
+                        {% elif video.handler == "RumbleHandler" %}
+                        <div class="{{ video.updated_at | humanize_color_class_rumble }} small ms-auto">
+                            {% else %}
+                            <div class="{{ video.updated_at | humanize_color_class_youtube }} small ms-auto">
+                                {% endif %}
+                                <em>Updated: {{ video.updated_at | humanize }}</em>
+                            </div>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+
             {% endfor %}
         </div>
+
+        <script>
+            function confirmDelete(url, source_name) {
+                if (confirm("Are you sure you want to delete '" + source_name + "' source?")) {
+                    window.location.href = url;
+                }
+            }
+        </script>
 
         {% endblock content %}

@@ -1,10 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
 from app.handlers.exceptions import HandlerNotFoundError
-from app.services.source import fetch_source
+from app.services.feed import get_rss_file
+from app.services.source import fetch_all_sources, fetch_source
+from app.services.ytdlp import PlaylistNotFoundError
 from app.views import deps, templates
 
 router = APIRouter()
@@ -32,10 +34,14 @@ async def list_sources(
     # Get alerts dict from cookies
     alerts = models.Alerts().from_cookies(request.cookies)
 
-    sources = await crud.source.get_multi(db=db, created_by=current_user.id)
     return templates.TemplateResponse(
         "source/list.html",
-        {"request": request, "sources": sources, "current_user": current_user, "alerts": alerts},
+        {
+            "request": request,
+            "sources": current_user.sources,
+            "current_user": current_user,
+            "alerts": alerts,
+        },
     )
 
 
@@ -90,11 +96,17 @@ async def view_source(
     Returns:
         Response: View of the source
     """
-    alerts = models.Alerts()
+    alerts = models.Alerts().from_cookies(request.cookies)
     try:
         source = await crud.source.get(db=db, id=source_id)
     except crud.RecordNotFoundError:
         alerts.danger.append("Source not found")
+        response = RedirectResponse("/sources", status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
+
+    if source not in current_user.sources and not current_user.is_superuser:
+        alerts.danger.append("You do not have access to this source")
         response = RedirectResponse("/sources", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
@@ -156,11 +168,16 @@ async def handle_create_source(
         source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Source already exists")
-        response = RedirectResponse("/sources/create", status_code=status.HTTP_302_FOUND)
+        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
     except HandlerNotFoundError:
         alerts.danger.append("Handler not found for this url.")
+        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
+    except PlaylistNotFoundError as e:
+        alerts.danger.append(str(e))
         response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
@@ -172,7 +189,7 @@ async def handle_create_source(
         db=db,
     )
 
-    alerts.success.append("Source successfully created")
+    alerts.success.append(f"{source.service.title()} source '{source.name}' successfully created.")
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
@@ -185,7 +202,7 @@ async def edit_source(
     source_id: str,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
-        deps.get_current_active_user
+        deps.get_current_active_superuser
     ),
 ) -> Response:
     """
@@ -256,7 +273,7 @@ async def handle_edit_source(
         response.headers["Method"] = "GET"
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
-    alerts.success.append("Source updated")
+    alerts.success.append(f"Source '{new_source.name}' updated")
     return templates.TemplateResponse(
         "source/edit.html",
         {"request": request, "source": new_source, "current_user": current_user, "alerts": alerts},
@@ -283,14 +300,23 @@ async def delete_source(
         Response: Form to create a new source
     """
     alerts = models.Alerts()
-    try:
-        await crud.source.remove(db=db, id=source_id)
-        alerts.success.append("Source deleted")
-    except crud.RecordNotFoundError:
-        alerts.danger.append("Source not found")
-    except crud.DeleteError:
-        alerts.danger.append("Error deleting source")
 
+    # Remove from user's sources
+    source = await crud.source.get(db=db, id=source_id)
+    await crud.user.remove_source(db=db, user_id=current_user.id, source=source)
+    alerts.success.append("Source removed from user.")
+
+    # Remove source if no users
+    if len(source.users) == 0:
+        try:
+            await crud.source.remove(db=db, id=source_id)
+            alerts.success.append("Source deleted")
+        except crud.RecordNotFoundError:
+            alerts.danger.append("Source not found")
+        except crud.DeleteError:
+            alerts.danger.append("Error deleting source")
+
+    # Redirect to sources page
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
     return response
@@ -320,18 +346,67 @@ async def fetch_source_page(
 
     if not current_user.is_superuser:
         alerts.danger.append("You are not authorized to do that")
+    elif not source:
+        alerts.danger.append("Source not found")
     else:
-        if not source:
-            alerts.danger.append("Source not found")
-        else:
-            # Fetch the source videos in the background
-            background_tasks.add_task(
-                fetch_source,
-                id=source_id,
-                db=db,
-            )
-            alerts.success.append(f"Fetching source ('{source.name}')")
+        await fetch_source(db=db, id=source_id)
+        alerts.success.append(f"Source '{source.name}' was fetched.")
 
-    response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(
+        url=f"/source/{source.id}" if source else "/sources", status_code=status.HTTP_303_SEE_OTHER
+    )
     response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
     return response
+
+
+@router.get("/sources/fetch", status_code=status.HTTP_202_ACCEPTED)
+async def fetch_all_source_page(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Response:
+    """
+    Fetches new data from yt-dlp and updates a source on the server.
+
+    Args:
+        db(Session): The database session
+        background_tasks: The background tasks to run.
+        current_user: The current superuser.
+
+    Returns:
+        Response: Redirects to the source page.
+    """
+    alerts = models.Alerts()
+    if not current_user.is_superuser:
+        alerts.danger.append("You are not authorized to do that")
+    else:
+        background_tasks.add_task(fetch_all_sources, db=db)
+        alerts.success.append(f"Fetching all sources...")
+
+    response = RedirectResponse(url=f"/sources", status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="alerts", value=alerts.json(), max_age=5, httponly=True)
+    return response
+
+
+@router.get("/source/{source_id}/feed", response_class=HTMLResponse)
+async def get_rss(source_id: str) -> Response:
+    """
+    Gets a rss file for source_id and returns it as a Response
+
+    Args:
+        source_id(str): The source_id of the source.
+
+    Returns:
+        Response: The rss file as a Response.
+
+    Raises:
+        HTTPException: If the rss file is not found.
+    """
+    try:
+        rss_file = await get_rss_file(id=source_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+
+    # Serve RSS File as a Response
+    content = rss_file.read_text()
+    return Response(content)

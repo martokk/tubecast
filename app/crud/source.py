@@ -1,23 +1,34 @@
 from typing import Any
 
+from loguru import logger as _logger
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
-from app import crud, logger, models, settings
+from app import crud, handlers, models
 from app.crud.base import BaseCRUD
-from app.models.source import generate_source_id_from_url
+from app.models.criteria import CriteriaField, CriteriaOperator, CriteriaUnitOfMeasure
+from app.models.source_video_link import SourceOrderBy
 from app.services.feed import delete_rss_file
 from app.services.source import get_source_from_source_info_dict, get_source_info_dict
+
+logger = _logger.bind(name="logger")
 
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):
     async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
         if source_id := kwargs.get("id"):
+
+            #
+
+            # Delete RSS file
             try:
-                await delete_rss_file(source_id=source_id)
+                await delete_rss_file(id=source_id)
             except FileNotFoundError as e:
                 logger.error(e)
-        return await super().remove(db, *args, **kwargs)
+
+            # Delete source
+            return await super().remove(db, *args, **kwargs)
+        raise ValueError("No source id provided")
 
     async def create_source_from_url(self, db: Session, url: str, user_id: str) -> models.Source:
         """
@@ -34,30 +45,115 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         Raises:
             RecordAlreadyExistsError: If a source already exists for the given URL.
         """
-        source_id = await generate_source_id_from_url(url=url)
+        handler = handlers.get_handler_from_url(url=url)
+        url = handler.sanitize_source_url(url=url)
+        source_id = await models.source.generate_source_id_from_url(url=url)
 
         # Check if the source already exists
         db_source = await self.get_or_none(id=source_id, db=db)
-        if db_source:
-            raise crud.RecordAlreadyExistsError("Record already exists for url.")
+        if not db_source:
+            # Fetch source information from yt-dlp and create the source object
+            source_info_dict = await get_source_info_dict(
+                source_id=source_id, url=url, playlistend=100, dateafter="now-20y"
+            )
 
-        # Fetch source information from yt-dlp and create the source object
-        source_info_dict = await get_source_info_dict(
-            source_id=source_id,
-            url=url,
-            extract_flat=True,
-            playlistreverse=True,
-            playlistend=settings.BUILD_FEED_RECENT_VIDEOS,
-            dateafter=settings.BUILD_FEED_DATEAFTER,
-        )
-        _source = await get_source_from_source_info_dict(
-            source_info_dict=source_info_dict, user_id=user_id
-        )
+            _source = await get_source_from_source_info_dict(
+                source_info_dict=source_info_dict, created_by_user_id=user_id
+            )
 
-        # Save the source to the database
-        db_source = await self.create(obj_in=_source, db=db)
-        logger.success(f"Created source {_source.id} from url {url}")
+            # Save the source to the database
+            db_source = await self.create(obj_in=_source, db=db)
+            logger.success(f"Created source {_source.id} from url {url}")
+
+        # Add the Source to the user's Sources
+        await crud.user.add_source(db=db, user_id=user_id, source=db_source)
+
+        # Create default filters ("shorts", "regular", "podcasts")
+        await self.add_default_filters(db=db, source=db_source, user_id=user_id)
+
         return db_source
+
+    async def add_default_filters(self, db: Session, source: models.Source, user_id: str) -> None:
+        """
+        Add default filters to a source.
+
+        Args:
+            db (Session): The database session.
+            source (models.Source): The source to add the default filters to.
+        """
+
+        # Filter: Shorts
+        filter_shorts = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="Shorts",
+                source_id=source.id,
+                ordered_by=SourceOrderBy.RELEASED_AT.value,
+                created_by=user_id,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_shorts.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.SHORTER_THAN.value,
+                value="90",
+                unit_of_measure=CriteriaUnitOfMeasure.SECONDS.value,
+            ),
+        )
+
+        # Filter: Regular Videos
+        filter_regular = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="Regular Videos",
+                source_id=source.id,
+                ordered_by=SourceOrderBy.RELEASED_AT.value,
+                created_by=user_id,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_regular.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.LONGER_THAN.value,
+                value="90",
+                unit_of_measure=CriteriaUnitOfMeasure.SECONDS.value,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_regular.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.SHORTER_THAN.value,
+                value="35",
+                unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
+            ),
+        )
+
+        # Filter: Podcasts
+        filter_podcasts = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="Podcasts",
+                source_id=source.id,
+                ordered_by=SourceOrderBy.RELEASED_AT.value,
+                created_by=user_id,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_podcasts.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.LONGER_THAN.value,
+                value="35",
+                unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
+            ),
+        )
 
 
 source = SourceCRUD(models.Source)

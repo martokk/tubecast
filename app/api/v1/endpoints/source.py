@@ -1,8 +1,10 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
 from app.api import deps
+from app.services.feed import build_rss_file, delete_rss_file
 from app.services.source import fetch_all_sources, fetch_source
 
 router = APIRouter()
@@ -76,7 +78,7 @@ async def get(
     """
     source = await model_crud.get_or_none(id=id, db=db)
     if source:
-        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source in current_user.sources:
             return source
 
     elif crud.user.is_superuser(user_=current_user):
@@ -136,8 +138,8 @@ async def get_videos_from_source(
         HTTPException: if user is not superuser and object does not belong to user.
     """
     source = await crud.source.get(db=db, id=id)
-    if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
-        return await crud.video.get_multi(db=db, source_id=id, skip=skip, limit=limit)
+    if crud.user.is_superuser(user_=current_user) or source in current_user.sources:
+        return source.videos
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
@@ -166,7 +168,7 @@ async def update(
     """
     source = await model_crud.get_or_none(id=id, db=db)
     if source:
-        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source in current_user.sources:
             return await model_crud.update(db=db, obj_in=obj_in, id=id)
 
     elif crud.user.is_superuser(user_=current_user):
@@ -198,7 +200,7 @@ async def delete(
 
     source = await model_crud.get_or_none(id=id, db=db)
     if source:
-        if crud.user.is_superuser(user_=current_user) or source.created_by == current_user.id:
+        if crud.user.is_superuser(user_=current_user) or source in current_user.sources:
             return await model_crud.remove(id=id, db=db)
 
     elif crud.user.is_superuser(user_=current_user):
@@ -265,3 +267,61 @@ async def fetch_all(
     # Fetch the source videos in the background
     background_tasks.add_task(fetch_all_sources, db=db)
     return models.Msg(msg="Fetching all sources in the background.")
+
+
+@router.put("/{id}/feed", response_class=HTMLResponse)
+async def build_rss(
+    id: str,
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> Response:
+    """
+    Builds a new rss file for source_id and returns it as a Response.
+
+    Args:
+        id(str): The source_id of the source.
+        db(Session): The database session.
+
+    Returns:
+        Response: The rss file as a Response.
+
+    Raises:
+        HTTPException: If the rss file is not found.
+    """
+    try:
+        source = await crud.source.get(id=id, db=db)
+    except crud.RecordNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+
+    rss_file = await build_rss_file(source=source)
+
+    # Serve RSS File as a Response
+    content = rss_file.read_text()
+    return Response(content)
+
+
+@router.delete("/{id}/feed", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_rss(
+    id: str,
+    db: Session = Depends(deps.get_db),
+    _: models.User = Depends(deps.get_current_active_superuser),
+) -> None:
+    """
+    Deletes the .rss file for a feed.
+
+    Args:
+        id(str): The source_id of the source.
+        db(Session): The database session.
+        _: models.User: The current active superuser.
+
+    Returns:
+        None: None
+
+    Raises:
+        HTTPException: If the rss file is not found.
+    """
+    try:
+        source = await crud.source.get(id=id, db=db)
+    except crud.RecordNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+    return await delete_rss_file(id=source.id)

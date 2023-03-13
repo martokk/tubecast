@@ -3,12 +3,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from app import crud, logger, settings, version
+from app import crud, logger, models, settings
 from app.api import deps
 from app.api.v1.api import api_router
 from app.core import notify
 from app.db.init_db import init_initial_data
 from app.paths import FEEDS_PATH, STATIC_PATH
+from app.services.import_export import export_sources, import_sources
 from app.services.source import fetch_all_sources
 from app.services.video import refresh_all_videos
 from app.views.router import views_router
@@ -41,7 +42,18 @@ async def on_startup(db: Session = next(deps.get_db())) -> None:
     logger.info("--- Start FastAPI ---")
     logger.debug("Starting FastAPI App...")
     if settings.NOTIFY_ON_START:
-        await notify.notify(text=f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started.")
+        total_users = await crud.user.count(db=db)
+        total_sources = await crud.source.count(db=db)
+        total_videos = await crud.video.count(db=db)
+
+        await notify.notify(
+            text=(
+                f"{settings.PROJECT_NAME}('{settings.ENV_NAME}') started.\n\n"
+                f"Total Users: {total_users}\n"
+                f"Total Sources: {total_sources}\n"
+                f"Total Videos: {total_videos}\n"
+            )
+        )
 
     await init_initial_data(db=db)
 
@@ -68,3 +80,38 @@ async def repeating_refresh_videos() -> None:  # pragma: no cover
     db: Session = next(deps.get_db())
     refreshed_videos = await refresh_all_videos(db=db)
     logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")
+
+
+# @app.on_event("startup")  # type: ignore
+# async def on_startup_export(db: Session = next(deps.get_db())) -> None:
+#     """
+#     On startup, export all Sources to a YAML file.
+
+#     Args:
+#         db (Session): Database session.
+#     """
+#     await export_sources(db=db)
+
+
+# @app.on_event("startup")  # type: ignore
+# async def on_startup_import(db: Session = next(deps.get_db())) -> None:
+#     """
+#     On startup, import all Sources from a YAML file.
+
+#     Args:
+#         db (Session): Database session.
+#     """
+#     await import_sources(db=db)
+
+
+# @app.on_event("startup")  # type: ignore
+# async def on_startup_temp(db: Session = next(deps.get_db())) -> None:
+#     """
+#     TODO: DELETE THIS FUNCTION
+#     """
+#     user: models.User = await crud.user.get(db=db, username="martokk")
+
+#     sources = await crud.source.get_all(db=db)
+
+#     for source in sources:
+#         await crud.source.add_default_filters(db=db, source=source, user_id=user.id)

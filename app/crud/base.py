@@ -1,7 +1,9 @@
-from typing import Any, Generic, Type, TypeVar
+from typing import Any, Generic, TypeVar
 
+from sqlalchemy import select as sa_select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.elements import BinaryExpression
+from sqlalchemy.sql.expression import func
 from sqlmodel import Session, SQLModel, select
 
 from app.crud.exceptions import DeleteError, RecordAlreadyExistsError, RecordNotFoundError
@@ -103,7 +105,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         statement = select(self.model).filter(*args).filter_by(**kwargs).offset(skip).limit(limit)
         return db.exec(statement).fetchmany()
 
-    async def create(self, db: Session, *, obj_in: ModelCreateType) -> ModelType:
+    async def create(self, db: Session, *, obj_in: ModelCreateType, **kwargs: Any) -> ModelType:
         """
         Create a new record.
 
@@ -117,7 +119,7 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         Raises:
             RecordAlreadyExistsError: If the record already exists.
         """
-        out_obj = self.model(**obj_in.dict())
+        out_obj = self.model(**{**obj_in.dict(), **kwargs})
 
         db.add(out_obj)
         try:
@@ -184,6 +186,24 @@ class BaseCRUD(Generic[ModelType, ModelCreateType, ModelUpdateType]):
         db_obj = await self.get(db=db, *args, **kwargs)
         try:
             db.delete(db_obj)
+            db.refresh(db_obj)
             db.commit()
         except Exception as exc:
             raise DeleteError("Error while deleting") from exc
+
+    async def count(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> Any:
+        """
+        Get the total count of records for the model.
+
+        Args:
+            db (Session): The database session.
+            args: Binary expressions to filter by.
+            kwargs: Keyword arguments to filter by.
+
+        Returns:
+            A list of all records, or None if there are none.
+        """
+
+        query = sa_select(func.count()).select_from(self.model).filter(*args).filter_by(**kwargs)
+        result = db.execute(query).scalar()
+        return result

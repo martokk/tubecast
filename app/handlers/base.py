@@ -5,15 +5,19 @@ from urllib.parse import urlparse
 
 from yt_dlp.extractor.common import InfoExtractor
 
+from app.models.settings import Settings as _Settings
+from app.models.source_video_link import SourceOrderBy
 from app.services.ytdlp import YDL_OPTS_BASE
+
+settings = _Settings()
 
 
 class ServiceHandler:
     SERVICE_NAME = "Base"
     COLOR = "#333333"
     USE_PROXY = False
-    REFRESH_INTERVAL_HOURS = 24
-    REFRESH_RECENT_DAYS = 14
+    REFRESH_UPDATE_INTERVAL_HOURS = 24
+    REFRESH_RELEASED_RECENT_DAYS = 14
     DOMAINS: list[str] = []
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = []
@@ -85,6 +89,24 @@ class ServiceHandler:
         """
         return YDL_OPTS_BASE
 
+    async def get_source_info_dict_kwargs(self, url: str) -> dict[str, Any]:
+        """
+
+
+        Args:
+            source_id: The ID of the source.
+            url: The URL of the source.
+
+        Returns:
+            A dictionary containing the kwargs for the source info dict.
+        """
+        return {
+            "extract_flat": True,
+            "playlistreverse": True,
+            "playlistend": settings.BUILD_FEED_RECENT_VIDEOS,
+            "dateafter": settings.BUILD_FEED_DATEAFTER,
+        }
+
     @abstractmethod
     def map_source_info_dict_to_source_dict(
         self, source_info_dict: dict[str, Any], source_videos: list[Any]
@@ -128,3 +150,6 @@ class ServiceHandler:
         Returns:
             A `Video` dictionary created from the `entry_info_dict`.
         """
+
+    def get_ordered_by(self, url: str) -> str:
+        return str(SourceOrderBy.RELEASED_AT.value)

@@ -43,7 +43,7 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
     # Handle if the media_url is expired or missing
     handler = get_handler_from_string(handler_string=video.handler)
     refresh_interval_age_threshold = datetime.utcnow() - timedelta(
-        hours=handler.REFRESH_INTERVAL_HOURS
+        hours=handler.REFRESH_UPDATE_INTERVAL_HOURS
     )
     if not video.media_url or video.updated_at < refresh_interval_age_threshold:
         video = await fetch_video(video_id=video.id, db=db)

@@ -91,10 +91,10 @@ MOCKED_YOUTUBE_VIDEO_2: dict[str, Any] = {
 
 MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
     "id": "7hyhcvzT",
-    "url": "https://rumble.com/c/Styxhexenhammer666",
+    "url": "https://www.rumble.com/c/styxhexenhammer666",
     "name": "Styxhexenhammer666",
     "logo": "https://sp.rmbl.ws/z8/t/j/s/b/tjsba.baa.1-Styxhexenhammer666-qyv16v.png",
-    "ordered_by": "release",
+    "ordered_by": "released_at",
     "feed_url": "/feed/7hyhcvzT",
     "handler": "RumbleHandler",
     "author": "Styxhexenhammer666",
@@ -109,12 +109,12 @@ MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
 
 MOCKED_RUMBLE_SOURCE_2: dict[str, Any] = {
     "id": "mLC5c5NH",
-    "url": "https://rumble.com/c/KimIversen",
+    "url": "https://www.rumble.com/c/kimiversen",
     "name": "Kim Iversen",
     "author": "Kim Iversen",
     "logo": "https://sp.rmbl.ws/z8/k/N/n/f/kNnfa.baa-KimIversen-r6nek8.png",
     "description": "Kim Iversen's Rumble Channel",
-    "ordered_by": "release",
+    "ordered_by": "released_at",
     "feed_url": "/feed/mLC5c5NH",
     "extractor": "CustomRumbleChannel",
     "handler": "RumbleHandler",
@@ -125,14 +125,14 @@ MOCKED_RUMBLE_SOURCE_2: dict[str, Any] = {
 }
 
 MOCKED_YOUTUBE_SOURCE_1: dict[str, Any] = {
-    "id": "iQEQPfeQ",
-    "url": "https://www.youtube.com/@breakingpoints",
+    "id": "RUF4Nbzd",
+    "url": "https://www.youtube.com/channel/UCDRIjKy6eZOvKtOELtTdeUA",
     "name": "Breaking Points",
     "author": "Breaking Points",
     "logo": "https://yt3.googleusercontent.com/zdnjHL8qsI_qgm0ahVLaGg2L0-WDSMeWuSecs-I1APcEHJIq_GXNEsDzwMAwfu3jzSmdflJ_VU4=w640-fcrop64=1,32b75a57cd48a5a8-k-c0xffffffff-no-nd-rj",
     "description": "Breaking Points with Krystal and Saagar is a fearless anti-establishment Youtube show and podcast. ",
-    "ordered_by": "release",
-    "feed_url": "/feed/iQEQPfeQ",
+    "ordered_by": "released_at",
+    "feed_url": "/feed/RUF4Nbzd",
     "extractor": "YoutubeTab",
     "handler": "YoutubeHandler",
     "created_by": "ZbFPeSXW",

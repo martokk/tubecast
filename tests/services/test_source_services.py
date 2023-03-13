@@ -31,7 +31,6 @@ async def test_get_source_videos_from_source_info_dict() -> None:
     assert result_video.duration == mocked_video["duration"]
     assert result_video.thumbnail == mocked_video["thumbnail"]
     assert result_video.url == mocked_video["url"]
-    assert result_video.source_id == mocked_video["source_id"]
 
 
 async def test_get_nested_source_videos_from_source_info_dict() -> None:
@@ -55,7 +54,6 @@ async def test_get_nested_source_videos_from_source_info_dict() -> None:
     assert result_video.duration == mocked_video["duration"]
     assert result_video.thumbnail == mocked_video["thumbnail"]
     assert result_video.url == mocked_video["url"]
-    assert result_video.source_id == mocked_video["source_id"]
 
 
 async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
@@ -74,9 +72,10 @@ async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
     fetched_videos = list(fetched_source.videos)
 
     # Add video to db_source
-    await crud.video.create_video_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_VIDEO_3["url"], source_id=fetched_source.id
+    video = await crud.video.create_video_from_url(
+        db=db_with_user, url=MOCKED_RUMBLE_VIDEO_3["url"]
     )
+    fetched_source.videos.append(video)
 
     # Get db_source Videos
     source = await crud.source.get(db=db_with_user, id=fetched_source.id)

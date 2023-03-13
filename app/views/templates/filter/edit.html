@@ -1,0 +1,39 @@
+{% extends "base/base.html" %}
+
+{% block title %}Edit Filter{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title">Edit Filter</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/filter/{{ filter.id }}/edit">
+
+                <div class="form-group">
+                    <label for="nameInput">Name:</label>
+                    <input type="text" class="form-control" id="nameInput" name="name" value="{{ filter.name }}">
+                </div>
+
+                <div class="form-group mt-3">
+                    <label for="orderedByInput">Ordered By:</label>
+                    <select class="form-control" id="orderedByInput" name="ordered_by">
+                        {% for select in ordered_by_select %}
+                        <option value="{{ select }}" {% if select==filter.ordered_by %} selected{% endif %}>{{
+                            select }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

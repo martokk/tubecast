@@ -1,0 +1,38 @@
+{% extends "base/base.html" %}
+
+{% block title %}Create a New Filter{% endblock %}
+
+{% block content_header %}Create a New Filter{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+
+                <div class="form-group mt-3">
+                    <label for="nameInput">Name:</label>
+                    <input type="text" class="form-control" id="nameInput" name="name" placeholder="Enter name">
+                </div>
+
+                <div class="form-group mt-3">
+                    <label for="sourceInput">Source:</label>
+                    <input type="text" class="form-control" id="sourceInput" name="source_id" value="{{ source_id }}">
+                </div>
+
+                <div class="form-group mt-3">
+                    <label for="orderedByInput">Ordered By:</label>
+                    <input type="text" class="form-control" id="orderedByInput" name="ordered_by"
+                        placeholder="Enter ordered by">
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

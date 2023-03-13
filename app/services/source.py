@@ -5,11 +5,13 @@ import asyncio
 from loguru import logger as _logger
 from sqlmodel import Session
 
-from app import crud, handlers, logger, models, settings
+from app import crud, logger, models
 from app.handlers import get_handler_from_url
 from app.models.source import Source, SourceCreate
 from app.models.video import Video, VideoCreate
+from app.paths import LOGOS_PATH
 from app.services.feed import build_rss_file
+from app.services.logo import create_logo_from_text
 from app.services.video import get_videos_needing_refresh, refresh_videos
 from app.services.ytdlp import get_info_dict
 
@@ -19,10 +21,10 @@ fetch_logger = _logger.bind(name="fetch_logger")
 async def get_source_info_dict(
     source_id: str | None,
     url: str,
-    extract_flat: bool,
-    playlistreverse: bool,
-    playlistend: int,
-    dateafter: str,
+    extract_flat: bool | None = None,
+    playlistreverse: bool | None = None,
+    playlistend: int | None = None,
+    dateafter: str | None = None,
 ) -> dict[str, Any]:
     """
     Retrieve the info_dict from yt-dlp for a Source
@@ -30,11 +32,11 @@ async def get_source_info_dict(
     Parameters:
         source_id (Union[str, None]): An optional ID for the source. If not provided,
             a unique ID will be generated from the URL.
-        url (str): The URL of the Source
-        extract_flat (bool): Whether to extract a flat list of videos in the playlist.
-        playlistreverse (bool): Whether to reverse the playlist.
-        playlistend (int): The index of the last video to extract.
-        dateafter (str): The date after which to extract videos.
+        url (str | None): The URL of the Source
+        extract_flat (bool | None): Whether to extract a flat list of videos in the playlist.
+        playlistreverse (bool | None): Whether to reverse the playlist.
+        playlistend (int | None): The index of the last video to extract.
+        dateafter (str | None): The date after which to extract videos.
 
     Returns:
         dict: The info dictionary for the Source
@@ -49,13 +51,20 @@ async def get_source_info_dict(
 
     # Get info_dict from yt-dlp
     handler = get_handler_from_url(url=url)
+
+    # Get source_info_dict_kwargs from handler
+    source_info_dict_kwargs = await handler.get_source_info_dict_kwargs(url=url)
+
+    # Get ydl_opts from handler
     ydl_opts = handler.get_source_ydl_opts(
-        extract_flat=extract_flat,
-        playlistreverse=playlistreverse,
-        playlistend=playlistend,
-        dateafter=dateafter,
+        extract_flat=extract_flat or source_info_dict_kwargs["extract_flat"],
+        playlistreverse=playlistreverse or source_info_dict_kwargs["playlistreverse"],
+        playlistend=playlistend or source_info_dict_kwargs["playlistend"],
+        dateafter=dateafter or source_info_dict_kwargs["dateafter"],
     )
     custom_extractors = handler.YTDLP_CUSTOM_EXTRACTORS or []
+
+    # Build source_info_dict
     _source_info_dict = await get_info_dict(
         url=url,
         ydl_opts=ydl_opts,
@@ -70,14 +79,14 @@ async def get_source_info_dict(
 
 
 async def get_source_from_source_info_dict(
-    source_info_dict: dict[str, Any], user_id: str
+    source_info_dict: dict[str, Any], created_by_user_id: str
 ) -> SourceCreate:
     """
     Get a `Source` object from a source_info_dict.
 
     Parameters:
         source_info_dict (dict): The source_info_dict.
-        user_id (str): user_id of authenticated user.
+        created_by (str): user_id of authenticated user.
 
     Returns:
         SourceCreate: The `SourceCreate` object.
@@ -85,7 +94,7 @@ async def get_source_from_source_info_dict(
     handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
     source_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
     return SourceCreate(
-        created_by=user_id,
+        created_by=created_by_user_id,
         **handler.map_source_info_dict_to_source_dict(
             source_info_dict=source_info_dict, source_videos=source_videos
         ),
@@ -143,7 +152,12 @@ async def add_new_source_videos_from_fetched_videos(
         if fetched_video.id not in db_video_ids:
             new_video = VideoCreate(**fetched_video.dict())
             added_videos.append(new_video)
-            await crud.video.create(obj_in=new_video, db=db)
+
+            db_video = await crud.video.get_or_none(db=db, id=new_video.id)
+            if not db_video:
+                db_video = await crud.video.create(obj_in=new_video, db=db)
+
+            db_source.videos.append(db_video)
 
     return added_videos
 
@@ -198,13 +212,9 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     source_info_dict = await get_source_info_dict(
         source_id=id,
         url=db_source.url,
-        extract_flat=True,
-        playlistreverse=True,
-        playlistend=settings.BUILD_FEED_RECENT_VIDEOS,
-        dateafter=settings.BUILD_FEED_DATEAFTER,
     )
     _source = await get_source_from_source_info_dict(
-        source_info_dict=source_info_dict, user_id=db_source.created_by
+        source_info_dict=source_info_dict, created_by_user_id=db_source.created_by
     )
     db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
@@ -231,8 +241,16 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
         db=db,
     )
 
-    # Build RSS File
+    # Check if source needs a logo
+    if db_source.logo and "static/logos" in db_source.logo:
+        logo_path = LOGOS_PATH / f"{db_source.id}.png"
+        if not logo_path.exists():
+            create_logo_from_text(text=db_source.name, file_path=logo_path)
+
+    # Build RSS Files
     await build_rss_file(source=db_source)
+    for filter in db_source.filters:
+        await build_rss_file(filter=filter)
 
     success_message = (
         f"Completed fetching Source(id='{db_source.id}', name='{db_source.name}'). "

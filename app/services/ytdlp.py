@@ -41,6 +41,12 @@ class IsPrivateVideoError(YoutubeDLError):
     """
 
 
+class PlaylistNotFoundError(YoutubeDLError):
+    """
+    Raised when a playlist does not exist.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -106,7 +112,9 @@ async def ydl_extract_info(
     try:
         info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
 
-    except YoutubeDLError as e:
+    except (YoutubeDLError, Exception) as e:
+        if "The playlist does not exist." in str(e):
+            raise PlaylistNotFoundError("The playlist does not exist.") from e
         if "No video formats found" in str(e):
             raise IsLiveEventError("No video formats found.") from e
         if "this live event will begin in" in str(e):
