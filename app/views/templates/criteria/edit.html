@@ -101,9 +101,9 @@
     // Define the options for each field
     const fieldOperatorOptions = {
         "released": {{ created_release_operators_select | tojson }},
-    "created": { { created_release_operators_select | tojson } },
-    "duration": { { duration_operators_select | tojson } },
-    "keyword": { { keyword_operators_select | tojson } }
+        "created": {{ created_release_operators_select | tojson }},
+        "duration": {{ duration_operators_select | tojson }},
+        "keyword": {{ keyword_operators_select | tojson }}
     };
     const fieldUOMOptions = {
         "released": ["hours", "days"],
