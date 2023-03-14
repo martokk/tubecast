@@ -98,7 +98,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 filter_id=filter_shorts.id,
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.SHORTER_THAN.value,
-                value=90,
+                value="90",
                 unit_of_measure=CriteriaUnitOfMeasure.SECONDS.value,
             ),
         )
@@ -119,7 +119,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 filter_id=filter_regular.id,
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.LONGER_THAN.value,
-                value=90,
+                value="90",
                 unit_of_measure=CriteriaUnitOfMeasure.SECONDS.value,
             ),
         )
@@ -129,7 +129,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 filter_id=filter_regular.id,
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.SHORTER_THAN.value,
-                value=35,
+                value="35",
                 unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
             ),
         )
@@ -150,7 +150,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 filter_id=filter_podcasts.id,
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.LONGER_THAN.value,
-                value=35,
+                value="35",
                 unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
             ),
         )
