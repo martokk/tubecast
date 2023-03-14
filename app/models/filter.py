@@ -45,6 +45,7 @@ class Filter(FilterBase, table=True):
         must_contain_videos = list(set(must_contain_videos))
 
         filtered_videos = must_contain_videos if must_contain_criteria else self.source.videos
+        filtered_videos = [video for video in filtered_videos if video.released_at]
         for criteria in self.criterias:
             if (
                 criteria.field == CriteriaField.KEYWORD.value
