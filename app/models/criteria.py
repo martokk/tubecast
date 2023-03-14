@@ -43,7 +43,7 @@ class CriteriaBase(TimestampModel, SQLModel):
     filter_id: str = Field(default=None, foreign_key="filter.id", index=True, nullable=False)
     field: str = Field(default=None)
     operator: str = Field(default=None)
-    value: str = Field(default=None)
+    value: str | int = Field(default=None)
     unit_of_measure: str = Field(default=None)
 
     @property
