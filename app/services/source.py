@@ -155,7 +155,10 @@ async def add_new_source_videos_from_fetched_videos(
 
             db_video = await crud.video.get_or_none(db=db, id=new_video.id)
             if not db_video:
-                db_video = await crud.video.create(obj_in=new_video, db=db)
+                try:
+                    db_video = await crud.video.create(obj_in=new_video, db=db)
+                except crud.RecordAlreadyExistsError:
+                    db_video = await crud.video.get(db=db, id=new_video.id)
 
             db_source.videos.append(db_video)
 

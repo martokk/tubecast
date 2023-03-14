@@ -50,10 +50,11 @@ class Source(SourceBase, table=True):
     users: list["User"] = Relationship(back_populates="sources", link_model=UserSourceLink)
 
     def videos_sorted(self) -> list["Video"]:
+        videos = [video for video in self.videos if video.released_at]
         if self.ordered_by == SourceOrderBy.RELEASED_AT.value:
-            return sorted(self.videos, key=lambda video: video.released_at, reverse=True)
+            return sorted(videos, key=lambda video: video.released_at, reverse=True)
         elif self.ordered_by == SourceOrderBy.CREATED_AT.value:
-            return sorted(self.videos, key=lambda video: video.created_at, reverse=True)
+            return sorted(videos, key=lambda video: video.created_at, reverse=True)
         else:
             raise ValueError(f"Invalid order_by value: {self.ordered_by}")
 
