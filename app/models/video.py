@@ -25,17 +25,17 @@ class VideoBase(TimestampModel, SQLModel):
     id: str = Field(default=None, primary_key=True, nullable=False)
     # source_id: str = Field(default=None, foreign_key="source.id", nullable=False)
     handler: str = Field(default=None, nullable=False)
-    uploader: str | None = Field(default=None)
-    uploader_id: str | None = Field(default=None)
-    title: str | None = Field(default=None)
+    uploader: str | None = Field(default=None, nullable=False)
+    uploader_id: str | None = Field(default=None, nullable=False)
+    title: str | None = Field(default=None, nullable=False)
     description: str | None = Field(default=None)
     duration: int | None = Field(default=None)
     thumbnail: str | None = Field(default=None)
-    url: str = Field(default=None)
+    url: str = Field(default=None, nullable=False)
     media_url: str | None = Field(default=None)
     feed_media_url: str | None = Field(default=None)
     media_filesize: int | None = Field(default=None)
-    released_at: datetime.datetime = Field(default=None)
+    released_at: datetime.datetime = Field(default=None, nullable=False)
 
 
 class Video(VideoBase, table=True):
