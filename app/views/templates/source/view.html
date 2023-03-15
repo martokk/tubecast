@@ -70,46 +70,58 @@
 
 
 
-                <div class="card border-0">
-                    <div class="card-body">
-                        {% if source.filters %}
-                        <ul class="list-group list-group-flush">
-                            {% for filter in source.filters %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <a href="/filter/{{ filter.id }}" class="text-decoration-none text-white">
-                                    {{ filter.name }}
+        <div class="card border-0">
+            <div class="card-body">
+                {% if source.filters %}
+                <ul class="list-group list-group-flush">
+                    {% for filter in source.filters %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/filter/{{ filter.id }}" class="text-decoration-none text-white">
+                            {{ filter.name }}
+                        </a>
+                        <div class="d-flex align-items-center">
+                            {# <span class="me-3">Total Videos: {{ filter.videos()|length }}</span> #}
+
+
+                            <div class="d-flex align-items-center me-3 small my-auto text-muted">
+                                <span class="text-muted me-2">{{ filter.videos()|length }}</span>
+                                <span><i class="fas fa-video"></i></span>
+                            </div>
+
+
+
+                            <div class="btn-group" role="group">
+                                <a href="/filter/{{ filter.id }}/edit" class="btn btn-outline-secondary btn-sm me-2"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                    <i class="fas fa-pencil-alt"></i>
                                 </a>
-                                <div class="btn-group" role="group">
-                                    <a href="/filter/{{ filter.id }}/edit" class="btn btn-outline-secondary btn-sm me-2"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-outline-secondary btn-sm me-2"
-                                        onclick="confirmDelete('/filter/{{ filter.id }}/delete', 'Filter: {{ filter.name }}')"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                    <a href="{{ filter.feed_url }}" class="btn btn-outline-secondary btn-sm me-2"
-                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Feed">
-                                        <i class="fas fa-rss"></i>
-                                    </a>
-                                    <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ filter.feed_url }}"
-                                        class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip"
-                                        data-bs-placement="top" title="PocketCast">
-                                        <i class="fas fa-plus-circle"></i>
-                                    </a>
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <div class="alert alert-warning" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            No filters found.
+                                <a href="#" class="btn btn-outline-secondary btn-sm me-2"
+                                    onclick="confirmDelete('/filter/{{ filter.id }}/delete', 'Filter: {{ filter.name }}')"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                <a href="{{ filter.feed_url }}" class="btn btn-outline-secondary btn-sm me-2"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Feed">
+                                    <i class="fas fa-rss"></i>
+                                </a>
+                                <a href="pktc://subscribe/{{ BASE_DOMAIN }}{{ filter.feed_url }}"
+                                    class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" data-bs-placement="top"
+                                    title="PocketCast">
+                                    <i class="fas fa-plus-circle"></i>
+                                </a>
+                            </div>
                         </div>
-                        {% endif %}
-                    </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No filters found.
                 </div>
+                {% endif %}
+            </div>
+        </div>
 
 
                 <!-- New Filter Card -->
@@ -128,7 +140,7 @@
                                 </div>
 
                                 <div class="col-2 form-group text-end ">
-                                    <button type="submit" class="btn btn-primary w-100">Create</button>
+                                    <button type="submit" class="btn btn-primary w-95">Create</button>
                                 </div>
                             </div>
                         </form>
@@ -197,6 +209,9 @@
 
 
 <div class="container">
+    <div class="small fw-bold w-auto d-flex justify-content-start">
+        Videos ({{ source.videos_sorted()|length }})
+    </div>
     {% for video in source.videos_sorted()[0:30] %}
     <div class="row border-top py-1">
 
