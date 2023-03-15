@@ -26,11 +26,14 @@ async def create_filter(
 
     Args:
         request(Request): The request object
+        source_id(str): The id of the source
         current_user(User): The authenticated user.
 
     Returns:
         Response: Form to create a new filter
     """
+    if not source_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Source id is required")
     alerts = models.Alerts().from_cookies(request.cookies)
     return templates.TemplateResponse(
         "filter/create.html",
@@ -46,7 +49,7 @@ async def create_filter(
 @router.post("/filter/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
 async def handle_create_filter(
     background_tasks: BackgroundTasks,
-    name: str = Form(...),
+    name: str = Form(None),
     source_id: str = Query(Form(...), alias="source_id"),
     ordered_by: str = Form(None),
     db: Session = Depends(deps.get_db),
@@ -69,30 +72,20 @@ async def handle_create_filter(
         Response: List of filters view
     """
     alerts = models.Alerts()
-    ordered_by = ordered_by or SourceOrderBy.RELEASED_AT.value
-    obj_in = models.FilterCreate(
-        name=name, source_id=source_id, ordered_by=ordered_by, created_by=current_user.id
-    )
-    try:
-        _filter = await crud.filter.create(db=db, obj_in=obj_in)
-    except crud.RecordAlreadyExistsError as e:
-        alerts.danger.append("Source Filter already exists")
-        response = RedirectResponse("/filters", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
-    except HandlerNotFoundError:
-        alerts.danger.append("Handler not found for this url.")
-        response = RedirectResponse("/filters", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
-    except PlaylistNotFoundError as e:
-        alerts.danger.append(str(e))
-        response = RedirectResponse("/filters", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
 
-    alerts.success.append(f"Filter '{_filter.name}' successfully created.")
-    response = RedirectResponse(url=f"/filter/{_filter.id}", status_code=status.HTTP_303_SEE_OTHER)
+    source = await crud.source.get(db=db, id=source_id)
+    obj_in = models.FilterCreate(
+        name=name, source_id=source.id, ordered_by=source.ordered_by, created_by=current_user.id
+    )
+    if not name:
+        alerts.danger.append("Filter name is required.")
+        redirect_url = f"/source/{source.id}"
+    else:
+        _filter = await crud.filter.create(db=db, obj_in=obj_in)
+        alerts.success.append(f"Filter '{_filter.name}' successfully created.")
+        redirect_url = f"/filter/{_filter.id}"
+
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
     return response

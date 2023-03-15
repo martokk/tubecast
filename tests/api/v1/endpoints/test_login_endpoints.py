@@ -68,7 +68,6 @@ def test_use_access_token(client: TestClient, superuser_token_headers: dict[str,
 
 
 async def test_reset_password(db_with_user: Session, client: TestClient) -> None:
-
     # Test that the reset password recovery email is sent with the access token
     with patch("app.core.notify.send_reset_password_email") as mock_send_email:
         r = client.post(
