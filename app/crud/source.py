@@ -128,7 +128,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             obj_in=models.FilterCreate(
                 name="Shorts",
                 source_id=source.id,
-                ordered_by=SourceOrderBy.RELEASED_AT.value,
+                ordered_by=source.ordered_by,
                 created_by=user_id,
             ),
         )
@@ -149,7 +149,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             obj_in=models.FilterCreate(
                 name="Regular Videos",
                 source_id=source.id,
-                ordered_by=SourceOrderBy.RELEASED_AT.value,
+                ordered_by=source.ordered_by,
                 created_by=user_id,
             ),
         )
@@ -180,7 +180,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             obj_in=models.FilterCreate(
                 name="Podcasts",
                 source_id=source.id,
-                ordered_by=SourceOrderBy.RELEASED_AT.value,
+                ordered_by=source.ordered_by,
                 created_by=user_id,
             ),
         )

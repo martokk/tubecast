@@ -7,9 +7,10 @@ from app import logger, settings
 from app.core.notify import notify
 from app.models import Filter, Source
 from app.paths import FEEDS_PATH
+from app.models.source_video_link import SourceOrderBy
 
 
-def get_published_date(
+def get_published_at(
     created_at: datetime.datetime, released_at: datetime.datetime | None
 ) -> datetime.datetime:
     """
@@ -65,12 +66,15 @@ class SourceFeedGenerator(FeedGenerator):
             title = f"{source.name} - [{filter.name}]"
             link = f"{settings.BASE_URL}{filter.feed_url}"
             videos = filter.videos()
+            ordered_by = filter.ordered_by
 
         elif source:
             id = source.id
             title = source.name
             link = f"{settings.BASE_URL}{source.feed_url}"
             videos = source.videos
+            ordered_by = source.ordered_by
+
         else:
             raise ValueError("Either source or filter must be provided")
 
@@ -96,9 +100,13 @@ class SourceFeedGenerator(FeedGenerator):
         # Generate Feed Posts
         for video in videos:
 
-            published_at = get_published_date(
-                created_at=video.created_at, released_at=video.released_at
-            )
+            # Get Published Date
+            if ordered_by == SourceOrderBy.CREATED_AT.value:
+                published_at = video.created_at
+            else:
+                published_at = get_published_at(
+                    created_at=video.created_at, released_at=video.released_at
+                )
 
             # Set Post
             post = self.add_entry()
