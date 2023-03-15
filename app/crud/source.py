@@ -57,7 +57,6 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
 
     async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
         if source_id := kwargs.get("id"):
-
             #
 
             # Delete RSS file

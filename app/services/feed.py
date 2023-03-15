@@ -6,8 +6,8 @@ from feedgen.feed import FeedGenerator
 from app import logger, settings
 from app.core.notify import notify
 from app.models import Filter, Source
-from app.paths import FEEDS_PATH
 from app.models.source_video_link import SourceOrderBy
+from app.paths import FEEDS_PATH
 
 
 def get_published_at(
@@ -99,7 +99,6 @@ class SourceFeedGenerator(FeedGenerator):
 
         # Generate Feed Posts
         for video in videos:
-
             # Get Published Date
             if ordered_by == SourceOrderBy.CREATED_AT.value:
                 published_at = video.created_at

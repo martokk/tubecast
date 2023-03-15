@@ -68,7 +68,6 @@ async def get_info_dict(
         dict[str, Any]: The info dictionary for the object.
     """
     with YoutubeDL(ydl_opts) as ydl:
-
         # Add custom_extractors
         if custom_extractors:
             for custom_extractor in custom_extractors:

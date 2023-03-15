@@ -51,7 +51,6 @@ class Source(SourceBase, table=True):
     users: list["User"] = Relationship(back_populates="sources", link_model=UserSourceLink)
 
     def videos_sorted(self) -> list["Video"]:
-
         if self.ordered_by == SourceOrderBy.RELEASED_AT.value:
             videos = [video for video in self.videos if video.released_at]
             un_fetched_videos = [video for video in self.videos if not video.released_at]
