@@ -30,6 +30,7 @@ class SourceBase(TimestampModel, SQLModel):
     author: str = Field(default=None)
     logo: str = Field(default=None)
     description: str = Field(default=None)
+    reverse_import_order: bool = Field(default=False)
     ordered_by: str = Field(default=None)
     extractor: str = Field(default=None)
     handler: str = Field(default=None)
@@ -50,11 +51,15 @@ class Source(SourceBase, table=True):
     users: list["User"] = Relationship(back_populates="sources", link_model=UserSourceLink)
 
     def videos_sorted(self) -> list["Video"]:
-        videos = [video for video in self.videos if video.released_at]
+
         if self.ordered_by == SourceOrderBy.RELEASED_AT.value:
-            return sorted(videos, key=lambda video: video.released_at, reverse=True)
+            videos = [video for video in self.videos if video.released_at]
+            un_fetched_videos = [video for video in self.videos if not video.released_at]
+            sorted_videos = sorted(videos, key=lambda video: video.released_at, reverse=True)
+            sorted_videos.extend(un_fetched_videos)
+            return sorted_videos
         elif self.ordered_by == SourceOrderBy.CREATED_AT.value:
-            return sorted(videos, key=lambda video: video.created_at, reverse=True)
+            return sorted(self.videos, key=lambda video: video.created_at, reverse=True)
         else:
             raise ValueError(f"Invalid order_by value: {self.ordered_by}")
 
