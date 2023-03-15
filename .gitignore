@@ -663,3 +663,5 @@ app/data/feed/
 app/data/exports/
 
 app/views/static/logos/
+
+app/data/static/logos/

@@ -235,10 +235,12 @@ async def edit_source(
 async def handle_edit_source(
     request: Request,
     source_id: str,
-    name: str = Form(...),
-    author: str = Form(...),
-    logo: str = Form(...),
-    description: str = Form(...),
+    background_tasks: BackgroundTasks,
+    name: str = Form(None),
+    author: str = Form(None),
+    logo: str = Form(None),
+    description: str = Form(None),
+    reverse_import_order: bool = Form(False),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
         deps.get_current_active_user
@@ -250,34 +252,51 @@ async def handle_edit_source(
     Args:
         request(Request): The request object
         source_id(str): The source id
+        background_tasks(BackgroundTasks): The background tasks
         name(str): The name of the source
         author(str): The author of the source
         logo(str): The logo of the source
         description(str): The description of the source
+        reverse_import_order(bool): The reverse import order of the source
         db(Session): The database session.
         current_user(User): The authenticated user.
+
 
     Returns:
         Response: View of the newly created source
     """
     alerts = models.Alerts()
+    db_source = await crud.source.get(db=db, id=source_id)
+    db_reverse_import_order = db_source.reverse_import_order
     source_update = models.SourceUpdate(
-        name=name, author=author, logo=logo, description=description
+        name=name,
+        author=author,
+        logo=logo,
+        description=description,
+        reverse_import_order=reverse_import_order,
     )
 
     try:
-        new_source = await crud.source.update(db=db, obj_in=source_update, id=source_id)
+        new_source = await crud.source.update(
+            db=db, obj_in=source_update, id=source_id, exclude_none=True, exclude_unset=True
+        )
+        alerts.success.append(f"Updated source '{new_source.name}'")
+        redirect_url = f"/source/{new_source.id}"
+        if db_reverse_import_order != reverse_import_order:
+            await fetch_source(id=new_source.id, db=db, ignore_video_refresh=True)
+            background_tasks.add_task(
+                fetch_source,
+                id=new_source.id,
+                db=db,
+            )
+
     except crud.RecordNotFoundError:
         alerts.danger.append("Source not found")
-        response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
-        response.headers["Method"] = "GET"
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
-    alerts.success.append(f"Source '{new_source.name}' updated")
-    return templates.TemplateResponse(
-        "source/edit.html",
-        {"request": request, "source": new_source, "current_user": current_user, "alerts": alerts},
-    )
+        redirect_url = "/sources"
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+    response.headers["Method"] = "GET"
+    response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+    return response
 
 
 @router.get("/source/{source_id}/delete", response_class=HTMLResponse)

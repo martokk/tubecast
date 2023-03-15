@@ -25,6 +25,7 @@ async def get_source_info_dict(
     playlistreverse: bool | None = None,
     playlistend: int | None = None,
     dateafter: str | None = None,
+    reverse_import_order: bool = False,
 ) -> dict[str, Any]:
     """
     Retrieve the info_dict from yt-dlp for a Source
@@ -37,6 +38,7 @@ async def get_source_info_dict(
         playlistreverse (bool | None): Whether to reverse the playlist.
         playlistend (int | None): The index of the last video to extract.
         dateafter (str | None): The date after which to extract videos.
+        reverse_import_order (bool): Whether to reverse the order of the videos in the playlist.
 
     Returns:
         dict: The info dictionary for the Source
@@ -55,10 +57,16 @@ async def get_source_info_dict(
     # Get source_info_dict_kwargs from handler
     source_info_dict_kwargs = await handler.get_source_info_dict_kwargs(url=url)
 
+    # Get playlistreverse from handler or kwargs
+    playlistreverse = playlistreverse or source_info_dict_kwargs["playlistreverse"]
+
+    # Reverse they playlistreverse if reverse_import_order is True
+    playlistreverse = not playlistreverse if reverse_import_order else playlistreverse
+
     # Get ydl_opts from handler
     ydl_opts = handler.get_source_ydl_opts(
         extract_flat=extract_flat or source_info_dict_kwargs["extract_flat"],
-        playlistreverse=playlistreverse or source_info_dict_kwargs["playlistreverse"],
+        playlistreverse=playlistreverse,
         playlistend=playlistend or source_info_dict_kwargs["playlistend"],
         dateafter=dateafter or source_info_dict_kwargs["dateafter"],
     )
@@ -191,7 +199,7 @@ async def delete_orphaned_source_videos(
     return deleted_videos
 
 
-async def fetch_source(db: Session, id: str) -> models.FetchResults:
+async def fetch_source(db: Session, id: str, ignore_video_refresh=False) -> models.FetchResults:
     """
     Fetch new data from yt-dlp for the source and update the source in the database.
 
@@ -200,6 +208,7 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     Args:
         id: The id of the source to fetch and update.
         db (Session): The database session.
+        ignore_video_refresh: If True, do not refresh videos.
 
     Returns:
         models.FetchResult: The result of the fetch.
@@ -215,6 +224,7 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     source_info_dict = await get_source_info_dict(
         source_id=id,
         url=db_source.url,
+        reverse_import_order=db_source.reverse_import_order,
     )
     _source = await get_source_from_source_info_dict(
         source_info_dict=source_info_dict, created_by_user_id=db_source.created_by
@@ -238,7 +248,9 @@ async def fetch_source(db: Session, id: str) -> models.FetchResults:
     # )
 
     # Refresh existing videos in database
-    videos_needing_refresh = get_videos_needing_refresh(videos=db_source.videos)
+    videos_needing_refresh = (
+        get_videos_needing_refresh(videos=db_source.videos) if not ignore_video_refresh else []
+    )
     refreshed_videos = await refresh_videos(
         videos_needing_refresh=videos_needing_refresh,
         db=db,

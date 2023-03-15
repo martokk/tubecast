@@ -15,6 +15,46 @@ logger = _logger.bind(name="logger")
 
 
 class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdate]):
+    async def update(
+        self,
+        db: Session,
+        *args: BinaryExpression[Any],
+        obj_in: models.SourceUpdate,
+        exclude_none: bool = True,
+        exclude_unset: bool = True,
+        **kwargs: Any,
+    ) -> models.Source:
+        """
+        Update an existing record.
+
+        Args:
+            obj_in (ModelUpdateType): The updated object.
+            args (BinaryExpression): Binary expressions to filter by.
+            db (Session): The database session.
+            exclude_none (bool): Whether to exclude None values from the update.
+            exclude_unset (bool): Whether to exclude unset values from the update.
+            kwargs (Any): Keyword arguments to filter by.
+
+        Returns:
+            The updated object.
+
+        Raises:
+            ValueError: If no filters are provided.
+        """
+
+        # If reverse_import_order, delete all existing videos
+        if obj_in.reverse_import_order:
+            await self.delete_all_videos(db=db, source_id=kwargs["id"])
+
+        return await super().update(
+            db,
+            *args,
+            obj_in=obj_in,
+            exclude_none=exclude_none,
+            exclude_unset=exclude_unset,
+            **kwargs,
+        )
+
     async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
         if source_id := kwargs.get("id"):
 
@@ -154,6 +194,18 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
             ),
         )
+
+    async def delete_all_videos(self, db: Session, source_id: str) -> None:
+        """
+        Delete all videos from a source.
+
+        Args:
+            db (Session): The database session.
+            source_id (str): The source id.
+        """
+        source = await self.get(db=db, id=source_id)
+        for video in source.videos:
+            await crud.video.remove(db=db, id=video.id)
 
 
 source = SourceCRUD(models.Source)
