@@ -100,12 +100,11 @@ async def get_source_from_source_info_dict(
     handler_source_dict = handler.map_source_info_dict_to_source_dict(
         source_info_dict=source_info_dict, source_videos=source_videos
     )
-
+    handler_source_dict["name"] = source_name or handler_source_dict["name"]
     return SourceCreate(
         created_by=created_by_user_id,
         reverse_import_order=reverse_import_order,
         **handler_source_dict,
-        name=source_name or handler_source_dict["name"],
     )
 
 
