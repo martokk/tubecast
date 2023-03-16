@@ -87,7 +87,7 @@ async def get_source_info_dict(
 
 
 async def get_source_from_source_info_dict(
-    source_info_dict: dict[str, Any], created_by_user_id: str
+    source_info_dict: dict[str, Any], created_by_user_id: str, reverse_import_order: bool = False
 ) -> SourceCreate:
     """
     Get a `Source` object from a source_info_dict.
@@ -95,6 +95,7 @@ async def get_source_from_source_info_dict(
     Parameters:
         source_info_dict (dict): The source_info_dict.
         created_by (str): user_id of authenticated user.
+        reverse_import_order (bool): Whether to reverse the import order of the videos.
 
     Returns:
         SourceCreate: The `SourceCreate` object.
@@ -103,6 +104,7 @@ async def get_source_from_source_info_dict(
     source_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
     return SourceCreate(
         created_by=created_by_user_id,
+        reverse_import_order=reverse_import_order,
         **handler.map_source_info_dict_to_source_dict(
             source_info_dict=source_info_dict, source_videos=source_videos
         ),
@@ -227,7 +229,9 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh=False) -> mode
         reverse_import_order=db_source.reverse_import_order,
     )
     _source = await get_source_from_source_info_dict(
-        source_info_dict=source_info_dict, created_by_user_id=db_source.created_by
+        source_info_dict=source_info_dict,
+        created_by_user_id=db_source.created_by,
+        reverse_import_order=db_source.reverse_import_order,
     )
     db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
