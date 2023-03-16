@@ -2,12 +2,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Re
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
-from app import crud, models
+from app import crud, models, logger
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.feed import build_rss_file, get_rss_file
 from app.services.source import fetch_all_sources, fetch_source
 from app.services.ytdlp import PlaylistNotFoundError
 from app.views import deps, templates
+from app.core.notify import notify
 
 router = APIRouter()
 
@@ -429,7 +430,10 @@ async def get_rss(source_id: str, db: Session = Depends(deps.get_db)) -> Respons
         try:
             rss_file = await get_rss_file(id=source_id)
         except FileNotFoundError as exc:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+            err_msg = f"RSS file ({id}.rss) does not exist for ({id=})"
+            logger.critical(err_msg)
+            await notify(telegram=True, email=False, text=err_msg)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_msg) from exc
 
     # Serve RSS File as a Response
     content = rss_file.read_text()

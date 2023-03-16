@@ -169,10 +169,7 @@ async def get_rss_file(id: str) -> Path:
 
     # Validate RSS File exists
     if not rss_file.exists():
-        err_msg = f"RSS file ({id}.rss) does not exist for ({id=})"
-        logger.critical(err_msg)
-        await notify(telegram=True, email=False, text=err_msg)
-        raise FileNotFoundError(err_msg)
+        raise FileNotFoundError()
     return rss_file
 
 
