@@ -62,6 +62,11 @@ async def handle_create_criteria(
 
     try:
         criteria = await crud.criteria.create(db=db, obj_in=obj_in)
+    except ValueError as exc:
+        alerts.danger.append(str(exc.args[0]))
+        response = RedirectResponse(f"/filter/{filter_id}", status_code=status.HTTP_302_FOUND)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
     except crud.RecordAlreadyExistsError:
         alerts.danger.append("Criteria already exists")
         response = RedirectResponse(f"/filter/{filter_id}", status_code=status.HTTP_302_FOUND)
@@ -178,6 +183,11 @@ async def handle_edit_criteria(
         new_criteria = await crud.criteria.update(db=db, obj_in=criteria_update, id=id)
         alerts.success.append(f"Criteria '{new_criteria.name}' updated")
         await build_rss_file(filter=new_criteria.filter)
+    except ValueError as exc:
+        alerts.danger.append(str(exc.args[0]))
+        response = RedirectResponse(f"/filter/{filter_id}", status_code=status.HTTP_302_FOUND)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
     except crud.RecordNotFoundError:
         alerts.danger.append("Criteria not found")
 
