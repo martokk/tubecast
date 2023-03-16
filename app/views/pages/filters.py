@@ -3,11 +3,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
-from app.handlers.exceptions import HandlerNotFoundError
 from app.models.source_video_link import SourceOrderBy
-from app.services.feed import get_rss_file
+from app.services.feed import build_rss_file, delete_rss_file, get_rss_file
 from app.services.source import fetch_source
-from app.services.ytdlp import PlaylistNotFoundError
 from app.views import deps, templates
 
 router = APIRouter()
@@ -82,6 +80,7 @@ async def handle_create_filter(
         redirect_url = f"/source/{source.id}"
     else:
         _filter = await crud.filter.create(db=db, obj_in=obj_in)
+        await build_rss_file(filter=_filter)
         alerts.success.append(f"Filter '{_filter.name}' successfully created.")
         redirect_url = f"/filter/{_filter.id}"
 
@@ -229,6 +228,7 @@ async def handle_edit_filter(
         new_filter = await crud.filter.update(
             db=db, obj_in=filter_update, exclude_none=True, id=filter_id
         )
+        await build_rss_file(filter=new_filter)
         alerts.success.append(f"Source Filter '{new_filter.name}' updated")
         return_url = f"/filter/{new_filter.id}"
     except crud.RecordNotFoundError:
@@ -265,6 +265,7 @@ async def delete_filter(
         _filter = await crud.filter.get(db=db, id=filter_id)
         _filter = _filter.copy()
         await crud.filter.remove(db=db, id=filter_id)
+        await delete_rss_file(id=filter_id)
         alerts.success.append(f"Filter '{_filter.name}' deleted")
         return_url = f"/source/{_filter.source_id}"
     except crud.RecordNotFoundError:
@@ -317,7 +318,7 @@ async def fetch_source_page(
 
 
 @router.get("/filter/{filter_id}/feed", response_class=HTMLResponse)
-async def get_rss(filter_id: str) -> Response:
+async def get_rss(filter_id: str, db: Session = Depends(deps.get_db)) -> Response:
     """
     Gets a rss file for filter_id and returns it as a Response
 
@@ -333,7 +334,12 @@ async def get_rss(filter_id: str) -> Response:
     try:
         rss_file = await get_rss_file(id=filter_id)
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+        filter = await crud.filter.get(id=filter_id, db=db)
+        await build_rss_file(filter=filter)
+        try:
+            rss_file = await get_rss_file(id=filter_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
 
     # Serve RSS File as a Response
     content = rss_file.read_text()

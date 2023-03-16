@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from app import crud, models
 from app.handlers.exceptions import HandlerNotFoundError
-from app.services.feed import get_rss_file
+from app.services.feed import build_rss_file, get_rss_file
 from app.services.source import fetch_all_sources, fetch_source
 from app.services.ytdlp import PlaylistNotFoundError
 from app.views import deps, templates
@@ -408,7 +408,7 @@ async def fetch_all_source_page(
 
 
 @router.get("/source/{source_id}/feed", response_class=HTMLResponse)
-async def get_rss(source_id: str) -> Response:
+async def get_rss(source_id: str, db: Session = Depends(deps.get_db)) -> Response:
     """
     Gets a rss file for source_id and returns it as a Response
 
@@ -424,7 +424,12 @@ async def get_rss(source_id: str) -> Response:
     try:
         rss_file = await get_rss_file(id=source_id)
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
+        source = await crud.source.get(id=source_id, db=db)
+        await build_rss_file(source=source)
+        try:
+            rss_file = await get_rss_file(id=source_id)
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
 
     # Serve RSS File as a Response
     content = rss_file.read_text()
