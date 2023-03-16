@@ -215,10 +215,13 @@
     <div class="container mt-3">
         <div class="d-flex justify-content-between small fw-bold">
             <div class="flex-grow-1">Videos ({{ filter.videos()|length }})</div>
+
+            {% if filter.videos()|length > 0 %}
             <div class="mx-2">min: {{ filter.videos()|map(attribute='duration')|map('int')|min // 60 }} min</div>
             <div class="mx-2">avg: {{ ((filter.videos()|map(attribute='duration')|map('int')|sum / filter.videos()|length) //
                 60)|int}} min</div>
             <div class="mx-2 text-end">max: {{ filter.videos()|map(attribute='duration')|map('int')|max // 60 }} min</div>
+            {% endif %}
         </div>
 
 
