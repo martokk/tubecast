@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "tubecast"
-version = "0.0.43"
+version = "0.0.44"
 description = "Convert Youtube or Rumble channels to RSS Podcasts"
 readme = "README.md"
 authors = ["martokk <25113632+martokk@users.noreply.github.com>"]
