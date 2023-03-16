@@ -190,7 +190,7 @@ async def handle_create_source(
     )
 
     alerts.success.append(f"{source.service.title()} source '{source.name}' successfully created.")
-    response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url=f"/source/{source.id}", status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
     return response

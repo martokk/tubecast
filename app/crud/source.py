@@ -121,6 +121,17 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             source (models.Source): The source to add the default filters to.
         """
 
+        # Filter: All
+        filter_all = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="All",
+                source_id=source.id,
+                ordered_by=source.ordered_by,
+                created_by=user_id,
+            ),
+        )
+
         # Filter: Shorts
         filter_shorts = await crud.filter.create(
             db=db,
@@ -143,7 +154,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         )
 
         # Filter: Regular Videos
-        filter_regular = await crud.filter.create(
+        filter_long_form = await crud.filter.create(
             db=db,
             obj_in=models.FilterCreate(
                 name="Regular Videos",
@@ -155,7 +166,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         await crud.criteria.create(
             db=db,
             obj_in=models.CriteriaCreate(
-                filter_id=filter_regular.id,
+                filter_id=filter_long_form.id,
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.LONGER_THAN.value,
                 value="90",
@@ -165,7 +176,7 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         await crud.criteria.create(
             db=db,
             obj_in=models.CriteriaCreate(
-                filter_id=filter_regular.id,
+                filter_id=filter_long_form.id,
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.SHORTER_THAN.value,
                 value="35",
@@ -190,6 +201,80 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 field=CriteriaField.DURATION.value,
                 operator=CriteriaOperator.LONGER_THAN.value,
                 value="35",
+                unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
+            ),
+        )
+
+        # Filter: Regular No Shorts
+        filter_long_form = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="Regular No Shorts",
+                source_id=source.id,
+                ordered_by=source.ordered_by,
+                created_by=user_id,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_long_form.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.LONGER_THAN.value,
+                value="90",
+                unit_of_measure=CriteriaUnitOfMeasure.SECONDS.value,
+            ),
+        )
+
+        # Filter: Short-Form
+        filter_long_form = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="Short-Form",
+                source_id=source.id,
+                ordered_by=source.ordered_by,
+                created_by=user_id,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_long_form.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.LONGER_THAN.value,
+                value="90",
+                unit_of_measure=CriteriaUnitOfMeasure.SECONDS.value,
+            ),
+        )
+
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_long_form.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.SHORTER_THAN.value,
+                value="20",
+                unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
+            ),
+        )
+
+        # Filter: Long-Form
+        filter_long_form = await crud.filter.create(
+            db=db,
+            obj_in=models.FilterCreate(
+                name="Long-Form",
+                source_id=source.id,
+                ordered_by=source.ordered_by,
+                created_by=user_id,
+            ),
+        )
+        await crud.criteria.create(
+            db=db,
+            obj_in=models.CriteriaCreate(
+                filter_id=filter_long_form.id,
+                field=CriteriaField.DURATION.value,
+                operator=CriteriaOperator.LONGER_THAN.value,
+                value="20",
                 unit_of_measure=CriteriaUnitOfMeasure.MINUTES.value,
             ),
         )
