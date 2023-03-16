@@ -31,8 +31,7 @@ async def get_source_info_dict(
     Retrieve the info_dict from yt-dlp for a Source
 
     Parameters:
-        source_id (Union[str, None]): An optional ID for the source. If not provided,
-            a unique ID will be generated from the URL.
+        source_id (Union[str, None]): An optional ID for the source.
         url (str | None): The URL of the Source
         extract_flat (bool | None): Whether to extract a flat list of videos in the playlist.
         playlistreverse (bool | None): Whether to reverse the playlist.
@@ -44,13 +43,6 @@ async def get_source_info_dict(
         dict: The info dictionary for the Source
 
     """
-    # source_id = source_id or await generate_source_id_from_url(url=url)
-    # cache_file = Path(SOURCE_INFO_CACHE_PATH / source_id)
-
-    # # Load Cache
-    # if use_cache and cache_file.exists():
-    #     return pickle.loads(cache_file.read_bytes())
-
     # Get info_dict from yt-dlp
     handler = get_handler_from_url(url=url)
 
@@ -87,7 +79,10 @@ async def get_source_info_dict(
 
 
 async def get_source_from_source_info_dict(
-    source_info_dict: dict[str, Any], created_by_user_id: str, reverse_import_order: bool = False
+    source_info_dict: dict[str, Any],
+    created_by_user_id: str,
+    reverse_import_order: bool = False,
+    source_name: str | None = None,
 ) -> SourceCreate:
     """
     Get a `Source` object from a source_info_dict.
@@ -102,12 +97,15 @@ async def get_source_from_source_info_dict(
     """
     handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
     source_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
+    handler_source_dict = handler.map_source_info_dict_to_source_dict(
+        source_info_dict=source_info_dict, source_videos=source_videos
+    )
+
     return SourceCreate(
         created_by=created_by_user_id,
         reverse_import_order=reverse_import_order,
-        **handler.map_source_info_dict_to_source_dict(
-            source_info_dict=source_info_dict, source_videos=source_videos
-        ),
+        **handler_source_dict,
+        name=source_name or handler_source_dict["name"],
     )
 
 
@@ -233,6 +231,7 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh=False) -> mode
         source_info_dict=source_info_dict,
         created_by_user_id=db_source.created_by,
         reverse_import_order=db_source.reverse_import_order,
+        source_name=db_source.name,
     )
     db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
 
