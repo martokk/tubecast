@@ -9,10 +9,10 @@ from yt_dlp.extractor.common import InfoExtractor
 from app.core.uuid import generate_uuid_from_url
 from app.models.settings import Settings as _Settings
 from app.models.source_video_link import SourceOrderBy
-from app.services.ytdlp import YDL_OPTS_BASE, Http410Error
+from app.services.ytdlp import YDL_OPTS_BASE, Http410Error, IsDeletedVideoError, IsPrivateVideoError
 
 from .base import ServiceHandler
-from .exceptions import InvalidSourceUrl
+from .exceptions import FormatNotFoundError, InvalidSourceUrl
 
 settings = _Settings()
 
@@ -304,9 +304,21 @@ class YoutubeHandler(ServiceHandler):
         ):
             raise Http410Error("Youtube video has been deleted.")
 
-        format_info_dict = self._get_format_info_dict_from_entry_info_dict(
-            entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
-        )
+        if entry_info_dict["title"] == "[Private video]":
+            raise IsPrivateVideoError("Youtube video is private.")
+
+        if entry_info_dict["title"] == "[Deleted video]":
+            raise IsDeletedVideoError("Youtube video has been deleted.")
+
+        try:
+            format_info_dict = self._get_format_info_dict_from_entry_info_dict(
+                entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
+            )
+        except KeyError as exc:
+            if "format_id" in str(exc):
+                raise FormatNotFoundError(f"Could not find format_id in entry_info_dict")
+            raise exc
+
         media_filesize = format_info_dict.get("filesize") or format_info_dict.get(
             "filesize_approx", 0
         )

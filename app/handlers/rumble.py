@@ -6,7 +6,7 @@ import re
 from loguru import logger as _logger
 
 from app.core.uuid import generate_uuid_from_url
-from app.handlers.exceptions import InvalidSourceUrl
+from app.handlers.exceptions import FormatNotFoundError, InvalidSourceUrl
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
@@ -224,9 +224,15 @@ class RumbleHandler(ServiceHandler):
         Returns:
             A `Video` dictionary created from the `entry_info_dict`.
         """
-        format_info_dict = self._get_format_info_dict_from_entry_info_dict(
-            entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
-        )
+        try:
+            format_info_dict = self._get_format_info_dict_from_entry_info_dict(
+                entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
+            )
+        except KeyError as exc:
+            if "format_id" in str(exc):
+                raise FormatNotFoundError(f"Could not find format_id in entry_info_dict")
+            raise exc
+
         media_filesize = (
             format_info_dict.get("filesize") or format_info_dict.get("filesize_approx") or 0
         )
