@@ -138,6 +138,7 @@ async def fetch_videos(videos: list[models.Video], db: Session) -> list[models.V
             err_msg = f"Database error: Video not found: \n{video=}"
             logger.critical(err_msg)
             await notify(telegram=True, email=False, text=err_msg)
+            continue
         except (Http410Error, IsPrivateVideoError, IsDeletedVideoError):
             # Video has been deleted on host server
             await crud.video.remove(db=db, id=video.id)

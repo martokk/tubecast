@@ -276,6 +276,20 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     formats.append(f)
         self._downloader.sort_formats({"formats": formats})
 
+        # Live videos have a single format until Rumble transcodes other formats
+        if not formats and video.get("u"):
+            f_url = video["u"]
+            ext = determine_ext(f_url)
+            height = int_or_none(video["h"])
+            formats.append(
+                {
+                    "ext": ext,
+                    "format_id": "%s-%sp" % (ext, height),
+                    "height": height,
+                    "url": f_url,
+                }
+            )
+
         # Get the subtitles
         subtitles = {
             lang: [
