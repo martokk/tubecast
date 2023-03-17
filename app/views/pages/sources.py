@@ -430,7 +430,9 @@ async def get_rss(source_id: str, db: Session = Depends(deps.get_db)) -> Respons
         try:
             rss_file = await get_rss_file(id=source_id)
         except FileNotFoundError as exc:
-            err_msg = f"RSS file ({id}.rss) does not exist for ({id=})"
+            err_msg = (
+                f"RSS file ({source.id}.rss) does not exist for '{source.id=}' ({source.name}).)"
+            )
             logger.critical(err_msg)
             await notify(telegram=True, email=False, text=err_msg)
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_msg) from exc
