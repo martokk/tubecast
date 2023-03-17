@@ -1,4 +1,5 @@
 # import itertools
+from datetime import datetime, timedelta
 import re
 
 from yt_dlp.compat import compat_HTTPError, compat_str
@@ -239,6 +240,8 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
         ]
 
     def _real_extract(self, url):  # pragma: no cover
+
+        # Download webpage data
         video_id = self._match_id(url)
         # video = self._download_json(
         #     "https://rumble.com/embedJS/u3/",
@@ -248,20 +251,13 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
         video = self._download_json(
             "https://rumble.com/embedJS/", video_id, query={"request": "video", "v": video_id}
         )
+
+        # Traverse the JSON data
         sys_msg = traverse_obj(video, ("sys", "msg"))
         if sys_msg:
             self.report_warning(sys_msg, video_id=video_id)
 
-        if video.get("live") == 0:
-            live_status = "not_live" if video.get("livestream_has_dvr") is None else "was_live"
-        elif video.get("live") == 1:
-            # live_status = "is_upcoming" if video.get("livestream_has_dvr") else "was_live"
-            live_status = "is_upcoming" if video.get("live_placeholder") else "post_live"
-        elif video.get("live") == 2:
-            live_status = "is_live"
-        else:
-            live_status = None
-
+        # Get the video formats
         formats = []
         for height, ua in (video.get("ua") or {}).items():
             for i in range(2):
@@ -280,6 +276,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     formats.append(f)
         self._downloader.sort_formats({"formats": formats})
 
+        # Get the subtitles
         subtitles = {
             lang: [
                 {
@@ -291,32 +288,55 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
             if sub_info.get("path")
         }
 
-        author = video.get("author") or {}
+        # Get the thumbnails
         thumbnails = traverse_obj(video, ("t", ..., {"url": "i", "width": "w", "height": "h"}))
         if not thumbnails and video.get("i"):
             thumbnails = [{"url": video["i"]}]
 
+        # Get video data
+        title = unescapeHTML(video.get("title"))
+        author = video.get("author") or {}
+        timestamp = parse_iso8601(video.get("pubDate"))
+        channel = author.get("name")
+        channel_url = author.get("url")
+        uploader = author.get("name")
+
+        # Set the live status
+        if video.get("live") == 0:
+            live_status = "not_live" if video.get("livestream_has_dvr") is None else "was_live"
+        elif video.get("live") == 1:
+            # live_status = "is_upcoming" if video.get("livestream_has_dvr") else "was_live"
+            live_status = "is_upcoming" if video.get("live_placeholder") else "post_live"
+        elif video.get("live") == 2:
+            live_status = "is_live"
+        else:
+            live_status = None
+
+        # Handle live, upcoming, and post live videos
         if live_status in {"is_live", "post_live", "is_upcoming"}:
             duration = None
             formats = []
         else:
             duration = int_or_none(video.get("duration"))
+
             if live_status == "was_live":
-                if duration < 61:
+                # Assume placeholders
+                dt_diff = datetime.utcnow() - datetime.fromtimestamp(timestamp)
+                if dt_diff.days <= 1 and duration <= 61:
                     duration = None
                     formats = []
 
         return {
             "id": video_id,
-            "title": unescapeHTML(video.get("title")),
+            "title": title,
             "formats": formats,
             "subtitles": subtitles,
             "thumbnails": thumbnails,
-            "timestamp": parse_iso8601(video.get("pubDate")),
-            "channel": author.get("name"),
-            "channel_url": author.get("url"),
+            "timestamp": timestamp,
+            "channel": channel,
+            "channel_url": channel_url,
             "duration": duration,
-            "uploader": author.get("name"),
+            "uploader": uploader,
             "live_status": live_status,
         }
 
