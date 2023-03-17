@@ -9,7 +9,14 @@ from yt_dlp.utils import YoutubeDLError
 from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers import get_handler_from_string, get_handler_from_url
-from app.services.ytdlp import Http410Error, IsLiveEventError, IsPrivateVideoError, get_info_dict
+from app.services.ytdlp import (
+    Http410Error,
+    IsDeletedVideoError,
+    IsLiveEventError,
+    IsPrivateVideoError,
+    get_info_dict,
+)
+from app.handlers.exceptions import FormatNotFoundError
 
 
 async def get_video_info_dict(
@@ -127,9 +134,14 @@ async def fetch_videos(videos: list[models.Video], db: Session) -> list[models.V
             fetched_video = await fetch_video(video_id=video.id, db=db)
         except IsLiveEventError:
             continue
-        except (Http410Error, IsPrivateVideoError):
+        except (Http410Error, IsPrivateVideoError, IsDeletedVideoError, crud.RecordNotFoundError):
             # Video has been deleted on host server
             await crud.video.remove(db=db, id=video.id)
+            continue
+        except FormatNotFoundError:
+            err_msg = f"Yt-dlp did not return a download url for video: \n{video=}"
+            logger.critical(err_msg)
+            await notify(telegram=True, email=False, text=err_msg)
             continue
         except (YoutubeDLError, Exception) as e:
             err_msg = f"Error fetching video: \n{e=} \n{video=}"

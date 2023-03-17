@@ -266,7 +266,10 @@ async def delete_filter(
         _filter = await crud.filter.get(db=db, id=filter_id)
         _filter = _filter.copy()
         await crud.filter.remove(db=db, id=filter_id)
-        await delete_rss_file(id=filter_id)
+        try:
+            await delete_rss_file(id=filter_id)
+        except FileNotFoundError:
+            pass
         alerts.success.append(f"Filter '{_filter.name}' deleted")
         return_url = f"/source/{_filter.source_id}"
     except crud.RecordNotFoundError:
