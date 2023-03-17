@@ -41,7 +41,11 @@ class VideoBase(TimestampModel, SQLModel):
 class Video(VideoBase, table=True):
     # sources: list["Source"] = Relationship(back_populates="videos")
 
-    sources: list["Source"] = Relationship(back_populates="videos", link_model=SourceVideoLink)
+    sources: list["Source"] = Relationship(
+        back_populates="videos",
+        link_model=SourceVideoLink,
+        sa_relationship_kwargs={"cascade": "delete"},
+    )
 
     def __repr__(self) -> str:
         return f"Video(id={self.id}, title={self.title[:20] if self.title else ''}, handler={self.handler})"
