@@ -124,9 +124,9 @@ async def ydl_extract_info(
             raise IsLiveEventError("No video formats found.") from e
         if "this live event will begin in" in str(e):
             raise IsLiveEventError("This video is a live event.") from e
-        if "Private video" in str(e):
+        if "[Private video]" in str(e):
             raise IsPrivateVideoError("This video is a private video.") from e
-        if "Deleted video" in str(e):
+        if "[Deleted video]" in str(e):
             raise IsDeletedVideoError("This video is a deleted video.") from e
         if e.__class__.__name__ == "DownloadError":
             if "HTTP Error 410" in str(e):
