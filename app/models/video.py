@@ -44,7 +44,6 @@ class Video(VideoBase, table=True):
     sources: list["Source"] = Relationship(
         back_populates="videos",
         link_model=SourceVideoLink,
-        sa_relationship_kwargs={"cascade": "delete"},
     )
 
     def __repr__(self) -> str:
