@@ -126,6 +126,23 @@ def get_source_videos_from_source_info_dict(source_info_dict: dict[str, Any]) ->
     else:
         playlists = [source_info_dict]
 
+    video_dicts = []
+    for playlist in playlists:
+        for entry_info_dict in playlist.get("entries", []):
+            if (
+                not entry_info_dict.get("live_status")
+                or entry_info_dict.get("live_status") == "was_live"
+            ):
+                if (
+                    "[private video]" in str(entry_info_dict.get("title")).lower()
+                    or "[deleted video]" in str(entry_info_dict.get("title")).lower()
+                ):
+                    continue
+                video_dict = handler.map_source_info_dict_entity_to_video_dict(
+                    source_id=source_info_dict["source_id"], entry_info_dict=entry_info_dict
+                )
+                video_dicts.append(video_dict)
+
     video_dicts = [
         handler.map_source_info_dict_entity_to_video_dict(
             source_id=source_info_dict["source_id"], entry_info_dict=entry_info_dict
