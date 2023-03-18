@@ -43,7 +43,7 @@
 
         </thead>
         <tbody>
-            {% for source in sources | sort(attribute='name') %}
+            {% for source in sources | sort(attribute='name_sortable') %}
             <tr class="bg-dark">
                 <td>
                     <div class="d-flex align-items-top">
