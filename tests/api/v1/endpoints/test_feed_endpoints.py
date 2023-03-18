@@ -29,9 +29,9 @@ def test_build_rss(
     assert response.status_code == 201
     created_source = response.json()
 
-    # Build the rss
+    # Build the rss & check the rss file was created
     response = client.put(
-        f"/api/v1/feed/{created_source['id']}",
+        f"/api/v1/source/{created_source['id']}/feed",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
@@ -40,21 +40,21 @@ def test_build_rss(
 
     # Check that the rss file was created
     response = client.get(
-        f"/feed/{created_source['id']}",
+        f"source/{created_source['id']}/feed",
         headers=superuser_token_headers,
     )
     assert response.status_code == 200
 
     # Delete the rss file
     response = client.delete(
-        f"/api/v1/feed/{created_source['id']}",
+        f"/api/v1/source/{created_source['id']}",
         headers=superuser_token_headers,
     )
     assert response.status_code == 204
 
     # Check that the rss file was deleted
     response = client.get(
-        f"/feed/{created_source['id']}",
+        f"/source/{created_source['id']}/feed",
         headers=superuser_token_headers,
     )
     assert response.status_code == 404

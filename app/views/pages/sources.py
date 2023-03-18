@@ -2,13 +2,13 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Re
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
-from app import crud, models, logger
+from app import crud, logger, models
+from app.core.notify import notify
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.feed import build_rss_file, get_rss_file
 from app.services.source import fetch_all_sources, fetch_source
 from app.services.ytdlp import PlaylistNotFoundError
 from app.views import deps, templates
-from app.core.notify import notify
 
 router = APIRouter()
 
@@ -167,8 +167,8 @@ async def handle_create_source(
     alerts = models.Alerts()
     try:
         source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
-    except crud.RecordAlreadyExistsError:
-        alerts.danger.append("Source already exists")
+    except crud.RecordAlreadyExistsError as exc:
+        alerts.danger.append(str(exc))
         response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
@@ -267,7 +267,15 @@ async def handle_edit_source(
         Response: View of the newly created source
     """
     alerts = models.Alerts()
-    db_source = await crud.source.get(db=db, id=source_id)
+    try:
+        db_source = await crud.source.get(db=db, id=source_id)
+    except crud.RecordNotFoundError:
+        alerts.danger.append(f"Source '{source_id}' not found")
+        redirect_url = "/sources"
+        response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
+        return response
+
     db_reverse_import_order = db_source.reverse_import_order
     source_update = models.SourceUpdate(
         name=name,
@@ -277,23 +285,21 @@ async def handle_edit_source(
         reverse_import_order=reverse_import_order,
     )
 
-    try:
-        new_source = await crud.source.update(
-            db=db, obj_in=source_update, id=source_id, exclude_none=True, exclude_unset=True
-        )
-        alerts.success.append(f"Updated source '{new_source.name}'")
-        redirect_url = f"/source/{new_source.id}"
-        if db_reverse_import_order != reverse_import_order:
-            await fetch_source(id=new_source.id, db=db, ignore_video_refresh=True)
-            background_tasks.add_task(
-                fetch_source,
-                id=new_source.id,
-                db=db,
-            )
+    new_source = await crud.source.update(
+        db=db, obj_in=source_update, id=source_id, exclude_none=True, exclude_unset=True
+    )
+    alerts.success.append(f"Updated source '{new_source.name}'")
+    redirect_url = f"/source/{new_source.id}"
 
-    except crud.RecordNotFoundError:
-        alerts.danger.append("Source not found")
-        redirect_url = "/sources"
+    # If the reverse import order has changed, re-fetch the source
+    if db_reverse_import_order != reverse_import_order:
+        await fetch_source(id=new_source.id, db=db, ignore_video_refresh=True)
+        background_tasks.add_task(
+            fetch_source,
+            id=new_source.id,
+            db=db,
+        )
+
     response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
     response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
@@ -321,20 +327,24 @@ async def delete_source(
     """
     alerts = models.Alerts()
 
-    # Remove from user's sources
-    source = await crud.source.get(db=db, id=source_id)
-    await crud.user.remove_source(db=db, user_id=current_user.id, source=source)
-    alerts.success.append("Source removed from user.")
+    source = await crud.source.get_or_none(db=db, id=source_id)
 
-    # Remove source if no users
-    if len(source.users) == 0:
-        try:
-            await crud.source.remove(db=db, id=source_id)
-            alerts.success.append("Source deleted")
-        except crud.RecordNotFoundError:
-            alerts.danger.append("Source not found")
-        except crud.DeleteError:
-            alerts.danger.append("Error deleting source")
+    if not source:
+        alerts.danger.append("Source not found")
+    else:
+        # Remove from user's sources
+        await crud.user.remove_source(db=db, user_id=current_user.id, source=source)
+        alerts.success.append("Source removed from user.")
+
+        # Remove source if no users
+        if len(source.users) == 0:
+            try:
+                await crud.source.remove(db=db, id=source_id)
+                alerts.success.append("Source deleted")
+            except crud.RecordNotFoundError:
+                alerts.danger.append("Source not found")
+            except crud.DeleteError:
+                alerts.danger.append("Error deleting source")
 
     # Redirect to sources page
     response = RedirectResponse(url="/sources", status_code=status.HTTP_303_SEE_OTHER)
@@ -424,8 +434,18 @@ async def get_rss(source_id: str, db: Session = Depends(deps.get_db)) -> Respons
     """
     try:
         rss_file = await get_rss_file(id=source_id)
+
     except FileNotFoundError as exc:
-        source = await crud.source.get(id=source_id, db=db)
+        # Handle source not found
+        try:
+            source = await crud.source.get(id=source_id, db=db)
+        except crud.RecordNotFoundError as exc:
+            err_msg = f"Source '{source_id}' not found."
+            logger.critical(err_msg)
+            await notify(telegram=True, email=False, text=err_msg)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_msg) from exc
+
+        # Build and get rss file
         await build_rss_file(source=source)
         try:
             rss_file = await get_rss_file(id=source_id)

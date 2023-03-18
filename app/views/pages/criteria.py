@@ -4,8 +4,8 @@ from pydantic import ValidationError
 from sqlmodel import Session
 
 from app import crud, models
-from app.views import deps, templates
 from app.services.feed import build_rss_file
+from app.views import deps, templates
 
 router = APIRouter()
 

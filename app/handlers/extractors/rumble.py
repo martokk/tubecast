@@ -1,6 +1,6 @@
 # import itertools
-from datetime import datetime, timedelta
 import re
+from datetime import datetime, timedelta
 
 from yt_dlp.compat import compat_HTTPError, compat_str
 from yt_dlp.extractor.common import InfoExtractor
@@ -240,7 +240,6 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
         ]
 
     def _real_extract(self, url):  # pragma: no cover
-
         # Download webpage data
         video_id = self._match_id(url)
         # video = self._download_json(

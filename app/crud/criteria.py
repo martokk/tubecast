@@ -1,6 +1,8 @@
 from typing import Any
-from sqlmodel import Session
+
 from sqlalchemy.sql.elements import BinaryExpression
+from sqlmodel import Session
+
 from app import models
 from app.models.criteria import CriteriaField
 

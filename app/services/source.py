@@ -216,15 +216,17 @@ async def delete_orphaned_source_videos(
     return deleted_videos
 
 
-async def fetch_source(db: Session, id: str, ignore_video_refresh=False) -> models.FetchResults:
+async def fetch_source(
+    db: Session, id: str, ignore_video_refresh: bool = False
+) -> models.FetchResults:
     """
     Fetch new data from yt-dlp for the source and update the source in the database.
 
     This function will also delete any videos that are no longer associated with the source.
 
     Args:
-        id: The id of the source to fetch and update.
         db (Session): The database session.
+        id: The id of the source to fetch and update.
         ignore_video_refresh: If True, do not refresh videos.
 
     Returns:
