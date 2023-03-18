@@ -46,20 +46,6 @@ async def fixture_sources(db_with_user: Session) -> list[models.Source]:
     return sources
 
 
-def test_create_source_page(
-    db_with_user: Session,  # pylint: disable=unused-argument
-    client: TestClient,
-    normal_user_cookies: Cookies,
-) -> None:
-    """
-    Test that the create source page is returned.
-    """
-    client.cookies = normal_user_cookies
-    response = client.get("/sources/create")
-    assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/create.html"  # type: ignore
-
-
 def test_handle_create_source(
     db_with_user: Session,  # pylint: disable=unused-argument
     client: TestClient,
@@ -74,7 +60,7 @@ def test_handle_create_source(
         data=MOCKED_RUMBLE_SOURCE_1,
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/list.html"  # type: ignore
+    assert response.template.name == "source/view.html"  # type: ignore
 
 
 @pytest.mark.filterwarnings("ignore::sqlalchemy.exc.SAWarning")
@@ -94,7 +80,7 @@ def test_create_duplicate_source(
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "source/list.html"  # type: ignore
-    assert response.context["alerts"].danger[0] == "Source already exists"  # type: ignore
+    assert response.context["alerts"].danger[0] == f"Source '{MOCKED_RUMBLE_SOURCE_1['name']}' already exists"  # type: ignore
 
 
 def test_read_source(
@@ -189,11 +175,21 @@ def test_edit_source_page(
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
+    superuser_cookies: Cookies,
 ) -> None:
     """
     Test that the edit source page is returned.
     """
+
+    # Test that normal user can NOT edit source
     client.cookies = normal_user_cookies
+    response = client.get(
+        f"/source/{source_1.id}/edit",  # type: ignore
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    # Test that superuser CAN edit source
+    client.cookies = superuser_cookies
     response = client.get(
         f"/source/{source_1.id}/edit",  # type: ignore
     )
@@ -227,7 +223,7 @@ def test_update_source(
         data=MOCKED_SOURCES[1],
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/edit.html"  # type: ignore
+    assert response.template.name == "source/view.html"  # type: ignore
 
     # View the source
     response = client.get(
@@ -246,7 +242,7 @@ def test_update_source(
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
-    assert response.context["alerts"].danger[0] == "Source not found"  # type: ignore
+    assert response.context["alerts"].danger[0] == "Source 'invalid_user_id' not found"  # type: ignore
     assert response.url.path == "/sources"
 
 
@@ -261,7 +257,16 @@ def test_delete_source(
     """
     client.cookies = normal_user_cookies
 
-    # Delete the source
+    # Test DeleteError raised and handled
+    with patch("app.crud.source.remove", side_effect=crud.DeleteError):
+        response = client.get(
+            f"/source/{source_1.id}/delete",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+        assert response.context["alerts"].danger[0] == "Error deleting source"  # type: ignore
+
+    # Test Delete the source
     response = client.get(
         f"/source/{source_1.id}/delete",
     )
@@ -269,7 +274,7 @@ def test_delete_source(
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.url.path == "/sources"
 
-    # View the source
+    # Validate source is deleted
     response = client.get(
         f"/source/{source_1.id}",
     )
@@ -284,15 +289,6 @@ def test_delete_source(
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "Source not found"  # type: ignore
     assert response.url.path == "/sources"
-
-    # Test DeleteError
-    with patch("app.crud.source.remove", side_effect=crud.DeleteError):
-        response = client.get(
-            f"/source/123/delete",
-        )
-        assert response.status_code == status.HTTP_200_OK
-        assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
-        assert response.context["alerts"].danger[0] == "Error deleting source"  # type: ignore
 
 
 def test_list_all_sources(

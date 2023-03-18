@@ -90,6 +90,9 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
 
         # Check if the source already exists
         db_source = await self.get_or_none(id=source_id, db=db)
+        source_already_exists = db_source is not None
+
+        # Create the source if it doesn't exist
         if not db_source:
             # Fetch source information from yt-dlp and create the source object
             source_info_dict = await get_source_info_dict(
@@ -109,6 +112,10 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
 
         # Create default filters ("shorts", "regular", "podcasts")
         await self.add_default_filters(db=db, source=db_source, user_id=user_id)
+
+        # After adding source to user, handle if already exists
+        if source_already_exists:
+            raise crud.RecordAlreadyExistsError(f"Source '{db_source.name}' already exists")
 
         return db_source
 

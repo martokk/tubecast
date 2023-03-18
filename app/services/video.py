@@ -9,6 +9,7 @@ from yt_dlp.utils import YoutubeDLError
 from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers import get_handler_from_string, get_handler_from_url
+from app.handlers.exceptions import FormatNotFoundError
 from app.services.ytdlp import (
     Http410Error,
     IsDeletedVideoError,
@@ -16,7 +17,6 @@ from app.services.ytdlp import (
     IsPrivateVideoError,
     get_info_dict,
 )
-from app.handlers.exceptions import FormatNotFoundError
 
 
 async def get_video_info_dict(

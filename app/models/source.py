@@ -36,6 +36,10 @@ class SourceBase(TimestampModel, SQLModel):
     handler: str = Field(default=None)
     service: str = Field(default=None)
 
+    @property
+    def name_sortable(self) -> str:
+        return self.name.lstrip("The ")
+
 
 class Source(SourceBase, table=True):
     videos: list["Video"] = Relationship(

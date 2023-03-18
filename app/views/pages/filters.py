@@ -2,12 +2,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Qu
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
-from app import crud, models, logger
+from app import crud, logger, models
+from app.core.notify import notify
 from app.models.source_video_link import SourceOrderBy
 from app.services.feed import build_rss_file, delete_rss_file, get_rss_file
 from app.services.source import fetch_source
 from app.views import deps, templates
-from app.core.notify import notify
 
 router = APIRouter()
 
