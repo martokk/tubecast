@@ -43,15 +43,16 @@
 
         </thead>
         <tbody>
+
             {% for source in sources | sort(attribute='name_sortable') %}
             <tr class="bg-dark">
-                <td>
+                <td onclick="location.href='/source/{{ source.id }}';" style="cursor:pointer;">
                     <div class="d-flex align-items-top">
                         <div class="me-3">
                             <img src="{{ source.logo }}" class="cropped-image" alt="" width="60" height="60">
                         </div>
                         <div>
-                            <a href="/source/{{ source.id }}" class="fw-bold text-light text-decoration-none">{{
+                            <a href="/source/{{ source.id }}" class="fw-bold text-light text-decoration-none d-block">{{
                                 source.name }}</a>
                             <div class="small">
                                 <span class="badge small {{ source.service | service_badge_color}}">
@@ -64,7 +65,7 @@
                 </td>
 
                 {% if current_user.is_superuser %}
-                <td class="text-center">
+                <td class="text-center" onclick="location.href='/source/{{ source.id }}';" style="cursor:pointer;">
                     <div class="small text-muted">{{ source.users | length }}</div>
                 </td>
                 {% endif %}
@@ -73,8 +74,7 @@
                     <div class="dropdown mt-2">
                         <button class="btn btn-dark" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
                             aria-expanded="false">
-                            <i class="fas fa-ellipsis-v"></i>
-
+                            <i class="fas fa-ellipsis-h"></i>
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                             {% if current_user.is_superuser %}
@@ -84,7 +84,6 @@
                                     Edit
                                 </a>
                             </li>
-
                             <li>
                                 <a class="dropdown-item" href="/source/{{ source.id }}/fetch">
                                     <i class="fas fa-arrow-circle-right me-2"></i>
@@ -119,7 +118,6 @@
                 </td>
             </tr>
             <tr class="border-bottom"></tr>
-
             {% endfor %}
 
         </tbody>
