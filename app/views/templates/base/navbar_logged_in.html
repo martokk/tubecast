@@ -1,5 +1,5 @@
 <nav
-    class="navbar navbar-expand-lg navbar-dark {% if current_user.is_superuser %}bg-success{% else %}bg-primary{% endif %}">
+    class="navbar navbar-expand-lg navbar-dark {% if current_user.is_superuser %}{% if ENV_NAME == "production" %}bg-admin{% else %}bg-admin-dev{% endif %}{% else %}{% if ENV_NAME == "production" %}bg-user{% else %}bg-user-dev{% endif %}{% endif %}">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">{{ PROJECT_NAME }}{% if ENV_NAME != "production" %} ({{ ENV_NAME }}){% endif
             %}{% if current_user.is_superuser %} -
