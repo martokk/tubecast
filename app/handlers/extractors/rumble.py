@@ -1,6 +1,6 @@
 # import itertools
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from yt_dlp.compat import compat_HTTPError, compat_str
 from yt_dlp.extractor.common import InfoExtractor
