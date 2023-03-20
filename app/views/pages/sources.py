@@ -7,7 +7,7 @@ from app.core.notify import notify
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.feed import build_rss_file, get_rss_file
 from app.services.source import fetch_all_sources, fetch_source
-from app.services.ytdlp import PlaylistNotFoundError
+from app.services.ytdlp import NoUploadsError, PlaylistNotFoundError
 from app.views import deps, templates
 
 router = APIRouter()
@@ -119,28 +119,28 @@ async def view_source(
     )
 
 
-@router.get("/sources/create", response_class=HTMLResponse)
-async def create_source(
-    request: Request,
-    current_user: models.User = Depends(  # pylint: disable=unused-argument
-        deps.get_current_active_user
-    ),
-) -> Response:
-    """
-    New Source form.
+# @router.get("/sources/create", response_class=HTMLResponse)
+# async def create_source(
+#     request: Request,
+#     current_user: models.User = Depends(  # pylint: disable=unused-argument
+#         deps.get_current_active_user
+#     ),
+# ) -> Response:
+#     """
+#     New Source form.
 
-    Args:
-        request(Request): The request object
-        current_user(User): The authenticated user.
+#     Args:
+#         request(Request): The request object
+#         current_user(User): The authenticated user.
 
-    Returns:
-        Response: Form to create a new source
-    """
-    alerts = models.Alerts().from_cookies(request.cookies)
-    return templates.TemplateResponse(
-        "source/create.html",
-        {"request": request, "current_user": current_user, "alerts": alerts},
-    )
+#     Returns:
+#         Response: Form to create a new source
+#     """
+#     alerts = models.Alerts().from_cookies(request.cookies)
+#     return templates.TemplateResponse(
+#         "source/create.html",
+#         {"request": request, "current_user": current_user, "alerts": alerts},
+#     )
 
 
 @router.post("/sources/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
@@ -167,18 +167,8 @@ async def handle_create_source(
     alerts = models.Alerts()
     try:
         source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
-    except crud.RecordAlreadyExistsError as exc:
+    except (crud.RecordAlreadyExistsError, NoUploadsError, HandlerNotFoundError) as exc:
         alerts.danger.append(str(exc))
-        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
-    except HandlerNotFoundError:
-        alerts.danger.append("Handler not found for this url.")
-        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
-    except PlaylistNotFoundError as e:
-        alerts.danger.append(str(e))
         response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
