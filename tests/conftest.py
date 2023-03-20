@@ -17,8 +17,13 @@ from app.api import deps as api_deps
 from app.core import security
 from app.core.app import app
 from app.db.init_db import init_initial_data
+from app.services.source import fetch_source
 from app.views import deps as views_deps
-from tests.mock_objects import get_mocked_source_info_dict, get_mocked_video_info_dict
+from tests.mock_objects import (
+    MOCKED_YOUTUBE_SOURCE_1,
+    get_mocked_source_info_dict,
+    get_mocked_video_info_dict,
+)
 
 # Set up the database
 db_url = "sqlite:///:memory:"
@@ -241,3 +246,37 @@ def fixture_superuser_cookies(
         response = client.post("/login", data=form_data)
         print(response.cookies)
         return response.cookies
+
+
+@pytest.fixture(name="source_1")
+async def fixture_source_1(db: Session) -> models.Source:
+    """
+    Create a source in the database.
+    """
+    source = await crud.source.create(db=db, obj_in=models.SourceCreate(**MOCKED_YOUTUBE_SOURCE_1))
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+    return source
+
+
+@pytest.fixture(name="source_1_w_videos")
+async def fixture_source_1_w_videos(db_with_user: Session) -> models.Source:
+    """
+    Create a source in the database.
+    """
+    # Create Source
+    source = await crud.source.create(
+        db=db_with_user, obj_in=models.SourceCreate(**MOCKED_YOUTUBE_SOURCE_1)
+    )
+    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
+    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
+    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+
+    # Create fetched_source
+    await fetch_source(db=db_with_user, id=source.id)
+
+    fetched_source = await crud.source.get(db=db_with_user, id=source.id)
+    assert len(fetched_source.videos) == 2
+
+    return source
