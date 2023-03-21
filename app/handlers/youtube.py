@@ -319,6 +319,9 @@ class YoutubeHandler(ServiceHandler):
                 raise FormatNotFoundError(f"Could not find format_id in entry_info_dict")
             raise exc
 
+        if "m3u8" in format_info_dict["url"]:
+            raise FormatNotFoundError("'m3u8' format not supported.")
+
         media_filesize = format_info_dict.get("filesize") or format_info_dict.get(
             "filesize_approx", 0
         )

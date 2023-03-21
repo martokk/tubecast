@@ -12,44 +12,15 @@ from app.views import deps, templates
 router = APIRouter()
 
 
-@router.get("/filter/create", response_class=HTMLResponse)
-async def create_filter(
-    request: Request,
-    source_id: str = Query(None, alias="source_id"),
-    current_user: models.User = Depends(  # pylint: disable=unused-argument
-        deps.get_current_active_user
-    ),
-) -> Response:
-    """
-    New Filter form.
-
-    Args:
-        request(Request): The request object
-        source_id(str): The id of the source
-        current_user(User): The authenticated user.
-
-    Returns:
-        Response: Form to create a new filter
-    """
-    if not source_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Source id is required")
-    alerts = models.Alerts().from_cookies(request.cookies)
-    return templates.TemplateResponse(
-        "filter/create.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "source_id": source_id,
-            "alerts": alerts,
-        },
-    )
-
-
-@router.post("/filter/create", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/source/{source_id}/filter/create",
+    response_class=HTMLResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def handle_create_filter(
     background_tasks: BackgroundTasks,
+    source_id: str,
     name: str = Form(None),
-    source_id: str = Query(Form(...), alias="source_id"),
     ordered_by: str = Form(None),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(  # pylint: disable=unused-argument
@@ -176,8 +147,8 @@ async def edit_filter(
     try:
         filter = await crud.filter.get(db=db, id=filter_id)
     except crud.RecordNotFoundError:
-        alerts.danger.append("Source Filter not found")
-        response = RedirectResponse("/filters", status_code=status.HTTP_302_FOUND)
+        alerts.danger.append("Filter not found")
+        response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
 
@@ -233,8 +204,8 @@ async def handle_edit_filter(
         alerts.success.append(f"Source Filter '{new_filter.name}' updated")
         return_url = f"/filter/{new_filter.id}"
     except crud.RecordNotFoundError:
-        alerts.danger.append("Source Filter not found")
-        return_url = "/filters"
+        alerts.danger.append("Filter not found")
+        return_url = "/sources"
 
     response = RedirectResponse(url=return_url, status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Method"] = "GET"
@@ -285,7 +256,7 @@ async def delete_filter(
 
 
 @router.get("/filter/{filter_id}/fetch", status_code=status.HTTP_202_ACCEPTED)
-async def fetch_source_page(
+async def fetch_filter_page(
     filter_id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(deps.get_db),
@@ -322,7 +293,7 @@ async def fetch_source_page(
 
 
 @router.get("/filter/{filter_id}/feed", response_class=HTMLResponse)
-async def get_rss(filter_id: str, db: Session = Depends(deps.get_db)) -> Response:
+async def get_filter_rss_feed(filter_id: str, db: Session = Depends(deps.get_db)) -> Response:
     """
     Gets a rss file for filter_id and returns it as a Response
 
@@ -342,7 +313,7 @@ async def get_rss(filter_id: str, db: Session = Depends(deps.get_db)) -> Respons
         await build_rss_file(filter=filter)
         try:
             rss_file = await get_rss_file(id=filter_id)
-        except FileNotFoundError as exc:
+        except FileNotFoundError as exc:  # pragma: no cover
             err_msg = f"RSS file ({filter.id}.rss) does not exist for filter '{filter.id=}' ({filter.source.name} - [{filter.name}]).)"
             logger.critical(err_msg)
             await notify(telegram=True, email=False, text=err_msg)

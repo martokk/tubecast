@@ -54,17 +54,19 @@ class Source(SourceBase, table=True):
     created_user: "User" = Relationship()
     users: list["User"] = Relationship(back_populates="sources", link_model=UserSourceLink)
 
-    def videos_sorted(self) -> list["Video"]:
-        if self.ordered_by == SourceOrderBy.RELEASED_AT.value:
+    def videos_sorted(self, ordered_by: str | None = None) -> list["Video"]:
+        ordered_by = ordered_by or self.ordered_by
+
+        if ordered_by == SourceOrderBy.RELEASED_AT.value:
             videos = [video for video in self.videos if video.released_at]
             un_fetched_videos = [video for video in self.videos if not video.released_at]
             sorted_videos = sorted(videos, key=lambda video: video.released_at, reverse=True)
             sorted_videos.extend(un_fetched_videos)
             return sorted_videos
-        elif self.ordered_by == SourceOrderBy.CREATED_AT.value:
+        elif ordered_by == SourceOrderBy.CREATED_AT.value:
             return sorted(self.videos, key=lambda video: video.created_at, reverse=True)
         else:
-            raise ValueError(f"Invalid order_by value: {self.ordered_by}")
+            raise ValueError(f"Invalid order_by value: {ordered_by}")
 
     @property
     def feed_url(self) -> str:

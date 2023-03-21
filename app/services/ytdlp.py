@@ -3,7 +3,7 @@ from typing import Any, Type
 from loguru import logger as _logger
 from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
-from yt_dlp.utils import YoutubeDLError
+from yt_dlp.utils import DownloadError, ExtractorError, YoutubeDLError
 
 # from app.core.loggers import ytdlp_logger as logger
 from app.core.notify import notify
@@ -18,7 +18,7 @@ YDL_OPTS_BASE: dict[str, Any] = {
     "format": "worst[ext=mp4]",
     "skip_download": True,
     "simulate": True,
-    "ignore_no_formats_error": True,
+    "ignore_no_formats_error": True,  # Ignore "No video formats" error. Extracts metadata if no formats are available.
     # "verbose": True,
 }
 
@@ -53,6 +53,12 @@ class PlaylistNotFoundError(YoutubeDLError):
     """
 
 
+class NoUploadsError(YoutubeDLError):
+    """
+    Raised when a channel has no uploads.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -73,22 +79,61 @@ async def get_info_dict(
     Returns:
         dict[str, Any]: The info dictionary for the object.
     """
-    with YoutubeDL(ydl_opts) as ydl:
-        # Add custom_extractors
-        if custom_extractors:
-            for custom_extractor in custom_extractors:
-                ydl.add_info_extractor(custom_extractor())
-        # Extract info dict
-        info_dict = await ydl_extract_info(ydl=ydl, url=url, download=False, ie_key=ie_key)
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            # Extract info dict, handle if no videos uploaded
+            info_dict = await get_info_dict_from_ydl(
+                ydl=ydl,
+                url=url,
+                ydl_opts=ydl_opts,
+                ie_key=ie_key,
+                custom_extractors=custom_extractors,
+            )
+    except NoUploadsError as e:
+        # TODO: Handle this error.
+        # Test: https://www.youtube.com/channel/UCeTX6IZlqeB6qhNBAB6cgTQ
+        # See: https://github.com/yt-dlp/yt-dlp/issues/5906
+        raise e
+    return info_dict
 
-        # Append Metadata to info_dict
-        info_dict["metadata"] = {
-            "url": url,
-            "ydl_opts": ydl_opts,
-            "ie_key": ie_key,
-            "custom_extractors": custom_extractors,
-        }
 
+async def get_info_dict_from_ydl(
+    ydl: YoutubeDL,
+    url: str,
+    ydl_opts: dict[str, Any],
+    ie_key: str | None = None,
+    custom_extractors: list[Type[InfoExtractor]] | None = None,
+) -> dict[str, Any]:
+    """
+    Use YouTube-DL to get the info dictionary for a given URL.
+
+    Parameters:
+        ydl (YoutubeDL): The YouTube-DL instance to use.
+        url (str): The URL of the object to retrieve info for.
+        ydl_opts (dict[str, Any]): The options to use with YouTube-DL.
+        ie_key (Optional[str]): The name of the YouTube-DL info extractor to use.
+            If not provided, the default extractor will be used.
+        custom_extractors (Optional[list[Type[InfoExtractor]]]): A list of
+            Custom Extractors to make available to yt-dlp.
+
+    Returns:
+        dict[str, Any]: The info dictionary for the object.
+    """
+    # Add custom_extractors
+    if custom_extractors:
+        for custom_extractor in custom_extractors:
+            ydl.add_info_extractor(custom_extractor())
+
+    # Extract info dict, handle if no videos uploaded
+    info_dict = await ydl_extract_info(ydl=ydl, url=url, download=False, ie_key=ie_key)
+
+    # Append Metadata to info_dict
+    info_dict["metadata"] = {
+        "url": url,
+        "ydl_opts": ydl_opts,
+        "ie_key": ie_key,
+        "custom_extractors": custom_extractors,
+    }
     return info_dict
 
 
@@ -115,9 +160,12 @@ async def ydl_extract_info(
         Http410Error: If a HTTP 410 "GONE" error is encountered.
     """
     try:
-        info_dict: dict[str, Any] = ydl.extract_info(url, download=False, ie_key=ie_key)
-
-    except (YoutubeDLError, Exception) as e:
+        info_dict: dict[str, Any] = ydl.extract_info(
+            url, download=download, ie_key=ie_key, process=True
+        )
+    except (YoutubeDLError, DownloadError, ExtractorError) as e:
+        if "This channel has no uploads" in str(e):
+            raise NoUploadsError("This channel has no uploads.") from e
         if "The playlist does not exist." in str(e):
             raise PlaylistNotFoundError("The playlist does not exist.") from e
         if "No video formats found" in str(e):

@@ -49,7 +49,7 @@ class Video(VideoBase, table=True):
     def __repr__(self) -> str:
         return f"Video(id={self.id}, title={self.title[:20] if self.title else ''}, uploader={self.uploader}, handler={self.handler})"
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # pyright: reportIncompatibleVariableOverride=false
         return hash(self.id)
 
     def __eq__(self, other: Any) -> bool:

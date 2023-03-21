@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timedelta
 from enum import Enum
 
-from pydantic import root_validator
+from pydantic import ValidationError, root_validator
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.uuid import generate_uuid_random
@@ -36,6 +36,7 @@ class CriteriaUnitOfMeasure(Enum):
     MINUTES = "minutes"
     HOURS = "hours"
     DAYS = "days"
+    KEYWORD = "keyword"
 
 
 class CriteriaBase(TimestampModel, SQLModel):
@@ -113,14 +114,14 @@ class Criteria(CriteriaBase, table=True):
         now = datetime.utcnow()
         if unit_of_measure == CriteriaUnitOfMeasure.SECONDS.value:
             within_range = now - timedelta(seconds=value)
-        if unit_of_measure == CriteriaUnitOfMeasure.MINUTES.value:
+        elif unit_of_measure == CriteriaUnitOfMeasure.MINUTES.value:
             within_range = now - timedelta(minutes=value)
         elif unit_of_measure == CriteriaUnitOfMeasure.HOURS.value:
             within_range = now - timedelta(hours=value)
         elif unit_of_measure == CriteriaUnitOfMeasure.DAYS.value:
             within_range = now - timedelta(days=value)
         else:
-            raise ValueError("Unit of measure must be 'minutes', 'hours' or 'days'")
+            raise ValueError("Unit of measure must be 'seconds', 'minutes', 'hours' or 'days'")
         return dt >= within_range
 
     def is_within_duration(
@@ -151,7 +152,7 @@ class Criteria(CriteriaBase, table=True):
         elif unit_of_measure == CriteriaUnitOfMeasure.DAYS.value:
             seconds = value * 60 * 60 * 24
         else:
-            raise ValueError("Unit of measure must be 'minutes', 'hours' or 'days'")
+            raise ValueError("Unit of measure must be 'seconds', 'minutes', 'hours' or 'days'")
 
         if operator == CriteriaOperator.SHORTER_THAN.value:
             return video_duration <= seconds
@@ -195,6 +196,13 @@ class CriteriaCreate(CriteriaBase):
         if field in [CriteriaField.RELEASED.value, CriteriaField.CREATED.value]:
             if values["operator"] not in [CriteriaOperator.WITHIN.value]:
                 raise ValueError("Operator for 'released' and 'created' fields must be 'within'")
+            if values["unit_of_measure"] not in [
+                CriteriaUnitOfMeasure.DAYS.value,
+                CriteriaUnitOfMeasure.HOURS.value,
+                CriteriaUnitOfMeasure.MINUTES.value,
+                CriteriaUnitOfMeasure.SECONDS.value,
+            ]:
+                raise ValueError("Unit of measure must be 'seconds', 'minutes', 'hours', or 'days'")
 
         elif field == CriteriaField.DURATION.value:
             if values["operator"] not in [
@@ -204,6 +212,13 @@ class CriteriaCreate(CriteriaBase):
                 raise ValueError(
                     "Operator for 'duration' field must be 'shorter_than' or 'longer_than'"
                 )
+            if values["unit_of_measure"] not in [
+                CriteriaUnitOfMeasure.DAYS.value,
+                CriteriaUnitOfMeasure.HOURS.value,
+                CriteriaUnitOfMeasure.MINUTES.value,
+                CriteriaUnitOfMeasure.SECONDS.value,
+            ]:
+                raise ValueError("Unit of measure must be 'seconds', 'minutes', 'hours' or 'days'")
 
         elif field == CriteriaField.KEYWORD.value:
             if values["operator"] not in [
@@ -213,6 +228,10 @@ class CriteriaCreate(CriteriaBase):
                 raise ValueError(
                     "Operator for 'keyword' field must be 'must_contain' or 'must_not_contain'"
                 )
+            if values["unit_of_measure"] not in [
+                CriteriaUnitOfMeasure.KEYWORD.value,
+            ]:
+                raise ValueError("Unit of measure must be 'keyword'")
 
         else:
             raise ValueError("Field must be 'released', 'created', 'duration' or 'keyword'")

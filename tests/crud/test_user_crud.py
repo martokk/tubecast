@@ -15,32 +15,30 @@ async def test_create_user(db: Session) -> None:
     assert hasattr(user, "hashed_password")
 
 
-async def test_authenticate_user(db_with_user: Session) -> None:
+async def test_authenticate_user(db: Session, normal_user: models.User) -> None:
     """
     Test that a user can authenticate with the correct username and password.
     """
     username = "test_user"
     password = "test_password"
-    authenticated_user = await crud.user.authenticate(
-        db_with_user, username=username, password=password
-    )
+    authenticated_user = await crud.user.authenticate(db, username=username, password=password)
     assert authenticated_user
     assert username == authenticated_user.username
 
 
-async def test_not_authenticate_user(db_with_user: Session) -> None:
+async def test_not_authenticate_user(db: Session) -> None:
     """
     Test that a user cannot authenticate with the wrong password.
     """
-    user = await crud.user.authenticate(db_with_user, username="fakeuser", password="wrongpassword")
+    user = await crud.user.authenticate(db, username="fakeuser", password="wrongpassword")
     assert user is None
 
 
-async def test_check_if_user_is_active(db_with_user: Session) -> None:
+async def test_check_if_user_is_active(db: Session, normal_user: models.User) -> None:
     """
     Test that a user is active.
     """
-    user = await crud.user.get(db=db_with_user, username="test_user")
+    user = await crud.user.get(db=db, username="test_user")
     is_active = crud.user.is_active(user)
     assert is_active is True
 

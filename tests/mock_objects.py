@@ -2,6 +2,9 @@ from typing import Any
 
 from datetime import datetime
 
+from app import models
+from app.models.source_video_link import SourceOrderBy
+
 MOCKED_RUMBLE_VIDEO_1: dict[str, Any] = {
     "id": "DthvvHVw",
     "source_id": "7hyhcvzT",
@@ -90,7 +93,7 @@ MOCKED_YOUTUBE_VIDEO_2: dict[str, Any] = {
 
 
 MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
-    "id": "7hyhcvzT",
+    "id": "Mq4cqDu8",
     "url": "https://www.rumble.com/c/styxhexenhammer666",
     "name": "Styxhexenhammer666",
     "logo": "https://sp.rmbl.ws/z8/t/j/s/b/tjsba.baa.1-Styxhexenhammer666-qyv16v.png",
@@ -107,7 +110,7 @@ MOCKED_RUMBLE_SOURCE_1: dict[str, Any] = {
 }
 
 MOCKED_RUMBLE_SOURCE_2: dict[str, Any] = {
-    "id": "mLC5c5NH",
+    "id": "ny9YnpGZ",
     "url": "https://www.rumble.com/c/kimiversen",
     "name": "Kim Iversen",
     "author": "Kim Iversen",
@@ -141,6 +144,31 @@ MOCKED_SOURCES: list[dict[str, Any]] = [
     MOCKED_RUMBLE_SOURCE_1,
     MOCKED_RUMBLE_SOURCE_2,
 ]
+
+
+MOCK_FILTER_1: dict[str, Any] = {
+    "name": "test filter 1",
+    "ordered_by": SourceOrderBy.RELEASED_AT.value,
+}
+
+MOCK_FILTER_2: dict[str, Any] = {
+    "name": "test filter 2",
+    "ordered_by": SourceOrderBy.CREATED_AT.value,
+}
+
+MOCK_CRITERIA_1: dict[str, Any] = {
+    "field": models.CriteriaField.DURATION.value,
+    "operator": models.CriteriaOperator.LONGER_THAN.value,
+    "value": 100,
+    "unit_of_measure": models.CriteriaUnitOfMeasure.SECONDS.value,
+}
+
+MOCK_CRITERIA_2: dict[str, Any] = {
+    "field": models.CriteriaField.KEYWORD.value,
+    "operator": models.CriteriaOperator.MUST_NOT_CONTAIN.value,
+    "value": MOCKED_RUMBLE_VIDEO_1["title"],
+    "unit_of_measure": models.CriteriaUnitOfMeasure.KEYWORD.value,
+}
 
 
 async def get_mocked_source_info_dict(*args: Any, **kwargs: Any) -> dict[str, Any]:

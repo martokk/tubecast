@@ -6,48 +6,37 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
-from app import crud, models, settings
+from app import crud, models
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES
 
 
-@pytest.fixture(name="source_1")
-async def fixture_source_1(db_with_user: Session) -> models.Source:
-    """
-    Create an source for testing.
-    """
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    return await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-
-
 @pytest.fixture(name="sources")
-async def fixture_sources(db_with_user: Session) -> list[models.Source]:
+async def fixture_sources(
+    db: Session, normal_user: models.User, superuser: models.User
+) -> list[models.Source]:
     """
     Create an source for testing.
     """
     # Create 1 as a superuser
-    user = await crud.user.get(db=db_with_user, username=settings.FIRST_SUPERUSER_USERNAME)
     sources = []
     sources.append(
         await crud.source.create_source_from_url(
-            db=db_with_user, url=MOCKED_SOURCES[0]["url"], user_id=user.id
+            db=db, url=MOCKED_SOURCES[0]["url"], user_id=superuser.id
         )
     )
 
     # Create 2 as a normal user
-    user = await crud.user.get(db=db_with_user, username="test_user")
     for mocked_source in [MOCKED_SOURCES[1], MOCKED_SOURCES[2]]:
         sources.append(
             await crud.source.create_source_from_url(
-                db=db_with_user, url=mocked_source["url"], user_id=user.id
+                db=db, url=mocked_source["url"], user_id=normal_user.id
             )
         )
     return sources
 
 
 def test_handle_create_source(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
 ) -> None:
@@ -60,12 +49,13 @@ def test_handle_create_source(
         data=MOCKED_RUMBLE_SOURCE_1,
     )
     assert response.status_code == status.HTTP_200_OK
+    assert response.url.path == f"/source/{MOCKED_RUMBLE_SOURCE_1['id']}"
     assert response.template.name == "source/view.html"  # type: ignore
 
 
 @pytest.mark.filterwarnings("ignore::sqlalchemy.exc.SAWarning")
 def test_create_duplicate_source(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
@@ -74,17 +64,19 @@ def test_create_duplicate_source(
     Test a duplicate source cannot be created.
     """
     # Try to create a duplicate source
+    client.cookies = normal_user_cookies
     response = client.post(
         "/sources/create",
         data=MOCKED_RUMBLE_SOURCE_1,
     )
     assert response.status_code == status.HTTP_200_OK
+    assert response.url.path == f"/sources"
     assert response.template.name == "source/list.html"  # type: ignore
-    assert response.context["alerts"].danger[0] == f"Source '{MOCKED_RUMBLE_SOURCE_1['name']}' already exists"  # type: ignore
+    assert response.context["alerts"].danger[0] == f"Source '{source_1.name}' already exists"  # type: ignore
 
 
 def test_read_source(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
@@ -101,7 +93,7 @@ def test_read_source(
 
 
 def test_get_source_not_found(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
 ) -> None:
@@ -117,7 +109,7 @@ def test_get_source_not_found(
 
 
 def test_get_source_forbidden(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
@@ -148,7 +140,7 @@ def test_get_source_forbidden(
 
 
 def test_normal_user_get_all_sources(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     sources: list[models.Source],  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
@@ -171,7 +163,7 @@ def test_normal_user_get_all_sources(
 
 
 def test_edit_source_page(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
@@ -207,7 +199,7 @@ def test_edit_source_page(
 
 
 def test_update_source(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     source_1: models.Source,
     normal_user_cookies: Cookies,
@@ -247,7 +239,7 @@ def test_update_source(
 
 
 def test_delete_source(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,
     client: TestClient,
     normal_user_cookies: Cookies,
@@ -292,7 +284,7 @@ def test_delete_source(
 
 
 def test_list_all_sources(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     sources: list[models.Source],  # pylint: disable=unused-argument
     client: TestClient,
     superuser_cookies: Cookies,
@@ -314,7 +306,7 @@ def test_list_all_sources(
 
 
 def test_fetch_source(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,

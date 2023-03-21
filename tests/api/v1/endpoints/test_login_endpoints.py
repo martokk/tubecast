@@ -9,7 +9,8 @@ from app import crud, models, settings
 
 
 async def test_get_access_token(
-    db_with_user: Session,
+    db: Session,
+    normal_user: models.User,
     client: TestClient,
 ) -> None:
     login_data = {
@@ -45,9 +46,11 @@ async def test_get_access_token_bad_username(client: TestClient) -> None:
     assert r.json() == {"detail": "Incorrect username or password"}
 
 
-async def test_get_access_token_inactive_user(db_with_user: Session, client: TestClient) -> None:
+async def test_get_access_token_inactive_user(
+    db: Session, normal_user: models.User, client: TestClient
+) -> None:
     db_user = await crud.user.update(
-        db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
+        db=db, username="test_user", obj_in=models.UserUpdate(is_active=False)
     )
     login_data = {
         "username": "test_user",
@@ -67,7 +70,7 @@ def test_use_access_token(client: TestClient, superuser_token_headers: dict[str,
     assert "email" in result
 
 
-async def test_reset_password(db_with_user: Session, client: TestClient) -> None:
+async def test_reset_password(db: Session, normal_user: models.User, client: TestClient) -> None:
     # Test that the reset password recovery email is sent with the access token
     with patch("app.core.notify.send_reset_password_email") as mock_send_email:
         r = client.post(
@@ -96,9 +99,7 @@ async def test_reset_password(db_with_user: Session, client: TestClient) -> None
     assert "access_token" in tokens
 
 
-async def test_reset_password_with_invalid_username(
-    db_with_user: Session, client: TestClient
-) -> None:
+async def test_reset_password_with_invalid_username(db: Session, client: TestClient) -> None:
     """
     Test that the reset password endpoint returns a 404 if the username is invalid
     """
@@ -109,7 +110,7 @@ async def test_reset_password_with_invalid_username(
     assert r.status_code == 404
 
 
-async def test_reset_password_with_invalid_token(db_with_user: Session, client: TestClient) -> None:
+async def test_reset_password_with_invalid_token(db: Session, client: TestClient) -> None:
     """
     Test that the reset password endpoint returns a 401 if the token is invalid
     """
@@ -122,7 +123,7 @@ async def test_reset_password_with_invalid_token(db_with_user: Session, client: 
 
 
 async def test_reset_password_with_invalid_user_id_from_token(
-    db_with_user: Session, client: TestClient
+    db: Session, client: TestClient
 ) -> None:
     """
     Test that the reset password endpoint returns a 404 if the user id in the token is invalid
@@ -137,14 +138,12 @@ async def test_reset_password_with_invalid_user_id_from_token(
 
 
 async def test_password_recovery_for_inactive_user(
-    db_with_user: Session, client: TestClient
+    db: Session, normal_user: models.User, client: TestClient
 ) -> None:
     """
     Test that the reset password endpoint returns a 400 if the user is inactive
     """
-    await crud.user.update(
-        db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
-    )
+    await crud.user.update(db=db, username="test_user", obj_in=models.UserUpdate(is_active=False))
 
     with patch("app.core.notify.send_reset_password_email") as mock_send_email:
         r = client.post(
@@ -154,12 +153,14 @@ async def test_password_recovery_for_inactive_user(
     assert r.json() == {"detail": "Inactive user"}
 
 
-async def test_reset_password_for_inactive_user(db_with_user: Session, client: TestClient) -> None:
+async def test_reset_password_for_inactive_user(
+    db: Session, normal_user: models.User, client: TestClient
+) -> None:
     """
     Test that the reset password endpoint returns a 400 if the user is inactive
     """
     db_user = await crud.user.update(
-        db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
+        db=db, username="test_user", obj_in=models.UserUpdate(is_active=False)
     )
 
     with patch("app.core.security.decode_token") as mock_decode_token:
@@ -173,7 +174,7 @@ async def test_reset_password_for_inactive_user(db_with_user: Session, client: T
 
 
 async def test_get_current_user_not_found(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that the current user endpoint returns a 404 if the user is not found
@@ -189,7 +190,7 @@ async def test_get_current_user_not_found(
 
 
 async def test_get_current_active_user_inactive_user(
-    db_with_user: Session,
+    db: Session,
     client: TestClient,
     normal_user_token_headers: dict[str, str],
 ) -> None:
@@ -197,7 +198,7 @@ async def test_get_current_active_user_inactive_user(
     Test that the current user endpoint returns a 400 if the user is inactive
     """
     db_user = await crud.user.update(
-        db=db_with_user, username="test_user", obj_in=models.UserUpdate(is_active=False)
+        db=db, username="test_user", obj_in=models.UserUpdate(is_active=False)
     )
 
     with patch("app.api.deps.get_current_user_id") as mock_get_current_user_id:
@@ -211,7 +212,7 @@ async def test_get_current_active_user_inactive_user(
 
 
 async def test_expired_token(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that the current user endpoint returns a 401 if the token is expired
@@ -227,7 +228,7 @@ async def test_expired_token(
 
 
 async def test_get_tokens_from_refresh_token(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that the refresh token endpoint returns new tokens
@@ -256,7 +257,7 @@ async def test_get_tokens_from_refresh_token(
 
 
 async def test_get_tokens_from_refresh_token_unauthorized(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that the refresh token endpoint returns a 401 if the token is invalid

@@ -89,6 +89,7 @@ class ServiceHandler:
         """
         return YDL_OPTS_BASE
 
+    @abstractmethod
     async def get_source_info_dict_kwargs(self, url: str) -> dict[str, Any]:
         """
 
@@ -100,12 +101,6 @@ class ServiceHandler:
         Returns:
             A dictionary containing the kwargs for the source info dict.
         """
-        return {
-            "extract_flat": True,
-            "playlistreverse": True,
-            "playlistend": settings.BUILD_FEED_RECENT_VIDEOS,
-            "dateafter": settings.BUILD_FEED_DATEAFTER,
-        }
 
     @abstractmethod
     def map_source_info_dict_to_source_dict(
