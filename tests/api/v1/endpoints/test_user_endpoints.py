@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -21,7 +22,7 @@ def test_get_users_superuser_me(
 
 
 def test_get_users_normal_user_me(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a normal user can retrieve their own user information.
@@ -72,7 +73,7 @@ async def test_create_user(
 
 
 def test_get_users_not_superuser(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a normal user cannot retrieve all users.
@@ -83,12 +84,12 @@ def test_get_users_not_superuser(
 
 
 async def test_get_user_not_superuser(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a normal user cannot retrieve another user.
     """
-    test_user = await crud.user.get(db=db_with_user, username=settings.FIRST_SUPERUSER_USERNAME)
+    test_user = await crud.user.get(db=db, username=settings.FIRST_SUPERUSER_USERNAME)
     r = client.get(
         f"{settings.API_V1_PREFIX}/user/{test_user.id}", headers=normal_user_token_headers
     )
@@ -97,7 +98,7 @@ async def test_get_user_not_superuser(
 
 
 async def test_get_existing_user(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    db: Session, client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a superuser can retrieve an existing user.
@@ -133,8 +134,12 @@ async def test_get_non_existing_user(
     assert r.status_code == 404
 
 
+@pytest.mark.filterwarnings("ignore::sqlalchemy.exc.SAWarning")
 async def test_create_user_existing_username(
-    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+    client: TestClient,
+    normal_user: models.User,
+    superuser_token_headers: dict[str, str],
+    db: Session,
 ) -> None:
     """
     Test that a superuser cannot create a new user with an existing username.
@@ -156,7 +161,7 @@ async def test_create_user_existing_username(
 
 
 def test_create_user_by_normal_user(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a normal user cannot create a new user.
@@ -174,7 +179,10 @@ def test_create_user_by_normal_user(
 
 
 def test_retrieve_users(
-    db_with_user: Session, client: TestClient, superuser_token_headers: dict[str, str]
+    db: Session,
+    normal_user: models.User,
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
 ) -> None:
     """
     Test that a superuser can retrieve all users.
@@ -226,16 +234,19 @@ def test_create_user_open(client: TestClient) -> None:
 
 
 async def test_update_user(
-    db_with_user: Session, client: TestClient, superuser_token_headers: dict[str, str]
+    db: Session,
+    normal_user: models.User,
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
 ) -> None:
     """
     Test that a super user can update a user.
     """
-    test_user = await crud.user.get(db=db_with_user, username="test_user")
+
     new_email = "newemail22@example.com"
     data = {"email": new_email, "full_name": "new name", "password": "new_password"}
     r = client.patch(
-        f"{settings.API_V1_PREFIX}/user/{test_user.id}",
+        f"{settings.API_V1_PREFIX}/user/{normal_user.id}",
         headers=superuser_token_headers,
         json=data,
     )
@@ -246,7 +257,7 @@ async def test_update_user(
 
 
 def test_update_user_me(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a normal user can update their own user.
@@ -264,27 +275,29 @@ def test_update_user_me(
 
 
 async def test_delete_user(
-    db_with_user: Session, client: TestClient, superuser_token_headers: dict[str, str]
+    db: Session,
+    normal_user: models.User,
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
 ) -> None:
     """
     Test that a super user can delete a user.
     """
-    test_user = await crud.user.get(db=db_with_user, username="test_user")
     r = client.delete(
-        f"{settings.API_V1_PREFIX}/user/{test_user.id}",
+        f"{settings.API_V1_PREFIX}/user/{normal_user.id}",
         headers=superuser_token_headers,
     )
     assert r.status_code == 204
 
     r = client.get(
-        f"{settings.API_V1_PREFIX}/user/{test_user.id}",
+        f"{settings.API_V1_PREFIX}/user/{normal_user.id}",
         headers=superuser_token_headers,
     )
     assert r.status_code == 404
 
 
 async def test_delete_invalid_user(
-    db_with_user: Session, client: TestClient, superuser_token_headers: dict[str, str]
+    db: Session, client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a super user cannot delete an invalid user.
@@ -296,7 +309,7 @@ async def test_delete_invalid_user(
     assert r.status_code == 404
 
 
-async def test_authenticate_with_wrong_password(db_with_user: Session, client: TestClient) -> None:
+async def test_authenticate_with_wrong_password(db: Session, client: TestClient) -> None:
     """
     Test that a user cannot authenticate with a wrong password.
     """

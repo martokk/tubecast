@@ -20,7 +20,9 @@ from app.db.init_db import init_initial_data
 from app.services.source import fetch_source
 from app.views import deps as views_deps
 from tests.mock_objects import (
-    MOCKED_YOUTUBE_SOURCE_1,
+    MOCK_CRITERIA_1,
+    MOCK_FILTER_1,
+    MOCKED_RUMBLE_SOURCE_1,
     get_mocked_source_info_dict,
     get_mocked_video_info_dict,
 )
@@ -108,12 +110,6 @@ async def fixture_db(
 async def fixture_client(db: Session) -> AsyncGenerator[TestClient, None]:
     """
     Fixture that creates a test client with the database session override.
-
-    Args:
-        db (Session): database session.
-
-    Yields:
-        TestClient: test client with database session override.
     """
 
     def override_get_db() -> Generator[Session, None, None]:
@@ -126,36 +122,30 @@ async def fixture_client(db: Session) -> AsyncGenerator[TestClient, None]:
     del app.dependency_overrides[views_deps.get_db]
 
 
-@pytest.fixture(name="db_with_user")
-async def fixture_db_with_user(db: Session) -> Session:
+@pytest.fixture(name="superuser")
+async def fixture_superuser(db: Session) -> models.User:
+    """
+    Fixture that gets the superuser from the test database.
+    """
+    return await crud.user.get(db=db, username=settings.FIRST_SUPERUSER_USERNAME)
+
+
+@pytest.fixture(name="normal_user")
+async def fixture_normal_user(db: Session) -> models.User:
     """
     Fixture that creates an example user in the test database.
-
-    Args:
-        db (Session): database session.
-
-    Returns:
-        Session: database session with example user.
     """
     user_hashed_password = security.get_password_hash("test_password")
     user_create = models.UserCreate(
         username="test_user", email="test@example.com", hashed_password=user_hashed_password
     )
-    await crud.user.create(obj_in=user_create, db=db)
-    return db
+    return await crud.user.create(obj_in=user_create, db=db)
 
 
 @pytest.fixture(name="superuser_token_headers")
-def superuser_token_headers(db_with_user: Session, client: TestClient) -> dict[str, str]:
+def superuser_token_headers(db: Session, client: TestClient) -> dict[str, str]:
     """
     Fixture that returns the headers for a superuser.
-
-    Args:
-        db_with_user (Session): database session.
-        client (TestClient): test client.
-
-    Returns:
-        dict[str, str]: headers for a superuser.
     """
     login_data = {
         "username": settings.FIRST_SUPERUSER_USERNAME,
@@ -168,15 +158,11 @@ def superuser_token_headers(db_with_user: Session, client: TestClient) -> dict[s
 
 
 @pytest.fixture(name="normal_user_token_headers")
-def normal_user_token_headers(client: TestClient) -> dict[str, str]:
+def normal_user_token_headers(
+    db: Session, normal_user: models.User, client: TestClient
+) -> dict[str, str]:
     """
     Fixture that returns the headers for a normal user.
-
-    Args:
-        client (TestClient): test client.
-
-    Returns:
-        dict[str, str]: headers for a normal user.
     """
     login_data = {
         "username": "test_user",
@@ -192,26 +178,16 @@ def normal_user_token_headers(client: TestClient) -> dict[str, str]:
 def fixture_request() -> Request:
     """
     Fixture that returns a request object.
-
-    Returns:
-        Request: request object.
     """
     return Request(scope={"type": "http", "method": "GET", "path": "/"})
 
 
 @pytest.fixture(name="normal_user_cookies")
 def fixture_normal_user_cookies(
-    db_with_user: Session, client: TestClient  # pylint: disable=unused-argument
+    db: Session, normal_user: models.User, client: TestClient  # pylint: disable=unused-argument
 ) -> Cookies:
     """
     Fixture that returns the cookie_data for a normal user.
-
-    Args:
-        db_with_user (Session): database session.
-        client (TestClient): test client.
-
-    Returns:
-        Cookies: cookie_data for a normal user.
     """
     form_data = {"username": "test_user", "password": "test_password"}
 
@@ -224,17 +200,10 @@ def fixture_normal_user_cookies(
 
 @pytest.fixture(name="superuser_cookies")
 def fixture_superuser_cookies(
-    db_with_user: Session, client: TestClient  # pylint: disable=unused-argument
+    db: Session, client: TestClient  # pylint: disable=unused-argument
 ) -> Cookies:
     """
     Fixture that returns the cookie_data for a normal user.
-
-    Args:
-        db_with_user (Session): database session.
-        client (TestClient): test client.
-
-    Returns:
-        Cookies: cookie_data for a normal user.
     """
     form_data = {
         "username": settings.FIRST_SUPERUSER_USERNAME,
@@ -249,34 +218,67 @@ def fixture_superuser_cookies(
 
 
 @pytest.fixture(name="source_1")
-async def fixture_source_1(db: Session) -> models.Source:
+async def fixture_source_1(db: Session, normal_user: models.User) -> models.Source:
     """
-    Create a source in the database.
+    Create an source for testing.
     """
-    source = await crud.source.create(db=db, obj_in=models.SourceCreate(**MOCKED_YOUTUBE_SOURCE_1))
-    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
-    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
-    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+    source = await crud.source.create_source_from_url(
+        db=db, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=normal_user.id
+    )
+
+    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
+    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
+    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
     return source
 
 
 @pytest.fixture(name="source_1_w_videos")
-async def fixture_source_1_w_videos(db_with_user: Session) -> models.Source:
+async def fixture_source_1_w_videos(db: Session, normal_user: models.User) -> models.Source:
     """
     Create a source in the database.
     """
     # Create Source
-    source = await crud.source.create(
-        db=db_with_user, obj_in=models.SourceCreate(**MOCKED_YOUTUBE_SOURCE_1)
+    source = await crud.source.create_source_from_url(
+        db=db,
+        url=MOCKED_RUMBLE_SOURCE_1["url"],
+        user_id=normal_user.id,
     )
-    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
-    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
-    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
+    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
+    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
 
     # Create fetched_source
-    await fetch_source(db=db_with_user, id=source.id)
+    await fetch_source(db=db, id=source.id)
 
-    fetched_source = await crud.source.get(db=db_with_user, id=source.id)
+    fetched_source = await crud.source.get(db=db, id=source.id)
     assert len(fetched_source.videos) == 2
 
     return source
+
+
+@pytest.fixture(name="filter_1")
+async def fixture_filter_1(
+    db: Session, normal_user: models.User, source_1: models.Source
+) -> models.Filter:
+    """
+    Create a filter for source 1.
+    """
+
+    filter_create = models.FilterCreate(
+        **{**MOCK_FILTER_1, "source_id": source_1.id, "created_by": normal_user.id}
+    )
+    return await crud.filter.create(db, obj_in=filter_create)
+
+
+@pytest.fixture(name="criteria_1")
+async def fixture_criteria_1(
+    db: Session, normal_user: models.User, filter_1: models.Filter
+) -> models.Criteria:
+    """
+    Create a criteria for filter 1.
+    """
+
+    criteria_create = models.CriteriaCreate(
+        **{**MOCK_CRITERIA_1, "filter_id": filter_1.id, "created_by": normal_user.id}
+    )
+    return await crud.criteria.create(db, obj_in=criteria_create)

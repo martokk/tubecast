@@ -14,7 +14,7 @@ def test_login_page(client: TestClient) -> None:
 
 
 def test_handle_login_success(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
 ) -> None:
@@ -27,7 +27,7 @@ def test_handle_login_success(
     assert response.template.name == "source/list.html"  # type: ignore
 
 
-def test_handle_login_failure(db_with_user: Session, client: TestClient) -> None:
+def test_handle_login_failure(db: Session, client: TestClient) -> None:
     """
     Test handling login failure
     """
@@ -36,7 +36,7 @@ def test_handle_login_failure(db_with_user: Session, client: TestClient) -> None
     assert response.template.name == "login/login.html"  # type: ignore
 
 
-def test_handle_login_exception(db_with_user: Session, client: TestClient) -> None:
+def test_handle_login_exception(db: Session, client: TestClient) -> None:
     """
     Test handling login exception
     """
@@ -47,7 +47,7 @@ def test_handle_login_exception(db_with_user: Session, client: TestClient) -> No
     assert response.template.name == "login/login.html"  # type: ignore
 
 
-def test_logout(db_with_user: Session, client: TestClient, normal_user_cookies: Cookies) -> None:
+def test_logout(db: Session, client: TestClient, normal_user_cookies: Cookies) -> None:
     """
     Test logout
     """
@@ -71,7 +71,7 @@ def test_register_page(client: TestClient) -> None:
 
 
 @patch("app.settings.USERS_OPEN_REGISTRATION", True)
-async def test_handle_register_success(db_with_user: Session, client: TestClient) -> None:
+async def test_handle_register_success(db: Session, client: TestClient) -> None:
     """
     Test handling register
     """
@@ -99,7 +99,7 @@ async def test_handle_register_success(db_with_user: Session, client: TestClient
 
 
 @patch("app.settings.USERS_OPEN_REGISTRATION", False)
-async def test_handle_registration_closed(db_with_user: Session, client: TestClient) -> None:
+async def test_handle_registration_closed(db: Session, client: TestClient) -> None:
     """
     Test registration closed
     """
@@ -110,7 +110,7 @@ async def test_handle_registration_closed(db_with_user: Session, client: TestCli
 
 
 @patch("app.settings.USERS_OPEN_REGISTRATION", True)
-async def test_handle_register_failure(db_with_user: Session, client: TestClient) -> None:
+async def test_handle_register_failure(db: Session, client: TestClient) -> None:
     """
     Test handling register
     """
@@ -187,7 +187,7 @@ async def test_handle_register_failure(db_with_user: Session, client: TestClient
 
 
 async def test_get_tokens_from_refresh_token(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
 ) -> None:
@@ -204,7 +204,7 @@ async def test_get_tokens_from_refresh_token(
 
 
 async def test_get_tokens_from_invalid_refresh_token(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
 ) -> None:

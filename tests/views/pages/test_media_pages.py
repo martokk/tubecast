@@ -68,7 +68,7 @@ async def test_handle_reverse_proxy_media(
 
 
 async def test_html_view_users_sources_no_media_url(
-    db_with_user: Session,
+    db: Session,
     client: TestClient,
     superuser_token_headers: dict[str, str],
 ) -> None:

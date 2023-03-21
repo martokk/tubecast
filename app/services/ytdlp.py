@@ -3,7 +3,7 @@ from typing import Any, Type
 from loguru import logger as _logger
 from yt_dlp import YoutubeDL
 from yt_dlp.extractor.common import InfoExtractor
-from yt_dlp.utils import YoutubeDLError, DownloadError, ExtractorError
+from yt_dlp.utils import DownloadError, ExtractorError, YoutubeDLError
 
 # from app.core.loggers import ytdlp_logger as logger
 from app.core.notify import notify
@@ -186,10 +186,10 @@ async def ydl_extract_info(
         await notify(telegram=True, email=False, text=err_msg)
         raise YoutubeDLError(err_msg) from e
 
-    # if info_dict is None:
-    #     raise YoutubeDLError(
-    #         f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl=}"
-    #     )
+    if info_dict is None:
+        raise YoutubeDLError(
+            f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl=}"
+        )
 
     if info_dict.get("is_live"):
         raise IsLiveEventError("This video is a live event.")

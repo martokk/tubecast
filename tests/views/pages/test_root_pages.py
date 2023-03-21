@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 
 def test_root_index_authenticated(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
 ) -> None:
@@ -18,7 +18,7 @@ def test_root_index_authenticated(
 
 
 def test_root_index_unauthenticated(
-    db_with_user: Session, client: TestClient  # pylint: disable=unused-argument
+    db: Session, client: TestClient  # pylint: disable=unused-argument
 ) -> None:
     """
     Test root index unauthenticated

@@ -4,28 +4,27 @@ import pytest
 from sqlmodel import Session
 
 from app import crud, models
-from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1
+from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1
 
 
-async def test_create_item(db_with_user: Session, source_1: models.Source) -> None:
+async def test_create_item(db: Session, source_1: models.Source) -> None:
     """
     Test creating a new item.
     """
-    assert source_1.name == MOCKED_YOUTUBE_SOURCE_1["name"]
-    assert source_1.url == MOCKED_YOUTUBE_SOURCE_1["url"]
-    assert source_1.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+    assert source_1.name == MOCKED_RUMBLE_SOURCE_1["name"]
+    assert source_1.url == MOCKED_RUMBLE_SOURCE_1["url"]
+    assert source_1.description == MOCKED_RUMBLE_SOURCE_1["description"]
 
 
-async def test_create_item_from_url(db_with_user: Session) -> None:
+async def test_create_item_from_url(db: Session, normal_user: models.User) -> None:
     """
     Test creating a new item from a url.
     """
-    owner = await crud.user.get(db=db_with_user, username="test_user")
-    url = MOCKED_YOUTUBE_SOURCE_1["url"]
-    source = await crud.source.create_source_from_url(db=db_with_user, url=url, user_id=owner.id)
-    assert source.name == MOCKED_YOUTUBE_SOURCE_1["name"]
-    assert source.url == MOCKED_YOUTUBE_SOURCE_1["url"]
-    assert source.description == MOCKED_YOUTUBE_SOURCE_1["description"]
+    url = MOCKED_RUMBLE_SOURCE_1["url"]
+    source = await crud.source.create_source_from_url(db=db, url=url, user_id=normal_user.id)
+    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
+    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
+    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
 
 
 async def test_get_item(db: Session, source_1: models.Source) -> None:

@@ -409,7 +409,7 @@ async def fetch_all_source_page(
 
 
 @router.get("/source/{source_id}/feed", response_class=HTMLResponse)
-async def get_rss(source_id: str, db: Session = Depends(deps.get_db)) -> Response:
+async def get_source_rss_feed(source_id: str, db: Session = Depends(deps.get_db)) -> Response:
     """
     Gets a rss file for source_id and returns it as a Response
 

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -7,7 +9,7 @@ from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_YOUTUBE_SOURCE_1
 
 async def test_read_video(
     client: TestClient,
-    db_with_user: Session,
+    db: Session,
     superuser_token_headers: dict[str, str],
     normal_user_token_headers: dict[str, str],
 ) -> None:
@@ -22,7 +24,7 @@ async def test_read_video(
     assert response.status_code == 201
     created_source = response.json()
 
-    source = await crud.source.get(db=db_with_user, id=created_source["id"])
+    source = await crud.source.get(db=db, id=created_source["id"])
     video_0 = source.videos[0]
 
     # Read Source as superuser
@@ -47,7 +49,7 @@ async def test_read_video(
 
 
 def test_superuser_get_video_not_found(
-    client: TestClient, db_with_user: Session, superuser_token_headers: dict[str, str]
+    client: TestClient, db: Session, superuser_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a superuser gets a 404 when trying to read a video that does not exist.
@@ -62,7 +64,7 @@ def test_superuser_get_video_not_found(
 
 
 async def test_superuser_get_all_videos(
-    db_with_user: Session,
+    db: Session,
     client: TestClient,
     superuser_token_headers: dict[str, str],
     normal_user_token_headers: dict[str, str],
@@ -98,7 +100,7 @@ async def test_superuser_get_all_videos(
 
 async def test_fetch_video(
     client: TestClient,
-    db_with_user: Session,
+    db: Session,
     superuser_token_headers: dict[str, str],
     normal_user_token_headers: dict[str, str],
 ) -> None:
@@ -113,7 +115,7 @@ async def test_fetch_video(
     assert response.status_code == 201
     created_source = response.json()
 
-    source = await crud.source.get(db=db_with_user, id=created_source["id"])
+    source = await crud.source.get(db=db, id=created_source["id"])
     video_0 = source.videos[0]
 
     # Fetch Source as superuser
@@ -151,3 +153,23 @@ async def test_fetch_video(
     assert response.status_code == 200
     response_msg = response.json()
     assert response_msg["msg"] == "Fetching all videos in the background."
+
+
+async def test_refresh_all_videos(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+    normal_user_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that a superuser can refresh all videos.
+    """
+
+    with patch("app.api.v1.endpoints.video.refresh_all_videos") as mock_refresh_all_videos:
+        response = client.put(
+            f"{settings.API_V1_PREFIX}/video/refresh",
+            headers=superuser_token_headers,
+        )
+        assert response.status_code == 200
+        assert mock_refresh_all_videos.call_count == 1
+        assert response.json() == {"msg": "Refreshing all videos in the background."}

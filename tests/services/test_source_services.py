@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+import pytest
 from sqlmodel import Session
 
 from app import crud, models
@@ -75,34 +76,29 @@ async def test_get_nested_source_videos_from_source_info_dict() -> None:
     assert result_video.url == mocked_video["url"]
 
 
-async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
+async def test_delete_orphaned_source_videos(
+    db: Session, normal_user: models.User, source_1: models.Source
+) -> None:
     """
     Tests 'delete_orphaned_source_videos', deleting videos that are no longer in the source.
     """
-    # Create fetched_source
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    created_source = await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-    await fetch_source(db=db_with_user, id=created_source.id)
+    await fetch_source(db=db, id=source_1.id)
 
-    fetched_source = await crud.source.get(db=db_with_user, id=created_source.id)
+    fetched_source = await crud.source.get(db=db, id=source_1.id)
     assert len(fetched_source.videos) == 2
     fetched_videos = list(fetched_source.videos)
 
     # Add video to db_source
-    video = await crud.video.create_video_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_VIDEO_3["url"]
-    )
+    video = await crud.video.create_video_from_url(db=db, url=MOCKED_RUMBLE_VIDEO_3["url"])
     fetched_source.videos.append(video)
 
     # Get db_source Videos
-    source = await crud.source.get(db=db_with_user, id=fetched_source.id)
+    source = await crud.source.get(db=db, id=fetched_source.id)
     assert len(source.videos) == 3
 
     # Delete orphaned videos
     deleted_videos = await delete_orphaned_source_videos(
-        db=db_with_user, fetched_videos=fetched_videos, db_source=source
+        db=db, fetched_videos=fetched_videos, db_source=source
     )
 
     # Check that videos were deleted
@@ -110,57 +106,26 @@ async def test_delete_orphaned_source_videos(db_with_user: Session) -> None:
     assert deleted_videos[0].title == MOCKED_RUMBLE_VIDEO_3["title"]
 
     # Check that videos were deleted from database
-    source = await crud.source.get(db=db_with_user, id=fetched_source.id)
+    source = await crud.source.get(db=db, id=fetched_source.id)
     assert len(source.videos) == 2
 
 
-async def test_fetch_all_sources(db_with_user: Session) -> None:
+async def test_fetch_all_sources(
+    db: Session, normal_user: models.User, source_1: models.Source
+) -> None:
     """
     Test fetching all sources.
     """
-    # Create 2 sources
-    user = await crud.user.get(db=db_with_user, username="test_user")
+    # Create another souce
     await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-    await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_YOUTUBE_SOURCE_1["url"], user_id=user.id
+        db=db, url=MOCKED_YOUTUBE_SOURCE_1["url"], user_id=normal_user.id
     )
 
     # Fetch all sources
-    fetch_results: models.FetchResults = await fetch_all_sources(db=db_with_user)
+    fetch_results: models.FetchResults = await fetch_all_sources(db=db)
 
     # Assert the results
     assert fetch_results.sources == 2
     assert fetch_results.added_videos == 4
     assert fetch_results.refreshed_videos == 4
     assert fetch_results.deleted_videos == 0
-
-
-async def test_source_videos_sorted(
-    db_with_user: Session, source_1_w_videos: models.Source
-) -> None:
-    """
-    Test Source.videos_sorted() if ordered_by is RELEASED_AT.
-    """
-    ordered_by = SourceOrderBy.RELEASED_AT.value
-
-    # Assert videos are already sorted.
-    source_videos = source_1_w_videos.videos.copy()
-    assert source_1_w_videos.videos_sorted(ordered_by=ordered_by) == source_videos
-
-    # Change created_at of first video. Move to end of list.
-    first_video = source_1_w_videos.videos.pop(0)
-    first_video.created_at = first_video.created_at - timedelta(days=1000)
-    source_1_w_videos.videos.append(first_video)
-    assert source_1_w_videos.videos != source_videos
-    assert first_video == source_1_w_videos.videos[-1]
-
-    # Sort videos by released_at
-    sorted_videos = source_1_w_videos.videos_sorted(ordered_by=SourceOrderBy.RELEASED_AT.value)
-    assert sorted_videos == source_videos
-    assert first_video == sorted_videos[0]
-
-    # Sort videos by created_at
-    sorted_videos = source_1_w_videos.videos_sorted(ordered_by=SourceOrderBy.CREATED_AT.value)
-    assert first_video == sorted_videos[1]

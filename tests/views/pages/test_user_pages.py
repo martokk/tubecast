@@ -5,9 +5,11 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
+from app.models import User
+
 
 def test_display_user_account_page(
-    client: TestClient, db: Session, superuser_cookies: Cookies
+    client: TestClient, db: Session, normal_user: User, superuser_cookies: Cookies
 ) -> None:
     """
     Test that superusers can view a users account page.
@@ -27,7 +29,7 @@ def test_display_user_account_page(
 
 
 def test_edit_user_account_page(
-    client: TestClient, db: Session, superuser_cookies: Cookies
+    client: TestClient, db: Session, normal_user: User, superuser_cookies: Cookies
 ) -> None:
     """
     Test that superusers can edit a users account page.
@@ -46,7 +48,9 @@ def test_edit_user_account_page(
     assert response.context["alerts"].danger == ["User not found"]  # type: ignore
 
 
-def test_update_user_account(client: TestClient, db: Session, superuser_cookies: Cookies) -> None:
+def test_update_user_account(
+    client: TestClient, db: Session, normal_user: User, superuser_cookies: Cookies
+) -> None:
     """
     Test that superusers can update a users account.
     """

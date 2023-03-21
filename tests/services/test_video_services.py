@@ -9,55 +9,46 @@ from app.services.ytdlp import IsLiveEventError
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_RUMBLE_SOURCE_2
 
 
-async def test_refresh_all_videos(db_with_user: Session) -> None:
+async def test_refresh_all_videos(
+    db: Session, normal_user: models.User, source_1: models.Source
+) -> None:
     """
     Tests 'refresh_all_videos', fetching new data from yt-dlp for all Videos.
     """
-    # Create source
-    user = await crud.user.get(db=db_with_user, username="test_user")
+    # Create another source
     await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-    await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_2["url"], user_id=user.id
+        db=db, url=MOCKED_RUMBLE_SOURCE_2["url"], user_id=normal_user.id
     )
 
     # Refresh all videos older than 0 hours
     with patch("app.services.video.refresh_videos") as mocked_refresh_videos:
-        await refresh_all_videos(db=db_with_user)
+        await refresh_all_videos(db=db)
         assert mocked_refresh_videos.call_count == 1
         mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)
 
     # Refresh all videos older than 0 hours
     with patch("app.services.video.refresh_videos") as mocked_refresh_videos:
-        await refresh_all_videos(db=db_with_user)
+        await refresh_all_videos(db=db)
         assert mocked_refresh_videos.call_count == 1
         mocked_refresh_videos.assert_called_with(videos_needing_refresh=ANY, db=ANY)
 
 
-async def test_fetch_videos(db_with_user: Session) -> None:
+async def test_fetch_videos(
+    db: Session, normal_user: models.User, source_1_w_videos: models.Source
+) -> None:
     """
     Tests 'fetch_videos', fetching new data for a list of videos from yt-dlp.
     """
-    # Create source
-    user = await crud.user.get(db=db_with_user, username="test_user")
-    source = await crud.source.create_source_from_url(
-        db=db_with_user, url=MOCKED_RUMBLE_SOURCE_1["url"], user_id=user.id
-    )
-
-    videos = [models.Video(**video) for video in MOCKED_RUMBLE_SOURCE_1["videos"]]
-    source.videos = videos
-
-    with patch("app.services.video.fetch_video", return_value=videos[0]):
-        fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
-        assert len(fetched_videos) == len(videos)
+    with patch("app.services.video.fetch_video", return_value=source_1_w_videos.videos[0]):
+        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
+        assert len(fetched_videos) == len(source_1_w_videos.videos)
 
     # Test that videos that are live events are ignored
     with patch("app.services.video.fetch_video", side_effect=IsLiveEventError):
-        fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
+        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
         assert len(fetched_videos) == 0
 
     # Test that videos with errors are ignored
     with patch("app.services.video.fetch_video", side_effect=YoutubeDLError):
-        fetched_videos = await fetch_videos(videos=videos, db=db_with_user)
+        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
         assert len(fetched_videos) == 0

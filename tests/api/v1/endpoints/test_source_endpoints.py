@@ -9,7 +9,7 @@ from tests.mock_objects import MOCKED_SOURCES, MOCKED_YOUTUBE_SOURCE_1
 
 def test_create_source_from_url(
     client: TestClient,
-    db_with_user: Session,
+    db: Session,
     normal_user_token_headers: dict[str, str],
 ) -> None:
     """
@@ -106,7 +106,7 @@ def test_get_source_not_found(client: TestClient, superuser_token_headers: dict[
 
 
 def test_get_source_forbidden(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a forbidden error is returned.
@@ -121,7 +121,7 @@ def test_get_source_forbidden(
 
 
 def test_superuser_get_all_sources(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     superuser_token_headers: dict[str, str],
 ) -> None:
@@ -149,7 +149,7 @@ def test_superuser_get_all_sources(
 
 
 def test_normal_user_get_all_sources(
-    db_with_user: Session,  # pylint: disable=unused-argument
+    db: Session,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_token_headers: dict[str, str],
     superuser_token_headers: dict[str, str],
@@ -223,7 +223,7 @@ def test_update_source(client: TestClient, superuser_token_headers: dict[str, st
 
 
 def test_update_source_forbidden(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a forbidden error is returned.
@@ -266,7 +266,7 @@ def test_delete_source(client: TestClient, superuser_token_headers: dict[str, st
 
 
 def test_normal_user_get_videos_from_source_forbidden(
-    db_with_user: Session,
+    db: Session,
     client: TestClient,
     normal_user_token_headers: dict[str, str],
     superuser_token_headers: dict[str, str],
@@ -294,7 +294,7 @@ def test_normal_user_get_videos_from_source_forbidden(
 
 
 def test_delete_source_forbidden(
-    db_with_user: Session, client: TestClient, normal_user_token_headers: dict[str, str]
+    db: Session, client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     """
     Test that a forbidden error is returned.
@@ -355,9 +355,59 @@ def test_fetch_all_sources(client: TestClient, superuser_token_headers: dict[str
     assert response.status_code == 201
 
     # Fetch All Sources
-    with patch("app.services.source.fetch_all_sources") as fetch_all_sources:
+    with patch("app.api.v1.endpoints.source.fetch_all_sources") as mock_fetch_all_sources:
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/fetch",
             headers=superuser_token_headers,
         )
         assert response.status_code == 202
+        assert mock_fetch_all_sources.call_count == 1
+        assert response.json() == {"msg": "Fetching all sources in the background."}
+
+
+def test_get_source_rss_feed(
+    client: TestClient,
+    db: Session,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that a valid rss file is returned.
+    """
+    # Check that the rss file doesn't exist
+    response = client.get(
+        f"/source/{MOCKED_YOUTUBE_SOURCE_1['id']}/feed",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
+
+    # Create a source
+    response = client.post(
+        f"{settings.API_V1_PREFIX}/source/",
+        headers=superuser_token_headers,
+        json={"url": MOCKED_YOUTUBE_SOURCE_1["url"]},
+    )
+    assert response.status_code == 201
+    created_source = response.json()
+
+    # Check that the rss file was created
+    response = client.get(
+        f"/source/{created_source['id']}/feed",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 200
+    assert "<rss" in str(response.content)
+    assert "/rss>" in str(response.content)
+
+    # Delete the rss file
+    response = client.delete(
+        f"/api/v1/source/{created_source['id']}",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 204
+
+    # Check that the rss file was deleted
+    response = client.get(
+        f"/source/{created_source['id']}/feed",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == 404
