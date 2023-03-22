@@ -14,7 +14,6 @@ ytdlp_logger = _logger.bind(name="ytdlp_logger")
 
 # YoutubeDL Base Options
 YDL_OPTS_BASE: dict[str, Any] = {
-    "logger": ytdlp_logger,
     "format": "worst[ext=mp4]",
     "skip_download": True,
     "simulate": True,

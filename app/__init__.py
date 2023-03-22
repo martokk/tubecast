@@ -43,7 +43,7 @@ _logger.add(
 _logger.add(
     _FETCH_LOG_FILE,
     filter=lambda record: record["extra"].get("name") == "fetch_logger",
-    level="DEBUG",
+    level="ERROR",
     rotation="10 MB",
 )
 _logger.add(

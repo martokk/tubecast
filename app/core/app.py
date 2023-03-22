@@ -3,10 +3,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
 from sqlmodel import Session
 
-from app import crud, logger, models, settings
+from app import crud, logger, settings
 from app.api import deps
 from app.api.v1.api import api_router
 from app.core import notify
+from app.db.backup import backup_database
 from app.db.init_db import init_initial_data
 from app.paths import FEEDS_PATH, STATIC_PATH
 from app.services.import_export import export_sources, import_sources
@@ -70,16 +71,26 @@ async def repeating_fetch_all_sources() -> None:  # pragma: no cover
     logger.success(f"Completed refreshing {fetch_results.sources} Sources from yt-dlp.")
 
 
+# @app.on_event("startup")  # type: ignore
+# @repeat_every(seconds=settings.REFRESH_VIDEOS_INTERVAL_MINUTES * 60, wait_first=True)
+# async def repeating_refresh_videos() -> None:  # pragma: no cover
+#     """
+#     Refreshes all Videos that meet criteria with updated data from yt-dlp.
+#     """
+#     logger.debug("Repeating refresh of Videos...")
+#     db: Session = next(deps.get_db())
+#     refreshed_videos = await refresh_all_videos(db=db)
+#     logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")
+
+
 @app.on_event("startup")  # type: ignore
-@repeat_every(seconds=settings.REFRESH_VIDEOS_INTERVAL_MINUTES * 60, wait_first=True)
-async def repeating_refresh_videos() -> None:  # pragma: no cover
+@repeat_every(seconds=60 * 60 * 12, wait_first=True)  # 12 hours
+async def repeating_backup_db() -> None:  # pragma: no cover
     """
     Refreshes all Videos that meet criteria with updated data from yt-dlp.
     """
-    logger.debug("Repeating refresh of Videos...")
     db: Session = next(deps.get_db())
-    refreshed_videos = await refresh_all_videos(db=db)
-    logger.success(f"Completed refreshing {len(refreshed_videos)} Videos from yt-dlp.")
+    await backup_database(db=db)
 
 
 # @app.on_event("startup")  # type: ignore
