@@ -13,7 +13,9 @@ model_crud = crud.criteria
 
 
 @router.post(
-    "/{filter_id}/criteria", response_model=ModelReadClass, status_code=status.HTTP_201_CREATED
+    "/filter/{filter_id}/criteria",
+    response_model=ModelReadClass,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_criteria(
     *,
@@ -32,23 +34,14 @@ async def create_criteria(
 
     Returns:
         ModelClass: Created object.
-
-    Raises:
-        HTTPException: if object already exists.
     """
-    try:
-        return await model_crud.create(db=db, obj_in=obj_in, filter_id=filter_id)
-    except crud.RecordAlreadyExistsError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_200_OK, detail="Criteria already exists"
-        ) from exc
+    return await model_crud.create(db=db, obj_in=obj_in, filter_id=filter_id)
 
 
-@router.get("/{filter_id}/criteria/{id}", response_model=ModelReadClass)
+@router.get("/criteria/{id}", response_model=ModelReadClass)
 async def get(
     *,
     db: Session = Depends(deps.get_db),
-    filter_id: str,
     id: str,
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> ModelClass:
@@ -80,11 +73,10 @@ async def get(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
-@router.patch("/{filter_id}/criteria/{id}", response_model=ModelReadClass)
+@router.patch("/criteria/{id}", response_model=ModelReadClass)
 async def update(
     *,
     db: Session = Depends(deps.get_db),
-    filter_id: str,
     id: str,
     obj_in: ModelUpdateClass,
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -110,18 +102,20 @@ async def update(
             crud.user.is_superuser(user_=current_user)
             or _criteria.filter.created_by == current_user.id
         ):
-            return await model_crud.update(db=db, obj_in=obj_in, id=id)
+            try:
+                return await model_crud.update(db=db, obj_in=obj_in, id=id)
+            except ValueError as e:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     elif crud.user.is_superuser(user_=current_user):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Criteria not found")
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
-@router.delete("/{filter_id}/criteria/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/criteria/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     *,
     db: Session = Depends(deps.get_db),
-    filter_id: str,
     id: str,
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> None:

@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import HTMLResponse
 from sqlmodel import Session
 
 from app import crud, models
 from app.api import deps
+from app.services.feed import build_rss_file, delete_rss_file
 
 router = APIRouter()
 ModelClass = models.Filter
@@ -12,10 +14,15 @@ ModelUpdateClass = models.FilterUpdate
 model_crud = crud.filter
 
 
-@router.post("/", response_model=ModelReadClass, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/source/{source_id}/filter",
+    response_model=ModelReadClass,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_filter(
     *,
     db: Session = Depends(deps.get_db),
+    source_id: str,
     obj_in: ModelCreateClass,
     current_active_user: models.User = Depends(deps.get_current_active_user),
 ) -> ModelClass:
@@ -23,8 +30,9 @@ async def create_filter(
     Create a new filter.
 
     Args:
-        obj_in (ModelCreateClass): object to be created.
         db (Session): database session.
+        source_id (str): id of the source.
+        obj_in (ModelCreateClass): object to be created.
         current_active_user (models.User): Current active user.
 
     Returns:
@@ -33,13 +41,12 @@ async def create_filter(
     Raises:
         HTTPException: if object already exists.
     """
-    try:
-        return await model_crud.create(db=db, obj_in=obj_in)
-    except crud.RecordAlreadyExistsError as exc:
-        raise HTTPException(status_code=status.HTTP_200_OK, detail="Filter already exists") from exc
+    return await model_crud.create(
+        db=db, obj_in=obj_in, source_id=source_id, created_by=current_active_user.id
+    )
 
 
-@router.get("/{id}", response_model=ModelReadClass)
+@router.get("/filter/{id}", response_model=ModelReadClass)
 async def get(
     *,
     db: Session = Depends(deps.get_db),
@@ -71,7 +78,7 @@ async def get(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
-@router.patch("/{id}", response_model=ModelReadClass)
+@router.patch("/filter/{id}", response_model=ModelReadClass)
 async def update(
     *,
     db: Session = Depends(deps.get_db),
@@ -104,7 +111,7 @@ async def update(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/filter/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     *,
     db: Session = Depends(deps.get_db),
@@ -136,19 +143,8 @@ async def delete(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from fastapi.responses import HTMLResponse
-from sqlmodel import Session
-
-from app import crud, models
-from app.api import deps
-from app.services.feed import build_rss_file, delete_rss_file
-
-router = APIRouter()
-
-
-@router.put("/{id}/feed", response_class=HTMLResponse)
-async def build_rss(
+@router.put("/filter/{id}/feed", response_class=HTMLResponse)
+async def build_filter_rss(
     id: str,
     db: Session = Depends(deps.get_db),
     _: models.User = Depends(deps.get_current_active_superuser),
@@ -176,30 +172,3 @@ async def build_rss(
     # Serve RSS File as a Response
     content = rss_file.read_text()
     return Response(content)
-
-
-@router.delete("/{id}/feed", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_rss(
-    id: str,
-    db: Session = Depends(deps.get_db),
-    _: models.User = Depends(deps.get_current_active_superuser),
-) -> None:
-    """
-    Deletes the .rss file for a feed.
-
-    Args:
-        id(str): The id of the filter.
-        db(Session): The database session.
-        _: models.User: The current active superuser.
-
-    Returns:
-        None: None
-
-    Raises:
-        HTTPException: If the rss file is not found.
-    """
-    try:
-        filter = await crud.filter.get(id=id, db=db)
-    except crud.RecordNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.args) from exc
-    return await delete_rss_file(id=filter.id)

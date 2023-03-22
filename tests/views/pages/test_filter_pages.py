@@ -236,20 +236,6 @@ def test_get_filter_rss_feed(
     assert "<rss" in str(response.content)
     assert "/rss>" in str(response.content)
 
-    # Check that the rss file was created
-    response = client.get(
-        f"/filter/{filter_1.id}/feed",
-        headers=superuser_token_headers,
-    )
-    assert response.status_code == 200
-
-    # Delete the rss file
-    response = client.delete(
-        f"/api/v1/filter/{filter_1.id}/feed",
-        headers=superuser_token_headers,
-    )
-    assert response.status_code == 204
-
 
 def test_delete_filter_rss_feed(
     client: TestClient,

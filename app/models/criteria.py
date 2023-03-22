@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timedelta
 from enum import Enum
 
-from pydantic import ValidationError, root_validator
+from pydantic import root_validator
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.uuid import generate_uuid_random

@@ -43,7 +43,9 @@ async def create_source_from_url(
             url=obj_in.url, user_id=current_active_user.id, db=db
         )
     except crud.RecordAlreadyExistsError as exc:
-        raise HTTPException(status_code=status.HTTP_200_OK, detail="Source already exists") from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Source already exists"
+        ) from exc
 
     # Fetch the source videos in the background
     background_tasks.add_task(

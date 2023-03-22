@@ -2,9 +2,18 @@ from unittest.mock import patch
 
 import pytest
 from yt_dlp.extractor.common import InfoExtractor
-from yt_dlp.utils import YoutubeDLError
+from yt_dlp.utils import DownloadError, YoutubeDLError
 
-from app.services.ytdlp import YDL_OPTS_BASE, IsLiveEventError, get_info_dict
+from app.services.ytdlp import (
+    YDL_OPTS_BASE,
+    Http410Error,
+    IsDeletedVideoError,
+    IsLiveEventError,
+    IsPrivateVideoError,
+    NoUploadsError,
+    PlaylistNotFoundError,
+    get_info_dict,
+)
 from tests.mock_objects import MOCKED_RUMBLE_VIDEO_3, get_mocked_video_info_dict
 
 
@@ -72,3 +81,52 @@ async def test_get_info_dict() -> None:
             )
             assert mocked_extract_info.called
             assert raised.match("yt-dlp did not download a info_dict object.")
+
+
+async def test_get_info_dict_errors() -> None:
+    """
+    Test `get_info_dict` errors.
+    """
+    url = "https://nonexistent-video.com"
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("This channel has no uploads")
+        with pytest.raises(NoUploadsError):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("The playlist does not exist.")
+        with pytest.raises(PlaylistNotFoundError):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("No video formats found.")
+        with pytest.raises(IsLiveEventError):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("this live event will begin in")
+        with pytest.raises(IsLiveEventError):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("[Private video]")
+        with pytest.raises(IsPrivateVideoError):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("[Deleted video]")
+        with pytest.raises(IsDeletedVideoError):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when live event is starting soon.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = DownloadError("HTTP Error 410")
+        with pytest.raises(Http410Error):
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
