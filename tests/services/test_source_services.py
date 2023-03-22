@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
+from unittest.mock import Mock
 
 import pytest
 from sqlmodel import Session
 
-from app import crud, models
+from app import crud, models, paths
 from app.models.source_video_link import SourceOrderBy
 from app.services.source import (
     delete_orphaned_source_videos,
@@ -129,3 +130,23 @@ async def test_fetch_all_sources(
     assert fetch_results.added_videos == 4
     assert fetch_results.refreshed_videos == 4
     assert fetch_results.deleted_videos == 0
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+async def test_fetch_source_create_logo(mocker: Mock, db: Session, source_1: models.Source) -> None:
+    """
+    Fetch source and create logo.
+    """
+
+    logo_path = paths.LOGOS_PATH / f"{source_1.id}.png"
+    logo_path.unlink(missing_ok=True)
+    assert logo_path.exists() is False
+
+    db_source = await crud.source.get(db=db, id=source_1.id)
+    db_source.logo = f"/static/logos/{source_1.id}.png"
+    mocker.patch("app.crud.source.update", return_value=db_source)
+
+    await fetch_source(db=db, id=db_source.id)
+
+    # Create logo
+    assert logo_path.exists() is True

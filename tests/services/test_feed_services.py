@@ -1,6 +1,13 @@
 import datetime
 
-from app.services.feed import get_published_at
+import pytest
+
+from app.services.feed import SourceFeedGenerator, get_published_at
+
+
+def test_missing_feed_or_source() -> None:
+    with pytest.raises(ValueError):
+        SourceFeedGenerator(filter=None, source=None)
 
 
 def test_get_published_date() -> None:

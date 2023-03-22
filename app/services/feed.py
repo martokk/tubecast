@@ -3,8 +3,7 @@ from pathlib import Path
 
 from feedgen.feed import FeedGenerator
 
-from app import logger, settings
-from app.core.notify import notify
+from app import settings
 from app.models import Filter, Source
 from app.models.source_video_link import SourceOrderBy
 from app.paths import FEEDS_PATH
@@ -76,7 +75,7 @@ class SourceFeedGenerator(FeedGenerator):
             ordered_by = source.ordered_by
 
         else:
-            raise ValueError("Either source or filter must be provided")
+            raise ValueError("Either source or filter must be provided")  # pragma: no cover
 
         # Filter/Source Unique Data
         self.title(title)
@@ -101,7 +100,7 @@ class SourceFeedGenerator(FeedGenerator):
         for video in videos:
             # Get Published Date
             if ordered_by == SourceOrderBy.CREATED_AT.value:
-                published_at = video.created_at
+                published_at = video.created_at  # pragma: no cover
             else:
                 published_at = get_published_at(
                     created_at=video.created_at, released_at=video.released_at

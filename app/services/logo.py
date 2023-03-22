@@ -46,7 +46,7 @@ def create_logo_from_text(text: str, file_path: Path) -> Path:
     font = set_font_size(text=text, img=img)
 
     # Draw and center text
-    width, height = draw.textsize(text, font)
+    width, height = ImageDraw.Draw(img).textsize(text, font)
     x = (img.width - width) / 2
     y = (img.height - height) / 2
     draw.text((x, y), text, font=font, fill=foreground, align="center")

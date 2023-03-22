@@ -4,6 +4,7 @@ import pytest
 from sqlmodel import Session
 
 from app import crud, models
+from app.models.source_video_link import SourceOrderBy
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1
 
 
@@ -64,6 +65,21 @@ async def test_update_item_without_filter(db: Session, source_1: models.Source) 
         await crud.source.update(db=db, obj_in=db_source_update)
 
 
+async def test_update_item_reverse_order(db: Session, source_1_w_videos: models.Source) -> None:
+    """
+    Test updating an item's ordered by
+    """
+
+    assert source_1_w_videos.reverse_import_order is False
+    assert len(source_1_w_videos.videos) == 2
+
+    source_update = models.SourceUpdate(reverse_import_order=True)
+
+    db_source = await crud.source.update(db=db, id=source_1_w_videos.id, obj_in=source_update)
+    assert db_source.reverse_import_order == source_update.reverse_import_order
+    assert len(db_source.videos) == 0
+
+
 async def test_delete_item(db: Session, source_1: models.Source) -> None:
     """
     Test deleting an item.
@@ -73,6 +89,15 @@ async def test_delete_item(db: Session, source_1: models.Source) -> None:
     await crud.source.remove(db=db, id=source_1.id)
     with pytest.raises(crud.RecordNotFoundError):
         await crud.source.get(db=db, id=source_1.id)
+
+
+async def test_delete_item_without_id(db: Session, source_1: models.Source) -> None:
+    """
+    Test deleting an item when id is missing.
+    """
+    # Delete the item (missing id)
+    with pytest.raises(ValueError):
+        await crud.source.remove(db=db)
 
 
 async def test_delete_item_delete_error(db: Session, mocker: MagicMock) -> None:

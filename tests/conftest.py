@@ -233,27 +233,19 @@ async def fixture_source_1(db: Session, normal_user: models.User) -> models.Sour
 
 
 @pytest.fixture(name="source_1_w_videos")
-async def fixture_source_1_w_videos(db: Session, normal_user: models.User) -> models.Source:
+async def fixture_source_1_w_videos(
+    db: Session, normal_user: models.User, source_1: models.Source
+) -> models.Source:
     """
     Create a source in the database.
     """
-    # Create Source
-    source = await crud.source.create_source_from_url(
-        db=db,
-        url=MOCKED_RUMBLE_SOURCE_1["url"],
-        user_id=normal_user.id,
-    )
-    assert source.name == MOCKED_RUMBLE_SOURCE_1["name"]
-    assert source.url == MOCKED_RUMBLE_SOURCE_1["url"]
-    assert source.description == MOCKED_RUMBLE_SOURCE_1["description"]
-
     # Create fetched_source
-    await fetch_source(db=db, id=source.id)
+    await fetch_source(db=db, id=source_1.id)
 
-    fetched_source = await crud.source.get(db=db, id=source.id)
+    fetched_source = await crud.source.get(db=db, id=source_1.id)
     assert len(fetched_source.videos) == 2
 
-    return source
+    return source_1
 
 
 @pytest.fixture(name="filter_1")

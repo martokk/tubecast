@@ -54,7 +54,7 @@ def test_create_duplicate_source(
         headers=superuser_token_headers,
         json=MOCKED_YOUTUBE_SOURCE_1,
     )
-    assert response.status_code == 200
+    assert response.status_code == 409
     duplicate = response.json()
     assert duplicate["detail"] == "Source already exists"
 

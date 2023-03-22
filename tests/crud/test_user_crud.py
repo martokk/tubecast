@@ -26,11 +26,16 @@ async def test_authenticate_user(db: Session, normal_user: models.User) -> None:
     assert username == authenticated_user.username
 
 
-async def test_not_authenticate_user(db: Session) -> None:
+async def test_not_authenticate_user(db: Session, normal_user: models.User) -> None:
     """
     Test that a user cannot authenticate with the wrong password.
     """
+    # User does not exist
     user = await crud.user.authenticate(db, username="fakeuser", password="wrongpassword")
+    assert user is None
+
+    # User exists, wrong password
+    user = await crud.user.authenticate(db, username=normal_user.username, password="wrongpassword")
     assert user is None
 
 

@@ -7,7 +7,6 @@ from sqlmodel import Session
 from app import crud, handlers, models
 from app.crud.base import BaseCRUD
 from app.models.criteria import CriteriaField, CriteriaOperator, CriteriaUnitOfMeasure
-from app.models.source_video_link import SourceOrderBy
 from app.services.feed import delete_rss_file
 from app.services.source import get_source_from_source_info_dict, get_source_info_dict
 

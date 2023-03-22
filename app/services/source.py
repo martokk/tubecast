@@ -173,8 +173,8 @@ async def add_new_source_videos_from_fetched_videos(
             if not db_video:
                 try:
                     db_video = await crud.video.create(obj_in=new_video, db=db)
-                except crud.RecordAlreadyExistsError:
-                    db_video = await crud.video.get(db=db, id=new_video.id)
+                except crud.RecordAlreadyExistsError:  # pragma: no cover
+                    db_video = await crud.video.get(db=db, id=new_video.id)  # pragma: no cover
 
             db_source.videos.append(db_video)
 

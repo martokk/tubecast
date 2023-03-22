@@ -312,8 +312,11 @@ def test_criteria_is_not_within_timedelta() -> None:
     )
 
     result = c.is_within_timedelta(dt=dt, value=delta, unit_of_measure=unit_of_measure)
-
     assert result is False
+
+    # Test invalid unit of measure
+    with pytest.raises(ValueError):
+        c.is_within_timedelta(dt=dt, value=delta, unit_of_measure="invalid")
 
 
 def test_criteria_is_within_duration_shorter_than_value() -> None:
@@ -333,7 +336,27 @@ def test_criteria_is_within_duration_shorter_than_value() -> None:
     result = c.is_within_duration(
         video_duration=duration, operator=operator, value=delta, unit_of_measure=unit_of_measure
     )
+    assert result is True
 
+    # Test invalid unit of measure
+    with pytest.raises(ValueError):
+        c.is_within_duration(
+            video_duration=duration, operator=operator, value=delta, unit_of_measure="invalid"
+        )
+
+    # Test invalid operator
+    with pytest.raises(ValueError):
+        c.is_within_duration(
+            video_duration=duration,
+            operator="invalid",
+            value=delta,
+            unit_of_measure=unit_of_measure,
+        )
+
+    # Test missing duration
+    result = c.is_within_duration(
+        video_duration=None, operator=operator, value=delta, unit_of_measure=unit_of_measure
+    )
     assert result is True
 
 
@@ -354,8 +377,25 @@ def test_criteria_is_within_duration_longer_than_value() -> None:
     result = c.is_within_duration(
         video_duration=duration, operator=operator, value=delta, unit_of_measure=unit_of_measure
     )
-
     assert result is True
+
+    # Alternate Unit of Measure
+    result = c.is_within_duration(
+        video_duration=duration,
+        operator=operator,
+        value=delta,
+        unit_of_measure=CriteriaUnitOfMeasure.HOURS.value,
+    )
+    assert result is False
+
+    # Alternate Unit of Measure
+    result = c.is_within_duration(
+        video_duration=duration,
+        operator=operator,
+        value=delta,
+        unit_of_measure=CriteriaUnitOfMeasure.DAYS.value,
+    )
+    assert result is False
 
 
 def test_criteria_matches_contains_must_contain(source_1_w_videos: Source) -> None:
@@ -370,8 +410,12 @@ def test_criteria_matches_contains_must_contain(source_1_w_videos: Source) -> No
     )
 
     result = c.matches_contains(video=video, keyword=keyword)
-
     assert result is True
+
+    # Test invalid operator
+    c.operator = "invalid"
+    with pytest.raises(ValueError):
+        c.matches_contains(video=video, keyword=keyword)
 
 
 def test_criteria_matches_contains_must_not_contain(source_1_w_videos: Source) -> None:
@@ -386,7 +430,6 @@ def test_criteria_matches_contains_must_not_contain(source_1_w_videos: Source) -
     )
 
     result = c.matches_contains(video=video, keyword=keyword)
-
     assert result is True
 
 
