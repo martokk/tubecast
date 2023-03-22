@@ -2,18 +2,17 @@ import os
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from sqlmodel import SQLModel
+import pytest
+from sqlmodel import Session, SQLModel
 
+from app import paths
+from app.db.backup import backup_database
 from app.db.init_db import create_all
 
 
-async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
+async def test_create_all(tmpdir: str, monkeypatch: pytest.MonkeyPatch) -> None:
     """
     Test that the function creates the required tables.
-
-    Args:
-        tmpdir (str): temporary directory.
-        monkeypatch (MagicMock): monkeypatch object.
     """
 
     # Set up test database file in a temporary directory
@@ -34,3 +33,34 @@ async def test_create_all(tmpdir: str, monkeypatch: MagicMock) -> None:
     assert "source" in tables
     assert "user" in tables
     assert "fake_table" not in tables
+
+
+@pytest.fixture()
+def mocked_shutil_copy(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    mocked_copy = MagicMock()
+
+    def mock_copy(src: str, dst: str) -> None:
+        # Instead of copying files, we'll just create empty files to simulate the copy operation
+        open(dst, "w").close()
+        mocked_copy(src=src, dst=dst)
+
+    monkeypatch.setattr("shutil.copy", mock_copy)
+    return mocked_copy
+
+
+async def test_backup_database(db: Session, tmpdir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Test that the function creates a backup of the database.
+    """
+
+    # Patch the database backup path,
+    monkeypatch.setattr("app.paths.DB_BACKUP_PATH", tmpdir)
+
+    # Call the function
+    db_backup_file = await backup_database(db=db)
+
+    # Check that the backup file exists
+    assert db_backup_file.exists() is True
+
+    # Delete the backup file
+    os.remove(db_backup_file)

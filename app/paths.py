@@ -20,6 +20,7 @@ CACHE_PATH = DATA_PATH / "cache"
 FEEDS_PATH = DATA_PATH / "feed"
 EXPORTS_PATH = DATA_PATH / "exports"
 FONTS_PATH = DATA_PATH / "fonts"
+DB_BACKUP_PATH = DATA_PATH / "db_backup"
 
 # Static Folder
 LOGOS_PATH = STATIC_PATH / "logos"
