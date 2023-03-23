@@ -274,3 +274,21 @@ async def fixture_criteria_1(
         **{**MOCK_CRITERIA_1, "filter_id": filter_1.id, "created_by": normal_user.id}
     )
     return await crud.criteria.create(db, obj_in=criteria_create)
+
+
+@pytest.fixture(name="mocked_source_info_dict")
+async def fixture_source_info_dict() -> dict[str, Any]:
+    """
+    Get a mocked source info dict.
+    """
+
+    return await get_mocked_source_info_dict(url=MOCKED_RUMBLE_SOURCE_1["url"])
+
+
+@pytest.fixture(name="mocked_entry_info_dict")
+async def fixture_entry_info_dict(mocked_source_info_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Get a mocked source info dict.
+    """
+    entry_info_dict: dict[str, Any] = mocked_source_info_dict["entries"][0]
+    return entry_info_dict

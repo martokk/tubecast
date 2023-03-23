@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from fastapi import status
@@ -7,7 +7,7 @@ from httpx import Cookies
 from sqlmodel import Session
 
 from app import crud, models
-from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES
+from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES, MOCKED_YOUTUBE_SOURCE_1
 
 
 @pytest.fixture(name="sources")
@@ -90,19 +90,9 @@ def test_read_source(
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.template.name == "source/view.html"  # type: ignore
+    assert response.context["source"].id == source_1.id  # type: ignore
 
-
-def test_get_source_not_found(
-    db: Session,  # pylint: disable=unused-argument
-    client: TestClient,
-    normal_user_cookies: Cookies,
-) -> None:
-    """
-    Test that a source not found error is returned.
-    """
-    client.cookies = normal_user_cookies
-
-    # Read the source
+    # Test that a source not found error is returned.
     response = client.get("/source/8675309")
     assert response.status_code == status.HTTP_200_OK
     assert response.url.path == "/sources"
@@ -113,18 +103,28 @@ def test_get_source_forbidden(
     source_1: models.Source,  # pylint: disable=unused-argument
     client: TestClient,
     normal_user_cookies: Cookies,
+    superuser_cookies: Cookies,
 ) -> None:  # sourcery skip: extract-duplicate-method
     """
     Test that a forbidden error is returned when a user tries to read an source
     """
-    client.cookies = normal_user_cookies
-
-    # Read the source
-    response = client.get(
-        f"/source/{source_1.id}",
+    # Create source as superuser
+    client.cookies = superuser_cookies
+    response = client.post(
+        "/sources/create",
+        data=MOCKED_YOUTUBE_SOURCE_1,
     )
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/view.html"  # type: ignore
+    assert response.url.path == f"/source/{MOCKED_YOUTUBE_SOURCE_1['id']}"
+
+    # Read the source as normal user
+    client.cookies = normal_user_cookies
+    response = client.get(
+        f"/source/{MOCKED_YOUTUBE_SOURCE_1['id']}",
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.template.name == "source/list.html"  # type: ignore
+    assert response.context["alerts"].danger[0] == "You do not have access to this source"  # type: ignore
 
     # Logout
     response = client.get(
@@ -238,6 +238,32 @@ def test_update_source(
     assert response.url.path == "/sources"
 
 
+def test_edit_source_reverse_import_order(
+    mocker: MagicMock,
+    db: Session,  # pylint: disable=unused-argument
+    client: TestClient,
+    source_1: models.Source,
+    normal_user_cookies: Cookies,
+) -> None:
+    """
+    Test that a user can update an source.
+    """
+    client.cookies = normal_user_cookies
+
+    # Update the source
+    MOCKED_UPDATE = MOCKED_SOURCES[1].copy()
+    MOCKED_UPDATE["reverse_import_order"] = True
+
+    with patch("fastapi.BackgroundTasks.add_task", return_value=None) as mocked_task:
+        response = client.post(
+            f"/source/{source_1.id}/edit",  # type: ignore
+            data=MOCKED_UPDATE,
+        )
+        assert mocked_task.call_count == 1
+        assert response.status_code == status.HTTP_200_OK
+        assert response.template.name == "source/view.html"  # type: ignore
+
+
 def test_delete_source(
     db: Session,  # pylint: disable=unused-argument
     source_1: models.Source,
@@ -347,3 +373,66 @@ def test_fetch_source(
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "Source not found"  # type: ignore
     assert response.url.path == f"/sources"
+
+
+def test_fetch_all_sources(
+    db: Session,  # pylint: disable=unused-argument
+    source_1: models.Source,  # pylint: disable=unused-argument
+    client: TestClient,
+    normal_user_cookies: Cookies,
+    superuser_cookies: Cookies,
+) -> None:
+    """
+    Test fetching all sources.
+    """
+
+    # Attempt to fetch all sources as normal user
+    client.cookies = normal_user_cookies
+    response = client.get(
+        f"/sources/fetch",
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert response.context["alerts"].danger[0] == "You are not authorized to do that"  # type: ignore
+    assert response.url.path == f"/sources"
+
+    # Fetch all sources as superuser
+    with patch("fastapi.BackgroundTasks.add_task", return_value=None) as mocked_task:
+        client.cookies = superuser_cookies
+        response = client.get(
+            f"/sources/fetch",
+        )
+        assert mocked_task.call_count == 1
+    assert response.status_code == status.HTTP_200_OK
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert response.context["alerts"].success[0] == "Fetching all sources..."  # type: ignore
+    assert response.url.path == f"/sources"
+
+
+def test_get_source_rss_feed(
+    db: Session,  # pylint: disable=unused-argument
+    source_1: models.Source,  # pylint: disable=unused-argument
+    client: TestClient,
+    normal_user_cookies: Cookies,
+    superuser_cookies: Cookies,
+) -> None:
+    """
+    Test getting a source's RSS feed.
+    """
+    with patch("app.views.pages.sources.build_rss_file", return_value=None) as mocked:
+        response = client.get(
+            f"/source/{source_1.id}/feed",
+        )
+        assert mocked.call_count == 1
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert f"RSS file ({source_1.id}.rss) does not exist" in response.text
+    assert response.url.path == f"/source/{source_1.id}/feed"
+
+    # Get source's RSS feed as superuser with not found source
+    with patch("app.views.pages.sources.build_rss_file", return_value=None) as mocked:
+        client.cookies = superuser_cookies
+        response = client.get(
+            f"/source/wrongs_source_id/feed",
+        )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Source 'wrongs_source_id' not found."

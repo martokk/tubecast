@@ -331,8 +331,6 @@ async def delete_source(
             try:
                 await crud.source.remove(db=db, id=source_id)
                 alerts.success.append("Source deleted")
-            except crud.RecordNotFoundError:
-                alerts.danger.append("Source not found")
             except crud.DeleteError:
                 alerts.danger.append("Error deleting source")
 

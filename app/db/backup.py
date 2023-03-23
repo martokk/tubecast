@@ -27,5 +27,7 @@ async def backup_database(db: Session) -> Path:
     shutil.copy(src=paths.DATABASE_FILE, dst=db_backup_file)
 
     if not db_backup_file.exists():
-        raise FileNotFoundError(f"Database backup file not found: {db_backup_file}")
+        raise FileNotFoundError(
+            f"Database backup file not found: {db_backup_file}"
+        )  # pragma: no cover
     return db_backup_file

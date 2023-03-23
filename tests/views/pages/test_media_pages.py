@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from fastapi import status
 from fastapi.responses import RedirectResponse, Response
 from fastapi.testclient import TestClient
 from sqlmodel import Session
@@ -82,3 +83,30 @@ async def test_html_view_users_sources_no_media_url(
         json={"url": MOCKED_RUMBLE_SOURCE_1["url"]},
     )
     assert response.status_code == 201
+
+
+async def test_handle_media_video_no_media_url(
+    db: Session,
+    source_1_w_videos: models.Source,
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+) -> None:
+    """
+    Test that the handle_media function returns a response with the correct status code.
+    """
+    test_video = source_1_w_videos.videos[0]
+    test_video.media_url = None
+
+    with patch("app.crud.video.get") as mock_get:
+        mock_get.return_value = test_video
+
+        with patch("app.views.pages.media.fetch_video") as mock_fetch_video:
+            mock_fetch_video.return_value = test_video
+
+            response = client.get(f"/media/{test_video.id}")
+
+    mock_get.assert_called_once()
+    mock_fetch_video.assert_called_once()
+
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert "The server has not able to fetch a media_url from yt-dlp." in response.text

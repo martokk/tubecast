@@ -60,6 +60,7 @@ class RumbleHandler(ServiceHandler):
         Returns:
             The sanitized URL.
         """
+        url.replace("https://rumble.com", "https://www.rumble.com")
         if "/c/" in url:
             url = self.get_channel_url_from_c_url(url=url)
         elif "/user/" in url:
@@ -177,7 +178,7 @@ class RumbleHandler(ServiceHandler):
             "name": source_info_dict["title"],
             "author": source_info_dict["uploader"],
             "logo": logo,
-            "ordered_by": "release",
+            "ordered_by": "released_at",
             "description": f"{source_info_dict.get('description', source_info_dict['uploader'])}",
             "videos": source_videos,
             "extractor": source_info_dict["extractor_key"],
