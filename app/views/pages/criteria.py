@@ -67,11 +67,6 @@ async def handle_create_criteria(
         response = RedirectResponse(f"/filter/{filter_id}", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
-    except crud.RecordAlreadyExistsError:
-        alerts.danger.append("Criteria already exists")
-        response = RedirectResponse(f"/filter/{filter_id}", status_code=status.HTTP_302_FOUND)
-        response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
-        return response
 
     await build_rss_file(filter=criteria.filter)
 

@@ -54,6 +54,7 @@ class YoutubeHandler(ServiceHandler):
         Returns:
             The sanitized URL.
         """
+        url.replace("https://youtube.com", "https://www.youtube.com")
         if "@" in url:
             url = self.get_channel_url_from_channel_name_id_url(url=url)
         elif "/channel" in url:
@@ -238,7 +239,11 @@ class YoutubeHandler(ServiceHandler):
             logo = f"/static/logos/{source_id}.png"
             ordered_by = "created_at"
         else:
-            logo = source_info_dict["thumbnails"][-2]["url"]
+            try:
+                logo = source_info_dict["thumbnails"][-2]["url"]
+            except (KeyError, IndexError):
+                source_id = generate_uuid_from_url(url=source_info_dict["url"])
+                logo = f"/static/logos/{source_id}.png"
             ordered_by = "released_at"
         return {
             "url": url,
@@ -275,13 +280,15 @@ class YoutubeHandler(ServiceHandler):
         url = entry_info_dict.get("webpage_url", entry_info_dict["url"])
         return {
             "source_id": source_id,
+            "url": url,
+            "added_at": datetime.datetime.now(tz=datetime.timezone.utc),
             "title": entry_info_dict["title"],
             "description": entry_info_dict["description"],
-            "url": url,
+            "duration": entry_info_dict["duration"],
+            "thumbnail": entry_info_dict["thumbnail"],
             "released_at": released_at,
             "media_url": None,
             "media_filesize": None,
-            "added_at": datetime.datetime.now(tz=datetime.timezone.utc),
         }
 
     def map_video_info_dict_entity_to_video_dict(

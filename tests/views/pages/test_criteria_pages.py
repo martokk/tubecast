@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from httpx import Cookies
 from sqlmodel import Session
 
-from app import models
+from app import crud, models
 from app.models import Criteria, Filter, Source
 from app.models.criteria import CriteriaBase, CriteriaField, CriteriaOperator, CriteriaUnitOfMeasure
 from tests.mock_objects import MOCK_CRITERIA_1, MOCK_CRITERIA_2
@@ -54,6 +54,7 @@ def test_handle_create_criteria(
         f"/filter/{filter_1.id}/criteria/create",
         data=MOCK_CRITERIA_2,
     )
+    assert response.status_code == status.HTTP_200_OK
     response_criteria = response.context["filter"].criterias[1]  # type: ignore
     assert response.status_code == status.HTTP_200_OK
     assert response.url.path == f"/filter/{response_criteria.filter.id}"
@@ -62,6 +63,13 @@ def test_handle_create_criteria(
     assert response_criteria.operator == MOCK_CRITERIA_2["operator"]
     assert response_criteria.value == MOCK_CRITERIA_2["value"]
     assert response_criteria.unit_of_measure == MOCK_CRITERIA_2["unit_of_measure"]
+
+    client.cookies = normal_user_cookies
+    response = client.post(
+        f"/filter/{filter_1.id}/criteria/create",
+        data=MOCK_CRITERIA_2,
+    )
+    assert response.status_code == status.HTTP_200_OK
 
 
 def test_handle_create_criteria_validation(
@@ -246,6 +254,26 @@ def test_handle_edit_criteria(
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "Criteria not found"  # type: ignore
 
+    # Test invalid filter id
+    response = client.post(
+        f"/filter/{filter_1.id}/criteria/invalid_criteria_id/edit",  # type: ignore
+        data=MOCK_CRITERIA_UPDATE,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.url.path == f"/filter/{filter_1.id}"
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert response.context["alerts"].danger[0] == "Criteria not found"  # type: ignore
+
+    # Test validation error
+    MOCK_CRITERIA_TEMP = MOCK_CRITERIA_1.copy()
+    MOCK_CRITERIA_TEMP["value"] = "invalid_field"
+    response = client.post(
+        f"/filter/{filter_1.id}/criteria/{criteria_1.id}/edit",
+        data=MOCK_CRITERIA_TEMP,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.context["alerts"].danger[0] == "Value must be an integer"  # type: ignore
+
 
 def test_delete_criteria(
     db: Session,
@@ -268,14 +296,25 @@ def test_delete_criteria(
     assert response.url.path == f"/filter/{filter_1.id}"
     assert response.template.name == "filter/view.html"  # type: ignore
 
-    # Test invalid criteria id
+    # Test criteria not found
     response = client.get(
-        f"/filter/{filter_1.id}/criteria/invalid_user_id/delete",  # type: ignore
+        f"/filter/{filter_1.id}/criteria/{criteria_1.id}/delete",  # type: ignore
     )
     assert response.status_code == status.HTTP_200_OK
     assert response.url.path == f"/filter/{filter_1.id}"
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "Criteria not found"  # type: ignore
+
+    # Test DeleteError
+    with patch("app.crud.criteria.remove") as mock_delete_criteria:
+        mock_delete_criteria.side_effect = crud.DeleteError()
+        response = client.get(
+            f"/filter/{filter_1.id}/criteria/{criteria_1.id}/delete",  # type: ignore
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.url.path == f"/filter/{filter_1.id}"
+        assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+        assert response.context["alerts"].danger[0] == "Error deleting criteria"  # type: ignore
 
 
 def test_criteria_is_within_timedelta() -> None:
