@@ -38,7 +38,7 @@ class SourceBase(TimestampModel, SQLModel):
 
     @property
     def name_sortable(self) -> str:
-        return self.name.lstrip("The ")
+        return self.name.removeprefix("The ")
 
 
 class Source(SourceBase, table=True):

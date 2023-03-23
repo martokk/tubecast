@@ -4,6 +4,7 @@ import pytest
 from sqlmodel import Session
 
 from app import models
+from app.models import Source
 from app.models.source_video_link import SourceOrderBy
 
 
@@ -36,3 +37,16 @@ async def test_source_videos_sorted(db: Session, source_1_w_videos: models.Sourc
     # Test invalid ordered_by
     with pytest.raises(ValueError):
         source_1_w_videos.videos_sorted(ordered_by="invalid")
+
+
+async def test_source_name_sortable():
+    assert Source(name="Name").name_sortable == "Name"
+    assert Source(name="T Name").name_sortable == "T Name"
+    assert Source(name="Th Name").name_sortable == "Th Name"
+    assert Source(name="The Name").name_sortable == "Name"
+    assert Source(name="Then Name").name_sortable == "Then Name"
+    assert Source(name="The Test").name_sortable == "Test"
+
+    assert Source(name="Timcast Daily Show").name_sortable == "Timcast Daily Show"
+    assert Source(name="Timcast IRL").name_sortable == "Timcast IRL"
+    assert Source(name="TMJ4 News").name_sortable == "TMJ4 News"
