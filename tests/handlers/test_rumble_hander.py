@@ -191,6 +191,25 @@ async def test_map_video_info_dict_entity_to_video_dict_live_status(
     with pytest.raises(ValueError):
         handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=mocked_entry_info_dict)
 
+    # Test Awaiting Transcoding
+    entry_info_dict = mocked_entry_info_dict.copy()
+    entry_info_dict.pop("formats")
+    entry_info_dict["awaiting_transcoding"] = True
+    data = {
+        "title": video["title"],
+        "uploader": video["uploader"],
+        "uploader_id": video["uploader_id"],
+        "description": video["description"],
+        "duration": video["duration"],
+        "url": video["url"],
+        "media_url": None,
+        "media_filesize": 0,
+        "thumbnail": video["thumbnail"],
+        "released_at": ANY,
+    }
+    result = handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
+    assert result == data
+
 
 async def test_map_video_info_dict_entity_to_video_dict_format_id_keyerror(
     handler: Handler, mocked_entry_info_dict: dict[str, Any]
@@ -198,15 +217,15 @@ async def test_map_video_info_dict_entity_to_video_dict_format_id_keyerror(
     with pytest.raises(FormatNotFoundError):
         entry_info_dict = mocked_entry_info_dict.copy()
         entry_info_dict.pop("format_id")
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
+        handler._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
 
     with pytest.raises(FormatNotFoundError):
         entry_info_dict = mocked_entry_info_dict.copy()
         entry_info_dict.pop("formats")
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
+        handler._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
 
     with pytest.raises(AwaitingTranscodingError):
         entry_info_dict = mocked_entry_info_dict.copy()
         entry_info_dict.pop("formats")
         entry_info_dict["awaiting_transcoding"] = True
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
+        handler._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
