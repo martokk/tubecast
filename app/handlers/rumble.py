@@ -228,13 +228,13 @@ class RumbleHandler(ServiceHandler):
         Raises:
             FormatNotFoundError: If the format_id is not found in the entry_info_dict.
         """
-        if not entry_info_dict.get("format_id"):
-            raise FormatNotFoundError("Missing 'format_id' in entry_info_dict.")
 
-        format_info_dict = self._get_format_info_dict_from_entry_info_dict(
-            entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
-        )
-
+        try:
+            format_info_dict = self._get_format_info_dict_from_entry_info_dict(
+                entry_info_dict=entry_info_dict
+            )
+        except (FormatNotFoundError, AwaitingTranscodingError) as e:
+            format_info_dict = {}
         media_filesize = (
             format_info_dict.get("filesize") or format_info_dict.get("filesize_approx") or 0
         )
@@ -259,7 +259,7 @@ class RumbleHandler(ServiceHandler):
             "description": entry_info_dict.get(
                 "description", f"Rumble video uploaded by {entry_info_dict['uploader']}"
             ),
-            "duration": entry_info_dict["duration"],
+            "duration": entry_info_dict.get("duration"),
             "url": entry_info_dict["original_url"],
             "media_url": media_url,
             "media_filesize": media_filesize,
@@ -268,7 +268,7 @@ class RumbleHandler(ServiceHandler):
         }
 
     def _get_format_info_dict_from_entry_info_dict(
-        self, entry_info_dict: dict[str, Any], format_number: int | str
+        self, entry_info_dict: dict[str, Any]
     ) -> dict[str, Any]:
         """
         Returns the dictionary from entry_info_dict['formats'] that has a 'format_id' value
@@ -287,17 +287,16 @@ class RumbleHandler(ServiceHandler):
                 value matching format_number.
         """
         try:
+            format_id = entry_info_dict["format_id"]
             return next(
                 (
                     format_dict
                     for format_dict in entry_info_dict["formats"]
-                    if format_dict["format_id"] == str(format_number)
+                    if format_dict["format_id"] == str(format_id)
                 )
             )
         except StopIteration as exc:
-            raise ValueError(
-                f"Format '{str(format_number)}' was not found in the entry_info_dict['formats']."
-            ) from exc
+            raise ValueError(f"Format was not found in the entry_info_dict['formats'].") from exc
         except KeyError as exc:
             if entry_info_dict.get("awaiting_transcoding"):
                 raise AwaitingTranscodingError("Video is awaiting transcoding.") from exc
