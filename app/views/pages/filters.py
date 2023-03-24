@@ -6,7 +6,7 @@ from app import crud, logger, models
 from app.core.notify import notify
 from app.models.source_video_link import SourceOrderBy
 from app.services.feed import build_rss_file, delete_rss_file, get_rss_file
-from app.services.source import fetch_source
+from app.services.source import FetchCancelledError, fetch_source
 from app.views import deps, templates
 
 router = APIRouter()
@@ -282,8 +282,11 @@ async def fetch_filter_page(
     elif not filter:
         alerts.danger.append("Filter not found")
     else:
-        await fetch_source(db=db, id=filter.source.id)
-        alerts.success.append(f"Filter '{filter.name}' was fetched.")
+        try:
+            await fetch_source(db=db, id=filter.source.id)
+            alerts.success.append(f"Filter '{filter.name}' was fetched.")
+        except FetchCancelledError:
+            alerts.danger.append(f"Fetch of filter '{filter.name}' was cancelled.")
 
     response = RedirectResponse(
         url=f"/filter/{filter.id}" if filter else "/sources", status_code=status.HTTP_303_SEE_OTHER

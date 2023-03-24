@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from app import crud, paths
 from app.models import Filter, Source, User
+from app.services.source import FetchCancelledError
 from tests.mock_objects import MOCK_FILTER_1
 
 
@@ -212,6 +213,20 @@ def test_fetch_filter_page(
     assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
     assert response.context["alerts"].danger[0] == "Filter not found"  # type: ignore
     assert response.url.path == f"/sources"
+
+    # Fetch Source was canceled
+    with patch("app.views.pages.filters.fetch_source", return_value=None) as mocked_fetch_source:
+        mocked_fetch_source.side_effect = FetchCancelledError
+        client.cookies = superuser_cookies
+        response = client.get(
+            f"/filter/{filter_1.id}/fetch",
+        )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.history[0].status_code == status.HTTP_303_SEE_OTHER
+    assert (
+        response.context["alerts"].danger[0] == f"Fetch of filter '{filter_1.name}' was cancelled."  # type: ignore
+    )
+    assert response.url.path == f"/filter/{filter_1.id}"
 
 
 def test_get_filter_rss_feed(

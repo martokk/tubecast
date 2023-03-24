@@ -6,7 +6,7 @@ from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.feed import build_rss_file, get_rss_file
-from app.services.source import fetch_all_sources, fetch_source
+from app.services.source import FetchCancelledError, fetch_all_sources, fetch_source
 from app.services.ytdlp import NoUploadsError, PlaylistNotFoundError
 from app.views import deps, templates
 
@@ -367,8 +367,11 @@ async def fetch_source_page(
     elif not source:
         alerts.danger.append("Source not found")
     else:
-        await fetch_source(db=db, id=source_id)
-        alerts.success.append(f"Source '{source.name}' was fetched.")
+        try:
+            await fetch_source(db=db, id=source_id)
+            alerts.success.append(f"Source '{source.name}' was fetched.")
+        except FetchCancelledError:
+            alerts.danger.append(f"Fetch of source '{source.name}' was cancelled.")
 
     response = RedirectResponse(
         url=f"/source/{source.id}" if source else "/sources", status_code=status.HTTP_303_SEE_OTHER

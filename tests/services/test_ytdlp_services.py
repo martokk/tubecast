@@ -6,6 +6,7 @@ from yt_dlp.utils import DownloadError, YoutubeDLError
 
 from app.services.ytdlp import (
     YDL_OPTS_BASE,
+    AccountNotFoundError,
     Http410Error,
     IsDeletedVideoError,
     IsLiveEventError,
@@ -81,6 +82,12 @@ async def test_get_info_dict() -> None:
             )
             assert mocked_extract_info.called
             assert raised.match("yt-dlp did not download a info_dict object.")
+
+    # Test raises exception when info dict is_live.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("This account has been terminated.")
+        with pytest.raises(AccountNotFoundError) as raised:
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
 
 
 async def test_get_info_dict_errors() -> None:

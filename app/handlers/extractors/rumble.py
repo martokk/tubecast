@@ -183,6 +183,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                 "duration": 234,
                 "uploader": "WMAR",
                 "live_status": "not_live",
+                "awaiting_transcoding": False,
             },
         },
     ]
@@ -335,9 +336,14 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
             if live_status == "was_live":
                 # Assume placeholders
                 dt_diff = datetime.utcnow() - datetime.fromtimestamp(timestamp)
-                if dt_diff.days <= 1 and duration <= 61:
+                if dt_diff.days <= 1 and duration <= 61 and video.get("livestream_has_dvr") is True:
                     duration = None
                     formats = []
+
+        if formats and duration:
+            awaiting_transcoding = False
+        else:
+            awaiting_transcoding = True
 
         return {
             "id": video_id,
@@ -351,6 +357,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
             "duration": duration,
             "uploader": uploader,
             "live_status": live_status,
+            "awaiting_transcoding": awaiting_transcoding,
         }
 
 

@@ -14,3 +14,9 @@ class FormatNotFoundError(Exception):
     """
     Exception raised when a format cannot be found.
     """
+
+
+class AwaitingTranscodingError(Exception):
+    """
+    Exception raised when a video is awaiting transcoding.
+    """

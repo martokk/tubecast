@@ -13,9 +13,15 @@ from app.paths import LOGOS_PATH
 from app.services.feed import build_rss_file
 from app.services.logo import create_logo_from_text
 from app.services.video import get_videos_needing_refresh, refresh_videos
-from app.services.ytdlp import get_info_dict
+from app.services.ytdlp import AccountNotFoundError, get_info_dict
 
 fetch_logger = _logger.bind(name="fetch_logger")
+
+
+class FetchCancelledError(Exception):
+    """
+    Raised when a fetch is cancelled.
+    """
 
 
 async def get_source_info_dict(
@@ -104,6 +110,7 @@ async def get_source_from_source_info_dict(
     return SourceCreate(
         created_by=created_by_user_id,
         reverse_import_order=reverse_import_order,
+        is_deleted=False,
         **handler_source_dict,
     )
 
@@ -231,6 +238,16 @@ async def fetch_source(
     fetch_logger.info(info_message)
 
     # Fetch source information from yt-dlp and create the source object
+    try:
+        source_info_dict = await get_source_info_dict(
+            source_id=id,
+            url=db_source.url,
+            reverse_import_order=db_source.reverse_import_order,
+        )
+    except AccountNotFoundError as e:
+        await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
+        raise FetchCancelledError from e
+
     source_info_dict = await get_source_info_dict(
         source_id=id,
         url=db_source.url,
@@ -314,7 +331,13 @@ async def fetch_all_sources(db: Session) -> models.FetchResults:
     results = models.FetchResults()
 
     for _source in sources:
-        source_fetch_results = await fetch_source(id=_source.id, db=db)
+        if _source.is_deleted or _source.is_active is False:
+            continue
+        try:
+            source_fetch_results = await fetch_source(id=_source.id, db=db)
+        except FetchCancelledError:
+            continue
+
         results += source_fetch_results
 
         # Allow other tasks to run
@@ -331,3 +354,30 @@ async def fetch_all_sources(db: Session) -> models.FetchResults:
     fetch_logger.success(success_message)
 
     return results
+
+
+async def handle_source_is_deleted(db: Session, source_id: str, error_message: str) -> Source:
+    """
+    Handle when a source has been Deleted by Source Provider (Youtube, Rumble, etc.)
+
+    Args:
+        db (Session): The database session.
+        source_id (str): The source's id.
+        last_fetch_error (str): The error message.
+
+    Returns:
+        updated_source (models.Source): The updated source.
+    """
+    logger.error(error_message)
+    fetch_logger.error(error_message)
+
+    # Update the source in the database
+    return await crud.source.update(
+        db=db,
+        id=source_id,
+        obj_in=models.SourceUpdate(
+            is_active=False,
+            is_deleted=True,
+            last_fetch_error=error_message,
+        ),
+    )

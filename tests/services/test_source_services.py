@@ -1,17 +1,21 @@
 from datetime import datetime, timedelta
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from sqlmodel import Session
 
 from app import crud, models, paths
+from app.models import Source
+from app.models.source import SourceUpdate
 from app.models.source_video_link import SourceOrderBy
 from app.services.source import (
+    FetchCancelledError,
     delete_orphaned_source_videos,
     fetch_all_sources,
     fetch_source,
     get_source_videos_from_source_info_dict,
 )
+from app.services.ytdlp import AccountNotFoundError
 from tests.mock_objects import (
     MOCKED_RUMBLE_SOURCE_1,
     MOCKED_RUMBLE_VIDEO_3,
@@ -117,7 +121,39 @@ async def test_fetch_all_sources(
     """
     Test fetching all sources.
     """
-    # Create another souce
+    # Create another source
+    new_source = await crud.source.create_source_from_url(
+        db=db, url=MOCKED_YOUTUBE_SOURCE_1["url"], user_id=normal_user.id
+    )
+
+    # Fetch all sources
+    fetch_results: models.FetchResults = await fetch_all_sources(db=db)
+
+    # Assert the results
+    assert fetch_results.sources == 2
+    assert fetch_results.added_videos == 4
+    assert fetch_results.refreshed_videos == 4
+    assert fetch_results.deleted_videos == 0
+
+    # Test source.is_deleted
+    await crud.source.update(db=db, id=new_source.id, obj_in=SourceUpdate(is_deleted=True))
+    fetch_results = await fetch_all_sources(db=db)
+
+    # Assert the results
+    await crud.source.update(
+        db=db, id=new_source.id, obj_in=SourceUpdate(is_deleted=False, is_active=False)
+    )
+    fetch_results = await fetch_all_sources(db=db)
+    assert fetch_results.sources == 1
+
+
+async def test_fetch_all_sources_fetch_canceled_error(
+    db: Session, normal_user: models.User, source_1: models.Source
+) -> None:
+    """
+    Test fetching all sources.
+    """
+    # Create another source
     await crud.source.create_source_from_url(
         db=db, url=MOCKED_YOUTUBE_SOURCE_1["url"], user_id=normal_user.id
     )
@@ -130,6 +166,12 @@ async def test_fetch_all_sources(
     assert fetch_results.added_videos == 4
     assert fetch_results.refreshed_videos == 4
     assert fetch_results.deleted_videos == 0
+
+    with patch("app.services.source.fetch_source") as mocked_fetch_source:
+        mocked_fetch_source.side_effect = FetchCancelledError()
+        fetch_results = await fetch_all_sources(db=db)
+
+    assert fetch_results.sources == 0
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -150,3 +192,14 @@ async def test_fetch_source_create_logo(mocker: Mock, db: Session, source_1: mod
 
     # Create logo
     assert logo_path.exists() is True
+
+
+async def test_fetch_source_account_not_found_error(db: Session, source_1: Source) -> None:
+    """
+    Test fetch_source when AccountNotFoundError is raised.
+    """
+    with patch("app.services.source.get_source_info_dict") as mocked_get_source_info_dict:
+        mocked_get_source_info_dict.side_effect = AccountNotFoundError
+
+        with pytest.raises(FetchCancelledError):
+            await fetch_source(db=db, id=source_1.id)
