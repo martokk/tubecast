@@ -9,6 +9,7 @@ from app.views import deps, templates
 router = APIRouter()
 
 
+@router.get("/source/{source_id}/video/{video_id}", response_class=HTMLResponse)
 @router.get("/video/{video_id}", response_class=HTMLResponse)
 async def view_video(
     request: Request,

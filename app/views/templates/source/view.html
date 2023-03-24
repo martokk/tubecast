@@ -313,7 +313,7 @@
                     <small><em>({{ video.released_at | humanize }})</em></small>
                     {% endif %}
                 </div>
-                <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
+                <h5 class="mb-0"><a href="/source/{{ source.id }}/video/{{ video.id }}"
                         class="text-decoration-none text-muted">{{ video.title }}</a></h5>
                 {% if not video.media_url %}
                 <div class="small text-danger fw-bold">No media URL available</div>

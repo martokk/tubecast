@@ -6,7 +6,7 @@ import re
 from loguru import logger as _logger
 
 from app.core.uuid import generate_uuid_from_url
-from app.handlers.exceptions import FormatNotFoundError, InvalidSourceUrl, AwaitingTranscodingError
+from app.handlers.exceptions import AwaitingTranscodingError, FormatNotFoundError, InvalidSourceUrl
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,

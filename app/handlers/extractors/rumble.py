@@ -183,6 +183,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                 "duration": 234,
                 "uploader": "WMAR",
                 "live_status": "not_live",
+                "awaiting_transcoding": False,
             },
         },
     ]
@@ -340,9 +341,9 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                     formats = []
 
         if formats and duration:
-            awaiting_transcoding = True
-        else:
             awaiting_transcoding = False
+        else:
+            awaiting_transcoding = True
 
         return {
             "id": video_id,

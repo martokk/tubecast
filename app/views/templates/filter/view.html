@@ -238,7 +238,7 @@
                     <div class="col-12 small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
                         <small><em>({{ video.released_at | humanize }})</em></small>
                     </div>
-                    <h5 class="mb-0"><a href="/video/{{ video.id }}{% if source %}?source_id={{ source.id }}{% endif %}"
+                    <h5 class="mb-0"><a href="/source/{{ filter.source.id }}/video/{{ video.id }}"
                             class="text-decoration-none text-muted">{{ video.title }}</a></h5>
                     {% if not video.media_url %}
                     <div class="small text-danger fw-bold">No media URL available</div>

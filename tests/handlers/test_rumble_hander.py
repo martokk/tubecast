@@ -4,7 +4,7 @@ from unittest.mock import ANY
 
 import pytest
 
-from app.handlers.exceptions import FormatNotFoundError, InvalidSourceUrl
+from app.handlers.exceptions import AwaitingTranscodingError, FormatNotFoundError, InvalidSourceUrl
 from app.handlers.rumble import RumbleHandler as Handler
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, get_mocked_source_info_dict
 
@@ -200,7 +200,13 @@ async def test_map_video_info_dict_entity_to_video_dict_format_id_keyerror(
         entry_info_dict.pop("format_id")
         handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
 
-    with pytest.raises(KeyError):
+    with pytest.raises(FormatNotFoundError):
         entry_info_dict = mocked_entry_info_dict.copy()
         entry_info_dict.pop("formats")
+        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
+
+    with pytest.raises(AwaitingTranscodingError):
+        entry_info_dict = mocked_entry_info_dict.copy()
+        entry_info_dict.pop("formats")
+        entry_info_dict["awaiting_transcoding"] = True
         handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
