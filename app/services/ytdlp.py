@@ -58,6 +58,12 @@ class NoUploadsError(YoutubeDLError):
     """
 
 
+class AccountNotFoundError(YoutubeDLError):
+    """
+    Raised when a channel has been terminated or deleted.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -163,6 +169,12 @@ async def ydl_extract_info(
             url, download=download, ie_key=ie_key, process=True
         )
     except (YoutubeDLError, DownloadError, ExtractorError) as e:
+        if "This account has been terminated" in str(e):
+            try:
+                error_msg = e.exc_info[1].orig_msg  # type: ignore
+            except AttributeError:
+                error_msg = "This account has been terminated."
+            raise AccountNotFoundError(str(error_msg)) from e
         if "This channel has no uploads" in str(e):
             raise NoUploadsError("This channel has no uploads.") from e
         if "The playlist does not exist." in str(e):

@@ -35,6 +35,9 @@ class SourceBase(TimestampModel, SQLModel):
     extractor: str = Field(default=None)
     handler: str = Field(default=None)
     service: str = Field(default=None)
+    is_active: bool = Field(default=True)
+    is_deleted: bool = Field(default=False)
+    last_fetch_error: str | None = Field(default=None)
 
     @property
     def name_sortable(self) -> str:

@@ -33,6 +33,7 @@
             </div>
         </div>
 
+
         <div class="row">
             <div class="col-auto">
                 <div class="image-container">
@@ -46,7 +47,6 @@
                         <span class="badge small {{ source.service | service_badge_color}}">{{ source.service }}</span>
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-12 mt-1">{{ source.description | safe }}</div>
                 </div>
@@ -56,6 +56,29 @@
     </div>
 
 
+    {% if source.is_active == False %}
+    <div class="row my-3 mx-1 alert alert-danger align-items-center justify-content-center" role="alert">
+        <div class="col-auto">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+        </div>
+        <div class="col">
+            <div>This source is marked as not active.</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if source.is_deleted %}
+    <div class="row my-3 mx-1 alert alert-danger align-items-center justify-content-center" role="alert">
+        <div class="col-auto">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+        </div>
+        <div class="col">
+            <div>This source was deleted by the service ({{ source.service }}).</div>
+            <hr class="my-1">
+            <div class="fst-italic small">Last Error: {{ source.last_fetch_error }}.</div>
+        </div>
+    </div>
+    {% endif %}
 
 
     <!-- Filters and Info -->
@@ -195,6 +218,70 @@
 
                         {% endif %}
                     </ul>
+
+{#
+<div class="container">
+    <h1>{{ source.name }} Videos Duration</h1>
+    <canvas id="durationChart" width="800" height="400"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+<script>
+    const videos = {{ source.videos | tojson }};
+    const durations = {};
+    for (let i = 0; i < videos.length; i++) {
+        const durationInMinutes = Math.floor(videos[i].duration / 60);
+        if (durationInMinutes in durations) {
+            durations[durationInMinutes]++;
+        } else {
+            durations[durationInMinutes] = 1;
+        }
+    }
+    const durationData = {
+        labels: Object.keys(durations),
+        datasets: [{
+            label: 'Total Videos',
+            data: Object.values(durations),
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    const durationConfig = {
+        type: 'bar',
+        data: durationData,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                },
+                yAxes: [{
+                    ticks: {
+                        precision: 0,
+                        callback: function (value, index, values) {
+                            return value + ' videos';
+                        }
+                    }
+                }],
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Duration (minutes)'
+                    }
+                }]
+            }
+        }
+    };
+
+    const durationChart = new Chart(
+        document.getElementById('durationChart'),
+        durationConfig
+    );
+</script> #}
+
+
+
                 </div>
 
                 {% endif %}

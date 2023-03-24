@@ -45,7 +45,7 @@
         <tbody>
 
             {% for source in sources | sort(attribute='name_sortable') %}
-            <tr class="bg-dark">
+            <tr class="{% if source.is_deleted %}bg-danger-subtle{% elif source.is_active == False  %}bg-dark text-muted{% else %}bg-dark{% endif %}">
                 <td onclick="location.href='/source/{{ source.id }}';" style="cursor:pointer;">
                     <div class="d-flex align-items-top">
                         <div class="me-3">
@@ -70,11 +70,11 @@
                 </td>
                 {% endif %}
 
-                <td class=" text-end">
-                    <div class="dropdown mt-2">
-                        <button class="btn btn-dark" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                <td class="text-end align-middle">
+                    <div class="dropdown align-middle">
+                        <button class="btn" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
                             aria-expanded="false">
-                            <i class="fas fa-ellipsis-h"></i>
+                            <i class="fas fa-ellipsis-h text-white"></i>
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                             {% if current_user.is_superuser %}
