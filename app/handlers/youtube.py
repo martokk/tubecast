@@ -285,7 +285,7 @@ class YoutubeHandler(ServiceHandler):
             "title": entry_info_dict["title"],
             "description": entry_info_dict["description"],
             "duration": entry_info_dict["duration"],
-            "thumbnail": entry_info_dict["thumbnail"],
+            "thumbnail": entry_info_dict.get("thumbnail"),
             "released_at": released_at,
             "media_url": None,
             "media_filesize": None,

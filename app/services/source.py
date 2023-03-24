@@ -111,6 +111,7 @@ async def get_source_from_source_info_dict(
         created_by=created_by_user_id,
         reverse_import_order=reverse_import_order,
         is_deleted=False,
+        is_active=True,
         **handler_source_dict,
     )
 
