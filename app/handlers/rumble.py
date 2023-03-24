@@ -6,7 +6,7 @@ import re
 from loguru import logger as _logger
 
 from app.core.uuid import generate_uuid_from_url
-from app.handlers.exceptions import FormatNotFoundError, InvalidSourceUrl
+from app.handlers.exceptions import FormatNotFoundError, InvalidSourceUrl, AwaitingTranscodingError
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
@@ -224,15 +224,16 @@ class RumbleHandler(ServiceHandler):
 
         Returns:
             A `Video` dictionary created from the `entry_info_dict`.
+
+        Raises:
+            FormatNotFoundError: If the format_id is not found in the entry_info_dict.
         """
-        try:
-            format_info_dict = self._get_format_info_dict_from_entry_info_dict(
-                entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
-            )
-        except KeyError as exc:
-            if "format_id" in str(exc):
-                raise FormatNotFoundError(f"Could not find format_id in entry_info_dict")
-            raise exc
+        if not entry_info_dict.get("format_id"):
+            raise FormatNotFoundError("Missing 'format_id' in entry_info_dict.")
+
+        format_info_dict = self._get_format_info_dict_from_entry_info_dict(
+            entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
+        )
 
         media_filesize = (
             format_info_dict.get("filesize") or format_info_dict.get("filesize_approx") or 0
@@ -296,4 +297,10 @@ class RumbleHandler(ServiceHandler):
         except StopIteration as exc:
             raise ValueError(
                 f"Format '{str(format_number)}' was not found in the entry_info_dict['formats']."
+            ) from exc
+        except KeyError as exc:
+            if entry_info_dict.get("awaiting_transcoding"):
+                raise AwaitingTranscodingError("Video is awaiting transcoding.") from exc
+            raise FormatNotFoundError(
+                f"Could not find formats in entry_info_dict: {str(exc)}"
             ) from exc

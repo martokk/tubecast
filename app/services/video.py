@@ -9,7 +9,7 @@ from yt_dlp.utils import YoutubeDLError
 from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers import get_handler_from_string, get_handler_from_url
-from app.handlers.exceptions import FormatNotFoundError
+from app.handlers.exceptions import AwaitingTranscodingError, FormatNotFoundError
 from app.services.ytdlp import (
     Http410Error,
     IsDeletedVideoError,
@@ -132,7 +132,7 @@ async def fetch_videos(videos: list[models.Video], db: Session) -> list[models.V
     for video in videos:
         try:
             fetched_video = await fetch_video(video_id=video.id, db=db)
-        except IsLiveEventError:
+        except (IsLiveEventError, AwaitingTranscodingError):
             continue
         except crud.RecordNotFoundError:
             err_msg = f"Database error: Video not found: \n{video=}"
