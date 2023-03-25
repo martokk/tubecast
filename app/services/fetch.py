@@ -247,7 +247,6 @@ async def fetch_all_videos(db: Session) -> list[Video]:
     videos = await crud.video.get_all(db=db) or []
     fetched = []
     for _video in videos:
-
         try:
             fetched_video = await fetch_video(video_id=_video.id, db=db)
         except (FetchVideoError, FetchCanceledError):
@@ -317,7 +316,7 @@ async def fetch_video(video_id: str, db: Session) -> Video:
         raise FetchCanceledError from e
 
     except (YoutubeDLError, Exception) as e:
-        await log_and_notify(message="Error fetching video: \n{e=} \n{db_video=}")
+        await log_and_notify(message=f"Error fetching video: \n{e=} \n{db_video=}")
         raise e
 
     _video = get_video_from_video_info_dict(video_info_dict=video_info_dict)
