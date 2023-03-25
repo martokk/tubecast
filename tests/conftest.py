@@ -17,7 +17,7 @@ from app.api import deps as api_deps
 from app.core import security
 from app.core.app import app
 from app.db.init_db import init_initial_data
-from app.services.source import fetch_source
+from app.services.fetch import fetch_source
 from app.views import deps as views_deps
 from tests.mock_objects import (
     MOCK_CRITERIA_1,

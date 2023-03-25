@@ -17,7 +17,8 @@ YDL_OPTS_BASE: dict[str, Any] = {
     "format": "worst[ext=mp4]",
     "skip_download": True,
     "simulate": True,
-    "ignore_no_formats_error": True,  # Ignore "No video formats" error. Extracts metadata if no formats are available.
+    "no_color": True,
+    "ignore_no_formats_error": False,  # Ignore "No video formats" error. Extracts metadata if no formats are available.
     # "verbose": True,
 }
 
@@ -64,6 +65,12 @@ class AccountNotFoundError(YoutubeDLError):
     """
 
 
+class VideoUnavailableError(YoutubeDLError):
+    """
+    Raised when a video is unavailable.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -84,6 +91,7 @@ async def get_info_dict(
     Returns:
         dict[str, Any]: The info dictionary for the object.
     """
+    print("get_info_dict")
     try:
         with YoutubeDL(ydl_opts) as ydl:
             # Extract info dict, handle if no videos uploaded
@@ -165,7 +173,7 @@ async def ydl_extract_info(
         Http410Error: If a HTTP 410 "GONE" error is encountered.
     """
     try:
-        info_dict: dict[str, Any] = ydl.extract_info(
+        info_dict: dict[str, Any] | None = ydl.extract_info(
             url, download=download, ie_key=ie_key, process=True
         )
     except (YoutubeDLError, DownloadError, ExtractorError) as e:
@@ -175,6 +183,8 @@ async def ydl_extract_info(
             except AttributeError:
                 error_msg = "This account has been terminated."
             raise AccountNotFoundError(str(error_msg)) from e
+        if "Video unavailable" in str(e):
+            raise VideoUnavailableError(str(e)) from e
         if "This channel has no uploads" in str(e):
             raise NoUploadsError("This channel has no uploads.") from e
         if "The playlist does not exist." in str(e):
@@ -197,11 +207,13 @@ async def ydl_extract_info(
         await notify(telegram=True, email=False, text=err_msg)
         raise YoutubeDLError(err_msg) from e
 
+    # Handle if info_dict is None/Empty
     if info_dict is None:
         raise YoutubeDLError(
             f"yt-dlp did not download a info_dict object. {info_dict=} {url=} {ie_key=} {ydl=}"
         )
 
+    # Handle if video is a live event
     if info_dict.get("is_live"):
         raise IsLiveEventError("This video is a live event.")
 

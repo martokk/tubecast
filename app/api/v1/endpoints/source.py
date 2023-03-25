@@ -1,11 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
 from app.api import deps
-from app.services.feed import build_rss_file, delete_rss_file
-from app.services.source import fetch_all_sources, fetch_source
+from app.services.fetch import fetch_all_sources, fetch_source
 
 router = APIRouter()
 ModelClass = models.Source

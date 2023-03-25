@@ -389,7 +389,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             "playlist_mincount": 4,
             "info_dict": {
                 "url": "https://rumble.com/user/ProjectVeritas",
-                "thumbnail": "https://sp.rmbl.ws/z0/N/U/W/w/NUWwb.asF-ProjectVeritas-qnx1cq.jpeg",
+                "thumbnail": "https://sp.rmbl.ws/z0/N/U/W/w/NUWwb.asF.5-djhd3-rs1gno.jpeg",
                 "description": "ProjectVeritas's Rumble Channel",
                 "title": "ProjectVeritas",
                 "channel": "ProjectVeritas",

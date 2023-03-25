@@ -10,9 +10,8 @@ from app.core import notify
 from app.db.backup import backup_database
 from app.db.init_db import init_initial_data
 from app.paths import FEEDS_PATH, STATIC_PATH
+from app.services.fetch import fetch_all_sources, refresh_all_videos
 from app.services.import_export import export_sources, import_sources
-from app.services.source import fetch_all_sources
-from app.services.video import refresh_all_videos
 from app.views.router import views_router
 
 # Initialize FastAPI App

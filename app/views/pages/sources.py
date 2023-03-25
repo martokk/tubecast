@@ -6,7 +6,7 @@ from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers.exceptions import HandlerNotFoundError
 from app.services.feed import build_rss_file, get_rss_file
-from app.services.source import FetchCancelledError, fetch_all_sources, fetch_source
+from app.services.fetch import FetchCancelledError, fetch_all_sources, fetch_source
 from app.services.ytdlp import NoUploadsError, PlaylistNotFoundError
 from app.views import deps, templates
 

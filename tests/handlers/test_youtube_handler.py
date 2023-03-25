@@ -123,7 +123,8 @@ def test_get_video_ydl_opts(handler: Handler) -> None:
         "format": "worst[ext=mp4]",
         "skip_download": True,
         "simulate": True,
-        "ignore_no_formats_error": True,
+        "ignore_no_formats_error": False,
+        "no_color": True,
     }
 
 

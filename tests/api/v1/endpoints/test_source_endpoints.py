@@ -321,7 +321,7 @@ def test_fetch_source(client: TestClient, superuser_token_headers: dict[str, str
     created_source = response.json()
 
     # Fetch Source
-    with patch("app.services.source.fetch_source") as mocked_fetch_source:
+    with patch("app.services.fetch.fetch_source") as mocked_fetch_source:
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/{created_source['id']}/fetch",
             headers=superuser_token_headers,

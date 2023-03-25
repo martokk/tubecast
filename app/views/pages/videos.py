@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
-from app.services.video import fetch_video
+from app.services.fetch import fetch_video
 from app.views import deps, templates
 
 router = APIRouter()

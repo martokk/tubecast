@@ -3,7 +3,7 @@ from sqlmodel import Session
 
 from app import crud, logger, models
 from app.api import deps
-from app.services.video import fetch_all_videos, fetch_video, refresh_all_videos
+from app.services.fetch import fetch_all_videos, fetch_video, refresh_all_videos
 
 router = APIRouter()
 ModelClass = models.Video
