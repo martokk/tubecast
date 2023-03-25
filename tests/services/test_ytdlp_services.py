@@ -13,6 +13,7 @@ from app.services.ytdlp import (
     IsPrivateVideoError,
     NoUploadsError,
     PlaylistNotFoundError,
+    VideoUnavailableError,
     get_info_dict,
 )
 from tests.mock_objects import MOCKED_RUMBLE_VIDEO_3, get_mocked_video_info_dict
@@ -87,6 +88,12 @@ async def test_get_info_dict() -> None:
     with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
         mocked_extract_info.side_effect = YoutubeDLError("This account has been terminated.")
         with pytest.raises(AccountNotFoundError) as raised:
+            await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
+
+    # Test raises exception when info dict is_live.
+    with patch("yt_dlp.YoutubeDL.extract_info") as mocked_extract_info:
+        mocked_extract_info.side_effect = YoutubeDLError("Video unavailable")
+        with pytest.raises(VideoUnavailableError) as raised:
             await get_info_dict(url, ydl_opts=YDL_OPTS_BASE)
 
 

@@ -8,7 +8,7 @@ from app import crud, logger
 from app.api.deps import get_db
 from app.core.proxy import reverse_proxy
 from app.handlers import get_handler_from_string
-from app.services.video import fetch_video
+from app.services.fetch import fetch_video
 
 router = APIRouter()
 

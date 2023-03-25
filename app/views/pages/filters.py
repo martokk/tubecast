@@ -6,7 +6,7 @@ from app import crud, logger, models
 from app.core.notify import notify
 from app.models.source_video_link import SourceOrderBy
 from app.services.feed import build_rss_file, delete_rss_file, get_rss_file
-from app.services.source import FetchCancelledError, fetch_source
+from app.services.fetch import FetchCancelledError, fetch_source
 from app.views import deps, templates
 
 router = APIRouter()

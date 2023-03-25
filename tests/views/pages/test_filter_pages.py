@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from app import crud, paths
 from app.models import Filter, Source, User
-from app.services.source import FetchCancelledError
+from app.services.fetch import FetchCancelledError
 from tests.mock_objects import MOCK_FILTER_1
 
 
@@ -193,7 +193,7 @@ def test_fetch_filter_page(
     assert response.url.path == f"/filter/{filter_1.id}"
 
     # Fetch source as superuser
-    with patch("app.services.source.fetch_source", return_value=None):
+    with patch("app.services.fetch.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/filter/{filter_1.id}/fetch",
@@ -204,7 +204,7 @@ def test_fetch_filter_page(
     assert response.url.path == f"/filter/{filter_1.id}"
 
     # Fetch source as superuser with not found source
-    with patch("app.services.source.fetch_source", return_value=None):
+    with patch("app.services.fetch.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/filter/wrongs_source_id/fetch",

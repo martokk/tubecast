@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import status
@@ -7,7 +7,7 @@ from httpx import Cookies
 from sqlmodel import Session
 
 from app import crud, models
-from app.services.source import FetchCancelledError
+from app.services.fetch import FetchCancelledError
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES, MOCKED_YOUTUBE_SOURCE_1
 
 
@@ -354,7 +354,7 @@ def test_fetch_source(
     assert response.url.path == f"/source/{source_1.id}"
 
     # Fetch source as superuser
-    with patch("app.services.source.fetch_source", return_value=None):
+    with patch("app.services.fetch.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/{source_1.id}/fetch",
@@ -365,7 +365,7 @@ def test_fetch_source(
     assert response.url.path == f"/source/{source_1.id}"
 
     # Fetch source as superuser with not found source
-    with patch("app.services.source.fetch_source", return_value=None):
+    with patch("app.services.fetch.fetch_source", return_value=None):
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/wrongs_source_id/fetch",

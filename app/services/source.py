@@ -1,27 +1,11 @@
 from typing import Any
 
-import asyncio
-
-from loguru import logger as _logger
 from sqlmodel import Session
 
-from app import crud, logger, models
+from app import crud
 from app.handlers import get_handler_from_url
-from app.models.source import Source, SourceCreate
-from app.models.video import Video, VideoCreate
-from app.paths import LOGOS_PATH
-from app.services.feed import build_rss_file
-from app.services.logo import create_logo_from_text
-from app.services.video import get_videos_needing_refresh, refresh_videos
-from app.services.ytdlp import AccountNotFoundError, get_info_dict
-
-fetch_logger = _logger.bind(name="fetch_logger")
-
-
-class FetchCancelledError(Exception):
-    """
-    Raised when a fetch is cancelled.
-    """
+from app.models import Source, SourceCreate, Video, VideoCreate
+from app.services.ytdlp import get_info_dict
 
 
 async def get_source_info_dict(
@@ -154,8 +138,8 @@ def get_source_videos_from_source_info_dict(source_info_dict: dict[str, Any]) ->
     return [VideoCreate(**video_dict) for video_dict in video_dicts]
 
 
-async def add_new_source_videos_from_fetched_videos(
-    fetched_videos: list[VideoCreate], db_source: Source, db: Session
+async def add_new_source_info_dict_videos_to_source(
+    source_info_dict: dict[str, Any], db_source: Source, db: Session
 ) -> list[VideoCreate]:
     """
     Add new videos from a list of fetched videos to a source in the database.
@@ -168,14 +152,15 @@ async def add_new_source_videos_from_fetched_videos(
     Returns:
         A list of Video objects that were added to the database.
     """
+    fetched_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
     db_video_ids = [video.id for video in db_source.videos]
 
     # Add videos that were fetched, but not in the database.
-    added_videos = []
+    new_videos = []
     for fetched_video in fetched_videos:
         if fetched_video.id not in db_video_ids:
             new_video = VideoCreate(**fetched_video.dict())
-            added_videos.append(new_video)
+            new_videos.append(new_video)
 
             db_video = await crud.video.get_or_none(db=db, id=new_video.id)
             if not db_video:
@@ -186,7 +171,7 @@ async def add_new_source_videos_from_fetched_videos(
 
             db_source.videos.append(db_video)
 
-    return added_videos
+    return new_videos
 
 
 async def delete_orphaned_source_videos(
@@ -213,172 +198,3 @@ async def delete_orphaned_source_videos(
             await crud.video.remove(id=db_video.id, db=db)
 
     return deleted_videos
-
-
-async def fetch_source(
-    db: Session, id: str, ignore_video_refresh: bool = False
-) -> models.FetchResults:
-    """
-    Fetch new data from yt-dlp for the source and update the source in the database.
-
-    This function will also delete any videos that are no longer associated with the source.
-
-    Args:
-        db (Session): The database session.
-        id: The id of the source to fetch and update.
-        ignore_video_refresh: If True, do not refresh videos.
-
-    Returns:
-        models.FetchResult: The result of the fetch.
-    """
-
-    db_source = await crud.source.get(id=id, db=db)
-
-    info_message = f"Fetching Source(id='{db_source.id}, name='{db_source.name}')"
-    logger.info(info_message)
-    fetch_logger.info(info_message)
-
-    # Fetch source information from yt-dlp and create the source object
-    try:
-        source_info_dict = await get_source_info_dict(
-            source_id=id,
-            url=db_source.url,
-            reverse_import_order=db_source.reverse_import_order,
-        )
-    except AccountNotFoundError as e:
-        await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
-        raise FetchCancelledError from e
-
-    source_info_dict = await get_source_info_dict(
-        source_id=id,
-        url=db_source.url,
-        reverse_import_order=db_source.reverse_import_order,
-    )
-    _source = await get_source_from_source_info_dict(
-        source_info_dict=source_info_dict,
-        created_by_user_id=db_source.created_by,
-        reverse_import_order=db_source.reverse_import_order,
-        source_name=db_source.name,
-    )
-    db_source = await crud.source.update(obj_in=models.SourceUpdate(**_source.dict()), id=id, db=db)
-
-    # Use the source information to fetch the videos
-    fetched_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
-
-    # Add new videos to database
-    new_videos = await add_new_source_videos_from_fetched_videos(
-        fetched_videos=fetched_videos, db_source=db_source, db=db
-    )
-
-    # Delete orphaned videos from database
-    deleted_videos: list[models.Video] = []
-    # NOTE: Enable if db grows too large. Otherwise best not to delete any videos
-    # from database as podcast app will still reference the video's feed_media_url
-    # deleted_videos = await delete_orphaned_source_videos(
-    #     fetched_videos=fetched_videos, db_source=db_source
-    # )
-
-    # Refresh existing videos in database
-    videos_needing_refresh = (
-        get_videos_needing_refresh(videos=db_source.videos) if not ignore_video_refresh else []
-    )
-    refreshed_videos = await refresh_videos(
-        videos_needing_refresh=videos_needing_refresh,
-        db=db,
-    )
-
-    # Check if source needs a logo
-    if db_source.logo and "static/logos" in db_source.logo:
-        logo_path = LOGOS_PATH / f"{db_source.id}.png"
-        if not logo_path.exists():
-            create_logo_from_text(text=db_source.name, file_path=logo_path)
-
-    # Build RSS Files
-    await build_rss_file(source=db_source)
-    for filter in db_source.filters:
-        await build_rss_file(filter=filter)
-
-    success_message = (
-        f"Completed fetching Source(id='{db_source.id}', name='{db_source.name}'). "
-        f"[{len(new_videos)}/{len(deleted_videos)}/{len(refreshed_videos)}] "
-        f"Added {len(new_videos)} new videos. "
-        f"Deleted {len(deleted_videos)} orphaned videos. "
-        f"Refreshed {len(refreshed_videos)} videos."
-    )
-    logger.success(success_message)
-    fetch_logger.success(success_message)
-
-    return models.FetchResults(
-        sources=1,
-        added_videos=len(new_videos),
-        deleted_videos=len(deleted_videos),
-        refreshed_videos=len(refreshed_videos),
-    )
-
-
-async def fetch_all_sources(db: Session) -> models.FetchResults:
-    """
-    Fetch all sources.
-
-    Args:
-        db (Session): The database session.
-
-    Returns:
-        models.FetchResults: The results of the fetch.
-    """
-    logger.info("Fetching ALL Sources...")
-    fetch_logger.info("Fetching ALL Sources...")
-    sources = await crud.source.get_all(db=db) or []
-    results = models.FetchResults()
-
-    for _source in sources:
-        if _source.is_deleted or _source.is_active is False:
-            continue
-        try:
-            source_fetch_results = await fetch_source(id=_source.id, db=db)
-        except FetchCancelledError:
-            continue
-
-        results += source_fetch_results
-
-        # Allow other tasks to run
-        await asyncio.sleep(0)
-
-    success_message = (
-        f"Completed fetching All ({results.sources}) Sources. "
-        f"[{results.added_videos}/{results.deleted_videos}/{results.refreshed_videos}]"
-        f"Added {results.added_videos} new videos. "
-        f"Deleted {results.deleted_videos} orphaned videos. "
-        f"Refreshed {results.refreshed_videos} videos.\n"
-    )
-    logger.success(success_message)
-    fetch_logger.success(success_message)
-
-    return results
-
-
-async def handle_source_is_deleted(db: Session, source_id: str, error_message: str) -> Source:
-    """
-    Handle when a source has been Deleted by Source Provider (Youtube, Rumble, etc.)
-
-    Args:
-        db (Session): The database session.
-        source_id (str): The source's id.
-        last_fetch_error (str): The error message.
-
-    Returns:
-        updated_source (models.Source): The updated source.
-    """
-    logger.error(error_message)
-    fetch_logger.error(error_message)
-
-    # Update the source in the database
-    return await crud.source.update(
-        db=db,
-        id=source_id,
-        obj_in=models.SourceUpdate(
-            is_active=False,
-            is_deleted=True,
-            last_fetch_error=error_message,
-        ),
-    )

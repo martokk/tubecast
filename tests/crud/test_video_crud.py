@@ -2,7 +2,7 @@ import pytest
 from sqlmodel import Session
 
 from app import crud, models
-from app.services.source import fetch_source
+from app.services.fetch import fetch_source
 
 
 async def test_create_video_from_url_already_exists(
