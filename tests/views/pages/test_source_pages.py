@@ -7,7 +7,7 @@ from httpx import Cookies
 from sqlmodel import Session
 
 from app import crud, models
-from app.services.fetch import FetchCancelledError
+from app.services.fetch import FetchCanceledError
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, MOCKED_SOURCES, MOCKED_YOUTUBE_SOURCE_1
 
 
@@ -377,7 +377,7 @@ def test_fetch_source(
 
     # Fetch Source was canceled
     with patch("app.views.pages.sources.fetch_source", return_value=None) as mocked_fetch_source:
-        mocked_fetch_source.side_effect = FetchCancelledError
+        mocked_fetch_source.side_effect = FetchCanceledError
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/{source_1.id}/fetch",

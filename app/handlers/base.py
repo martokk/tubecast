@@ -7,7 +7,7 @@ from yt_dlp.extractor.common import InfoExtractor
 
 from app.models.settings import Settings as _Settings
 from app.models.source_video_link import SourceOrderBy
-from app.services.ytdlp import YDL_OPTS_BASE
+from app.services.ytdlp import YDL_OPTS_BASE, AwaitingTranscodingError, FormatNotFoundError
 
 settings = _Settings()
 
@@ -148,3 +148,45 @@ class ServiceHandler:
 
     def get_ordered_by(self, url: str) -> str:
         return str(SourceOrderBy.RELEASED_AT.value)
+
+    def _get_format_info_dict_from_entry_info_dict(
+        self, entry_info_dict: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Gets the format_info_dict from the entry_info_dict based of the format_id.
+
+        Args:
+            entry_info_dict: The entity dictionary returned by youtube_dl.YoutubeDL.extract_info.
+
+        Returns:
+            The dictionary from entry_info_dict['formats'] that has a 'format_id'
+                value matching format_number.
+
+        Raises:
+            FormatNotFoundError: If the format_id is not found in the entry_info_dict['formats'].
+            AwaitingTranscodingError: If the video is awaiting transcoding.
+        """
+        try:
+            format_id = entry_info_dict["format_id"]
+            format_info_dict: dict[str, Any] = next(
+                (
+                    format_dict
+                    for format_dict in entry_info_dict["formats"]
+                    if format_dict["format_id"] == str(format_id)
+                )
+            )
+        except StopIteration as exc:
+            raise FormatNotFoundError(
+                f"Format was not found in the entry_info_dict['formats']."
+            ) from exc
+        except KeyError as exc:
+            if entry_info_dict.get("awaiting_transcoding"):
+                raise AwaitingTranscodingError("Video is awaiting transcoding.") from exc
+            raise FormatNotFoundError(
+                f"Could not find formats in entry_info_dict: {str(exc)}"
+            ) from exc
+
+        if "m3u8" in format_info_dict["url"]:
+            raise AwaitingTranscodingError("'m3u8' format not supported.")
+
+        return format_info_dict

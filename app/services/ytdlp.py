@@ -71,6 +71,18 @@ class VideoUnavailableError(YoutubeDLError):
     """
 
 
+class FormatNotFoundError(Exception):
+    """
+    Exception raised when a format cannot be found.
+    """
+
+
+class AwaitingTranscodingError(Exception):
+    """
+    Exception raised when a video is awaiting transcoding.
+    """
+
+
 async def get_info_dict(
     url: str,
     ydl_opts: dict[str, Any],
@@ -91,7 +103,6 @@ async def get_info_dict(
     Returns:
         dict[str, Any]: The info dictionary for the object.
     """
-    print("get_info_dict")
     try:
         with YoutubeDL(ydl_opts) as ydl:
             # Extract info dict, handle if no videos uploaded

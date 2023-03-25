@@ -7,6 +7,7 @@ from httpx import Cookies
 from sqlmodel import Session
 
 from app import crud, models
+from app.services.fetch import FetchCanceledError
 
 
 def test_view_video(
@@ -61,3 +62,13 @@ def test_fetch_video_page(
         assert response.status_code == status.HTTP_200_OK
         assert response.url.path == f"/video/{test_video.id}"
         assert response.context["alerts"].success[0] == f"Video '{test_video.title}' was fetched."  # type: ignore
+
+    # Test when FetchCanceledError is raised
+    with patch("app.views.pages.videos.fetch_video") as mock_fetch_video:
+        mock_fetch_video.side_effect = FetchCanceledError("test")
+        client.cookies = superuser_cookies
+        response = client.get(f"/video/{test_video.id}/fetch")
+        assert mock_fetch_video.called
+        assert response.status_code == status.HTTP_200_OK
+        assert response.url.path == f"/video/{test_video.id}"
+        assert response.context["alerts"].danger[0] == f"Fetch canceled. test"  # type: ignore

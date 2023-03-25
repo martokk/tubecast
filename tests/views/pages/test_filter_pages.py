@@ -8,7 +8,7 @@ from sqlmodel import Session
 
 from app import crud, paths
 from app.models import Filter, Source, User
-from app.services.fetch import FetchCancelledError
+from app.services.fetch import FetchCanceledError
 from tests.mock_objects import MOCK_FILTER_1
 
 
@@ -216,7 +216,7 @@ def test_fetch_filter_page(
 
     # Fetch Source was canceled
     with patch("app.views.pages.filters.fetch_source", return_value=None) as mocked_fetch_source:
-        mocked_fetch_source.side_effect = FetchCancelledError
+        mocked_fetch_source.side_effect = FetchCanceledError
         client.cookies = superuser_cookies
         response = client.get(
             f"/filter/{filter_1.id}/fetch",

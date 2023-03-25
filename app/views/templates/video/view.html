@@ -51,11 +51,11 @@
                     <div class="row my-3">
                         <div class="col-12 col-sm-12">
                             {% if video.duration %}
-                            <p class="small mb-0"><strong>Duration</strong>: {{ (video.duration / 60) | int }} minutes
+                            <p class="small mb-0"><strong>Duration</strong>: {% if video.duration %}{{ (video.duration / 60) | int }} minutes{% endif %}
                             </p>
                             {% endif %}
-                            <p class="small mb-0"><strong>Released At</strong>: {{ video.released_at.strftime('%d %b %Y
-                                - %H:%M') }}</p>
+                            <p class="small mb-0"><strong>Released At</strong>: {% if video.released_at %}{{ video.released_at.strftime('%d %b %Y
+                                - %H:%M') }}{% endif %}</p>
                             <p class="small mb-0"><strong>Created At</strong>: {{ video.created_at.strftime('%d %b %Y -
                                 %H:%M') }}</p>
 

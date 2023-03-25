@@ -6,7 +6,7 @@ import re
 from loguru import logger as _logger
 
 from app.core.uuid import generate_uuid_from_url
-from app.handlers.exceptions import AwaitingTranscodingError, FormatNotFoundError, InvalidSourceUrl
+from app.handlers.exceptions import InvalidSourceUrl
 from app.handlers.extractors.rumble import (
     CustomRumbleChannelIE,
     CustomRumbleEmbedIE,
@@ -14,7 +14,7 @@ from app.handlers.extractors.rumble import (
 )
 from app.models.settings import Settings as _Settings
 from app.paths import LOG_FILE as _LOG_FILE
-from app.services.ytdlp import YDL_OPTS_BASE
+from app.services.ytdlp import YDL_OPTS_BASE, AwaitingTranscodingError, FormatNotFoundError
 
 from .base import ServiceHandler
 
@@ -229,16 +229,18 @@ class RumbleHandler(ServiceHandler):
             FormatNotFoundError: If the format_id is not found in the entry_info_dict.
         """
 
+        # Get formatting
         try:
             format_info_dict = self._get_format_info_dict_from_entry_info_dict(
                 entry_info_dict=entry_info_dict
             )
-        except (FormatNotFoundError, AwaitingTranscodingError) as e:
+        except (FormatNotFoundError, AwaitingTranscodingError):
             format_info_dict = {}
+
+        # Get metadata
         media_filesize = (
             format_info_dict.get("filesize") or format_info_dict.get("filesize_approx") or 0
         )
-
         media_url = format_info_dict.get("url")
         released_at = datetime.datetime.utcfromtimestamp(entry_info_dict["timestamp"])
 
@@ -266,40 +268,3 @@ class RumbleHandler(ServiceHandler):
             "thumbnail": entry_info_dict.get("thumbnail"),
             "released_at": released_at,
         }
-
-    def _get_format_info_dict_from_entry_info_dict(
-        self, entry_info_dict: dict[str, Any]
-    ) -> dict[str, Any]:
-        """
-        Returns the dictionary from entry_info_dict['formats'] that has a 'format_id' value
-        matching format_number.
-
-        Args:
-            entry_info_dict: The entity dictionary returned by youtube_dl.YoutubeDL.extract_info.
-            format_number: The 'format_id' value to search for in entry_info_dict['formats'].
-
-        Returns:
-            The dictionary from entry_info_dict['formats'] that has a 'format_id'
-                value matching format_number.
-
-        Raises:
-            ValueError: If no dictionary in entry_info_dict['formats'] has a 'format_id'
-                value matching format_number.
-        """
-        try:
-            format_id = entry_info_dict["format_id"]
-            return next(
-                (
-                    format_dict
-                    for format_dict in entry_info_dict["formats"]
-                    if format_dict["format_id"] == str(format_id)
-                )
-            )
-        except StopIteration as exc:
-            raise ValueError(f"Format was not found in the entry_info_dict['formats'].") from exc
-        except KeyError as exc:
-            if entry_info_dict.get("awaiting_transcoding"):
-                raise AwaitingTranscodingError("Video is awaiting transcoding.") from exc
-            raise FormatNotFoundError(
-                f"Could not find formats in entry_info_dict: {str(exc)}"
-            ) from exc

@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
 
 from app import crud, models
-from app.services.fetch import fetch_video
+from app.services.fetch import FetchCanceledError, fetch_video
 from app.views import deps, templates
 
 router = APIRouter()
@@ -83,8 +83,11 @@ async def fetch_video_page(
     elif not video:
         alerts.danger.append("Video not found")
     else:
-        await fetch_video(video_id=video_id, db=db)
-        alerts.success.append(f"Video '{video.title}' was fetched.")
+        try:
+            await fetch_video(video_id=video_id, db=db)
+            alerts.success.append(f"Video '{video.title}' was fetched.")
+        except FetchCanceledError as e:
+            alerts.danger.append(f"Fetch canceled. {e}")
 
     response = RedirectResponse(
         url=f"/video/{video.id}" if video else "/", status_code=status.HTTP_303_SEE_OTHER

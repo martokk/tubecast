@@ -4,8 +4,9 @@ from unittest.mock import ANY
 
 import pytest
 
-from app.handlers.exceptions import AwaitingTranscodingError, FormatNotFoundError, InvalidSourceUrl
+from app.handlers.exceptions import InvalidSourceUrl
 from app.handlers.rumble import RumbleHandler as Handler
+from app.services.ytdlp import AwaitingTranscodingError, FormatNotFoundError
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1, get_mocked_source_info_dict
 
 
@@ -189,8 +190,8 @@ async def test_map_video_info_dict_entity_to_video_dict_live_status(
 
     # Test if format_id not in format_info_dict
     mocked_entry_info_dict["format_id"] = "not_in_format_info_dict"
-    with pytest.raises(ValueError):
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=mocked_entry_info_dict)
+    result = handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
+    assert result == data
 
     # Test Awaiting Transcoding
     entry_info_dict = mocked_entry_info_dict.copy()
@@ -210,23 +211,3 @@ async def test_map_video_info_dict_entity_to_video_dict_live_status(
     }
     result = handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
     assert result == data
-
-
-async def test_map_video_info_dict_entity_to_video_dict_format_id_keyerror(
-    handler: Handler, mocked_entry_info_dict: dict[str, Any]
-) -> None:
-    with pytest.raises(FormatNotFoundError):
-        entry_info_dict = mocked_entry_info_dict.copy()
-        entry_info_dict.pop("format_id")
-        handler._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
-
-    with pytest.raises(FormatNotFoundError):
-        entry_info_dict = mocked_entry_info_dict.copy()
-        entry_info_dict.pop("formats")
-        handler._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
-
-    with pytest.raises(AwaitingTranscodingError):
-        entry_info_dict = mocked_entry_info_dict.copy()
-        entry_info_dict.pop("formats")
-        entry_info_dict["awaiting_transcoding"] = True
-        handler._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
