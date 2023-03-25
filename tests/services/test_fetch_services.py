@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from unittest.mock import ANY, Mock, patch
 
 import pytest
@@ -5,18 +6,20 @@ from sqlmodel import Session
 from yt_dlp.utils import YoutubeDLError
 
 from app import crud, paths
-from app.handlers.exceptions import FormatNotFoundError
-from app.models import FetchResults, Source, SourceUpdate, User
+from app.models import FetchResults, Source, SourceUpdate, User, Video, VideoUpdate
 from app.services.fetch import (
-    FetchCancelledError,
+    FetchCanceledError,
+    FetchVideoError,
     fetch_all_sources,
     fetch_source,
+    fetch_video,
     fetch_videos,
     get_videos_needing_refresh,
     refresh_all_videos,
 )
 from app.services.ytdlp import (
     AccountNotFoundError,
+    FormatNotFoundError,
     IsLiveEventError,
     IsPrivateVideoError,
     VideoUnavailableError,
@@ -24,6 +27,7 @@ from app.services.ytdlp import (
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_2, MOCKED_YOUTUBE_SOURCE_1
 
 
+# Fetch All Sources
 async def test_fetch_all_sources(db: Session, normal_user: User, source_1: Source) -> None:
     """
     Test fetching all sources.
@@ -75,12 +79,13 @@ async def test_fetch_all_sources_fetch_canceled_error(
     assert fetch_results.deleted_videos == 0
 
     with patch("app.services.fetch.fetch_source") as mocked_fetch_source:
-        mocked_fetch_source.side_effect = FetchCancelledError()
+        mocked_fetch_source.side_effect = FetchCanceledError()
         fetch_results = await fetch_all_sources(db=db)
 
     assert fetch_results.sources == 0
 
 
+# Fetch Source
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 async def test_fetch_source_create_logo(mocker: Mock, db: Session, source_1: Source) -> None:
     """
@@ -108,10 +113,96 @@ async def test_fetch_source_account_not_found_error(db: Session, source_1: Sourc
     with patch("app.services.fetch.get_source_info_dict") as mocked_get_source_info_dict:
         mocked_get_source_info_dict.side_effect = AccountNotFoundError
 
-        with pytest.raises(FetchCancelledError):
+        with pytest.raises(FetchCanceledError):
             await fetch_source(db=db, id=source_1.id)
 
 
+# Fetch Videos
+async def test_fetch_videos(db: Session, source_1_w_videos: Source) -> None:
+    """
+    Tests 'fetch_videos', fetching new data for a list of videos from yt-dlp.
+    """
+    with patch("app.services.fetch.fetch_video", return_value=source_1_w_videos.videos[0]):
+        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
+        assert len(fetched_videos) == len(source_1_w_videos.videos)
+
+
+async def test_fetch_videos_unavailable(
+    db: Session, normal_user: User, source_1_w_videos: Source
+) -> None:
+    # Test that videos that are not found are ignored
+    assert len(source_1_w_videos.videos) == 2
+    with patch("app.services.fetch.get_video_info_dict", side_effect=VideoUnavailableError):
+        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
+        assert len(fetched_videos) == 0
+        assert len(source_1_w_videos.videos) == 0
+
+
+# Fetch Video
+async def test_fetch_video_unavailable_error(db: Session, source_1_w_videos: Source) -> None:
+    # Test that videos recent videos are ignored via FetchCanceledError
+    video1: Video = source_1_w_videos.videos[0]
+    video1 = await crud.video.update(
+        db=db, id=video1.id, obj_in=VideoUpdate(released_at=datetime.utcnow() - timedelta(hours=1))
+    )
+    with patch("app.services.fetch.get_video_info_dict", side_effect=IsPrivateVideoError):
+        with pytest.raises(FetchCanceledError):
+            await fetch_video(db=db, video_id=video1.id)
+
+    # Test Errors from videos released more than 36 hour ago are not ignored
+    video2 = source_1_w_videos.videos[0]
+    video2 = await crud.video.update(
+        db=db, id=video2.id, obj_in=VideoUpdate(released_at=datetime.utcnow() - timedelta(hours=37))
+    )
+    with patch("app.services.fetch.get_video_info_dict", side_effect=IsPrivateVideoError):
+        with pytest.raises(FetchVideoError):
+            await fetch_video(db=db, video_id=video2.id)
+
+
+async def test_fetch_video_Exception(db: Session, source_1_w_videos: Source) -> None:
+    """
+    Test fetch_video when Exception is raised.
+    """
+    # Test that videos recent videos are ignored via FetchCanceledError
+    video1: Video = source_1_w_videos.videos[0]
+    video1 = await crud.video.update(
+        db=db, id=video1.id, obj_in=VideoUpdate(released_at=datetime.utcnow() - timedelta(hours=1))
+    )
+    with patch("app.services.fetch.get_video_info_dict", side_effect=IsPrivateVideoError):
+        with pytest.raises(FetchCanceledError):
+            await fetch_video(db=db, video_id=video1.id)
+
+    # Test Errors from videos released more than 36 hour ago are not ignored
+    video2 = source_1_w_videos.videos[0]
+    video2 = await crud.video.update(
+        db=db, id=video2.id, obj_in=VideoUpdate(released_at=datetime.utcnow() - timedelta(hours=37))
+    )
+    with patch("app.services.fetch.get_video_info_dict", side_effect=IsPrivateVideoError):
+        with pytest.raises(FetchVideoError):
+            await fetch_video(db=db, video_id=video2.id)
+
+
+async def test_fetch_video_record_not_found(db: Session, source_1_w_videos: Source) -> None:
+    """
+    Test fetch_video when RecordNotFoundError is raised.
+    """
+    video1: Video = source_1_w_videos.videos[0]
+    with patch("app.services.fetch.get_video_info_dict", side_effect=crud.RecordNotFoundError):
+        with pytest.raises(crud.RecordNotFoundError):
+            await fetch_video(db=db, video_id=video1.id)
+
+
+async def test_fetch_video_youtubedl_error(db: Session, source_1_w_videos: Source) -> None:
+    """
+    Test fetch_video when RecordNotFoundError is raised.
+    """
+    video1: Video = source_1_w_videos.videos[0]
+    with patch("app.services.fetch.get_video_info_dict", side_effect=YoutubeDLError):
+        with pytest.raises(YoutubeDLError):
+            await fetch_video(db=db, video_id=video1.id)
+
+
+# Refresh All Videos
 async def test_refresh_all_videos(db: Session, normal_user: User, source_1: Source) -> None:
     """
     Tests 'refresh_all_videos', fetching new data from yt-dlp for all Videos.
@@ -127,81 +218,25 @@ async def test_refresh_all_videos(db: Session, normal_user: User, source_1: Sour
         assert mocked_refresh_videos.call_count == 1
         mocked_refresh_videos.assert_called_with(videos=ANY, db=ANY)
 
-    # Refresh all videos older than 0 hours
-    with patch("app.services.fetch.refresh_videos") as mocked_refresh_videos:
-        await refresh_all_videos(db=db)
-        assert mocked_refresh_videos.call_count == 1
-        mocked_refresh_videos.assert_called_with(videos=ANY, db=ANY)
 
-
-async def test_fetch_videos(db: Session, normal_user: User, source_1_w_videos: Source) -> None:
-    """
-    Tests 'fetch_videos', fetching new data for a list of videos from yt-dlp.
-    """
-    with patch("app.services.fetch.fetch_video", return_value=source_1_w_videos.videos[0]):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == len(source_1_w_videos.videos)
-
-    # Test that videos that are live events are ignored
-    with patch("app.services.fetch.fetch_video", side_effect=IsLiveEventError):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == 0
-
-    # Test that videos with errors are ignored
-    with patch("app.services.fetch.fetch_video", side_effect=YoutubeDLError):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == 0
-
-    # Test that videos that are not found are ignored
-    with patch("app.services.fetch.fetch_video", side_effect=crud.RecordNotFoundError):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == 0
-
-    # Test that videos that are not found are ignored
-    with patch("app.services.fetch.fetch_video", side_effect=FormatNotFoundError):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == 0
-
-
-async def test_fetch_videos_is_private_video(
-    db: Session, normal_user: User, source_1_w_videos: Source
-) -> None:
-    # Test that videos that are not found are ignored
-    assert len(source_1_w_videos.videos) == 2
-    with patch("app.services.fetch.fetch_video", side_effect=IsPrivateVideoError):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == 0
-        assert len(source_1_w_videos.videos) == 0
-
-
-async def test_fetch_videos_unavailable(
-    db: Session, normal_user: User, source_1_w_videos: Source
-) -> None:
-    # Test that videos that are not found are ignored
-    assert len(source_1_w_videos.videos) == 2
-    with patch("app.services.fetch.get_video_info_dict", side_effect=VideoUnavailableError):
-        fetched_videos = await fetch_videos(videos=source_1_w_videos.videos, db=db)
-        assert len(fetched_videos) == 0
-        assert len(source_1_w_videos.videos) == 0
-
-
+# Refresh Videos
 def test_get_videos_needing_refresh(
     mocker: Mock, db: Session, normal_user: User, source_1_w_videos: Source
 ) -> None:
     """
     Tests 'get_videos_needing_refresh', getting videos that need to be refreshed.
     """
-    # Get videos that need to be refreshed
+    # Ensure no videos need to be refreshed
     videos_needing_refresh = get_videos_needing_refresh(videos=source_1_w_videos.videos)
     assert len(videos_needing_refresh) == 0
 
-    # Get videos that need to be refreshed
+    # Test 1 video needs to be refreshed
     videos = source_1_w_videos.videos
     videos[0].media_url = None
     videos_needing_refresh = get_videos_needing_refresh(videos=source_1_w_videos.videos)
     assert len(videos_needing_refresh) == 1
 
-    # Get videos that need to be refreshed
+    # Test deleted videos don't need to be refreshed
     videos = source_1_w_videos.videos
     videos[0].media_url = None
     videos[0].title = "[Deleted video]"

@@ -14,7 +14,6 @@ from yt_dlp.utils import YoutubeDLError
 from app import crud, logger, paths
 from app.core.notify import notify
 from app.handlers import get_handler_from_string
-from app.handlers.exceptions import AwaitingTranscodingError, FormatNotFoundError
 from app.models import FetchResults, Source, SourceUpdate, Video, VideoUpdate
 from app.services.feed import build_rss_file
 from app.services.logo import create_logo_from_text
@@ -32,7 +31,6 @@ from app.services.ytdlp import (
     AccountNotFoundError,
     Http410Error,
     IsDeletedVideoError,
-    IsLiveEventError,
     IsPrivateVideoError,
     VideoUnavailableError,
 )
@@ -40,10 +38,39 @@ from app.services.ytdlp import (
 fetch_logger = _logger.bind(name="fetch_logger")
 
 
-class FetchCancelledError(Exception):
+class FetchError(Exception):
+    """
+    Base class for fetch errors.
+    """
+
+
+class FetchCanceledError(FetchError):
     """
     Raised when a fetch is cancelled.
     """
+
+
+class FetchVideoError(FetchError):
+    """
+    Raised when a video fetch fails.
+    """
+
+
+class FetchSourceError(FetchError):
+    """
+    Raised when a source fetch fails.
+    """
+
+
+async def log_and_notify(message: str) -> None:
+    """
+    Log and notify a message.
+
+    Args:
+        message (str): The message to log and notify.
+    """
+    logger.critical(message)
+    await notify(telegram=True, email=False, text=message)
 
 
 async def fetch_all_sources(db: Session) -> FetchResults:
@@ -66,7 +93,7 @@ async def fetch_all_sources(db: Session) -> FetchResults:
             continue
         try:
             source_fetch_results = await fetch_source(id=_source.id, db=db)
-        except FetchCancelledError:
+        except FetchCanceledError:
             continue
 
         results += source_fetch_results
@@ -116,8 +143,9 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
             reverse_import_order=db_source.reverse_import_order,
         )
     except AccountNotFoundError as e:
+        await log_and_notify(message=f"AccountNotFoundError: \n{e=} \n{db_source=}")
         await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
-        raise FetchCancelledError from e
+        raise FetchCanceledError from e
 
     # Update source in database
     _source = await get_source_from_source_info_dict(
@@ -188,10 +216,6 @@ async def handle_source_is_deleted(db: Session, source_id: str, error_message: s
     Returns:
         updated_source (models.Source): The updated source.
     """
-    logger.error(error_message)
-    fetch_logger.error(error_message)
-
-    # Update the source in the database
     return await crud.source.update(
         db=db,
         id=source_id,
@@ -223,7 +247,13 @@ async def fetch_all_videos(db: Session) -> list[Video]:
     videos = await crud.video.get_all(db=db) or []
     fetched = []
     for _video in videos:
-        fetched.append(await fetch_video(video_id=_video.id, db=db))
+
+        try:
+            fetched_video = await fetch_video(video_id=_video.id, db=db)
+        except (FetchVideoError, FetchCanceledError):
+            continue
+
+        fetched.append(fetched_video)
 
     return fetched
 
@@ -244,26 +274,7 @@ async def fetch_videos(videos: list[Video], db: Session) -> list[Video]:
     for video in videos:
         try:
             fetched_video = await fetch_video(video_id=video.id, db=db)
-        except (IsLiveEventError, AwaitingTranscodingError, FetchCancelledError):
-            continue
-        except crud.RecordNotFoundError:
-            err_msg = f"Database error: Video not found: \n{video=}"
-            logger.critical(err_msg)
-            await notify(telegram=True, email=False, text=err_msg)
-            continue
-        except (Http410Error, IsPrivateVideoError, IsDeletedVideoError):
-            # Video has been deleted on host server
-            await crud.video.remove(db=db, id=video.id)
-            continue
-        except FormatNotFoundError:
-            err_msg = f"Yt-dlp did not return a download url for video: \n{video=}"
-            logger.critical(err_msg)
-            await notify(telegram=True, email=False, text=err_msg)
-            continue
-        except (YoutubeDLError, Exception) as e:
-            err_msg = f"Error fetching video: \n{e=} \n{video=}"
-            logger.critical(err_msg)
-            await notify(telegram=True, email=False, text=err_msg)
+        except (FetchVideoError, FetchCanceledError):
             continue
 
         # Allow other tasks to run
@@ -290,9 +301,24 @@ async def fetch_video(video_id: str, db: Session) -> Video:
     # Fetch video information from yt-dlp and create the video object
     try:
         video_info_dict = await get_video_info_dict(url=db_video.url)
-    except VideoUnavailableError as e:
+
+    except crud.RecordNotFoundError as e:
+        await log_and_notify(message=f"Database error: Video not found: \n{db_video=}")
+        raise e
+
+    except (VideoUnavailableError, Http410Error, IsPrivateVideoError, IsDeletedVideoError) as e:
         await handle_unavailable_video(db=db, video_id=video_id, error_message=str(e))
-        raise FetchCancelledError from e
+
+        # If the video was released more than 36 hours ago, raise an error
+        if db_video.released_at < datetime.utcnow() - timedelta(hours=36):
+            await log_and_notify(message=f"FetchVideoError: \n{e=} \n{db_video=}")
+            raise FetchVideoError(e) from e
+
+        raise FetchCanceledError from e
+
+    except (YoutubeDLError, Exception) as e:
+        await log_and_notify(message="Error fetching video: \n{e=} \n{db_video=}")
+        raise e
 
     _video = get_video_from_video_info_dict(video_info_dict=video_info_dict)
 

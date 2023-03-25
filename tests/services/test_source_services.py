@@ -5,7 +5,7 @@ from sqlmodel import Session
 
 from app import crud, models, paths
 from app.models import Source, SourceUpdate
-from app.services.fetch import FetchCancelledError, fetch_all_sources, fetch_source
+from app.services.fetch import FetchCanceledError, fetch_all_sources, fetch_source
 from app.services.source import (
     delete_orphaned_source_videos,
     get_source_info_dict,

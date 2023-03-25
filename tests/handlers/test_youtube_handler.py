@@ -4,10 +4,15 @@ from unittest.mock import ANY
 
 import pytest
 
-from app.handlers.exceptions import FormatNotFoundError, InvalidSourceUrl
+from app.handlers.exceptions import InvalidSourceUrl
 from app.handlers.youtube import YoutubeHandler as Handler
 from app.models.source_video_link import SourceOrderBy
-from app.services.ytdlp import Http410Error, IsDeletedVideoError, IsPrivateVideoError
+from app.services.ytdlp import (
+    FormatNotFoundError,
+    Http410Error,
+    IsDeletedVideoError,
+    IsPrivateVideoError,
+)
 from tests.mock_objects import MOCKED_YOUTUBE_SOURCE_1, get_mocked_source_info_dict
 
 
@@ -69,10 +74,11 @@ async def test_map_video_info_dict_entity_to_video_dict(
 
     # Test if format_id not in format_info_dict
     mocked_entry_info_dict["format_id"] = "not_in_format_info_dict"
-    with pytest.raises(ValueError):
-        video_dict = handler.map_video_info_dict_entity_to_video_dict(
-            entry_info_dict=mocked_entry_info_dict
-        )
+    video_dict = handler.map_video_info_dict_entity_to_video_dict(
+        entry_info_dict=mocked_entry_info_dict
+    )
+    assert video_dict["media_url"] == None
+    assert video_dict["media_filesize"] == 0
 
 
 def test_sanitize_source_url(handler: Handler) -> None:
@@ -261,25 +267,6 @@ async def test_map_video_info_dict_entity_to_video_dict_errors(
 
     with pytest.raises(IsDeletedVideoError):
         entry_info_dict["title"] = "[Deleted video]"
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
-
-    with pytest.raises(FormatNotFoundError):
-        entry_info_dict = mocked_entry_info_dict.copy()
-        entry_info_dict["formats"][0]["url"] = ".m3u8"
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
-
-
-async def test_map_video_info_dict_entity_to_video_dict_format_id_keyerror(
-    handler: Handler, mocked_entry_info_dict: dict[str, Any]
-) -> None:
-    with pytest.raises(FormatNotFoundError):
-        entry_info_dict = mocked_entry_info_dict.copy()
-        entry_info_dict.pop("format_id")
-        handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
-
-    with pytest.raises(KeyError):
-        entry_info_dict = mocked_entry_info_dict.copy()
-        entry_info_dict.pop("formats")
         handler.map_video_info_dict_entity_to_video_dict(entry_info_dict=entry_info_dict)
 
 

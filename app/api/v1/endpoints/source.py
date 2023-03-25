@@ -3,7 +3,7 @@ from sqlmodel import Session
 
 from app import crud, models
 from app.api import deps
-from app.services.fetch import fetch_all_sources, fetch_source
+from app.services.fetch import FetchCanceledError, fetch_all_sources, fetch_source
 
 router = APIRouter()
 ModelClass = models.Source
@@ -236,6 +236,10 @@ async def fetch_source_endpoint(
     except crud.RecordNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Source Not Found"
+        ) from exc
+    except FetchCanceledError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_202_ACCEPTED, detail="Fetch was canceled by server."
         ) from exc
 
     # Fetch the source videos in the background

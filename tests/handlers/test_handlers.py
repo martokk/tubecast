@@ -1,7 +1,11 @@
+from typing import Any
+
 import pytest
 
 from app.handlers import get_handler_from_string, get_handler_from_url
+from app.handlers.base import ServiceHandler
 from app.handlers.exceptions import HandlerNotFoundError
+from app.services.ytdlp import AwaitingTranscodingError, FormatNotFoundError
 
 
 def test_get_handler_from_url() -> None:
@@ -36,3 +40,32 @@ def test_get_handler_from_string() -> None:
     handler_string = "BitchuteHandler"
     with pytest.raises(HandlerNotFoundError):
         get_handler_from_string(handler_string=handler_string)
+
+
+async def test_map_video_info_dict_entity_to_video_dict_format_id_keyerror(
+    mocked_entry_info_dict: dict[str, Any]
+) -> None:
+    # Test missing format_id key
+    with pytest.raises(FormatNotFoundError):
+        entry_info_dict = mocked_entry_info_dict.copy()
+        entry_info_dict.pop("format_id")
+        ServiceHandler()._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
+
+    # Test missing formats key
+    with pytest.raises(FormatNotFoundError):
+        entry_info_dict = mocked_entry_info_dict.copy()
+        entry_info_dict.pop("formats")
+        ServiceHandler()._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
+
+    # Test missing formats key, but awaiting_transcoding is True
+    with pytest.raises(AwaitingTranscodingError):
+        entry_info_dict = mocked_entry_info_dict.copy()
+        entry_info_dict.pop("formats")
+        entry_info_dict["awaiting_transcoding"] = True
+        ServiceHandler()._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore
+
+    # Test m3u8 in url
+    with pytest.raises(AwaitingTranscodingError):
+        entry_info_dict = mocked_entry_info_dict.copy()
+        entry_info_dict["formats"][0]["url"] = "https://somedomain.com/somepath.m3u8"
+        ServiceHandler()._get_format_info_dict_from_entry_info_dict(entry_info_dict=entry_info_dict)  # type: ignore

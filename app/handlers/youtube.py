@@ -9,10 +9,17 @@ from yt_dlp.extractor.common import InfoExtractor
 from app.core.uuid import generate_uuid_from_url
 from app.models.settings import Settings as _Settings
 from app.models.source_video_link import SourceOrderBy
-from app.services.ytdlp import YDL_OPTS_BASE, Http410Error, IsDeletedVideoError, IsPrivateVideoError
+from app.services.ytdlp import (
+    YDL_OPTS_BASE,
+    AwaitingTranscodingError,
+    FormatNotFoundError,
+    Http410Error,
+    IsDeletedVideoError,
+    IsPrivateVideoError,
+)
 
 from .base import ServiceHandler
-from .exceptions import FormatNotFoundError, InvalidSourceUrl
+from .exceptions import InvalidSourceUrl
 
 settings = _Settings()
 
@@ -303,6 +310,16 @@ class YoutubeHandler(ServiceHandler):
         Returns:
             A `Video` dictionary created from the `entry_info_dict`.
         """
+
+        # Get formatting
+        try:
+            format_info_dict = self._get_format_info_dict_from_entry_info_dict(
+                entry_info_dict=entry_info_dict
+            )
+        except (FormatNotFoundError, AwaitingTranscodingError):
+            format_info_dict = {}
+
+        # Handle Private/Deleted videos
         if (
             not entry_info_dict.get("formats")
             and not entry_info_dict.get("uploader")
@@ -317,24 +334,15 @@ class YoutubeHandler(ServiceHandler):
         if entry_info_dict["title"] == "[Deleted video]":
             raise IsDeletedVideoError("Youtube video has been deleted.")
 
-        try:
-            format_info_dict = self._get_format_info_dict_from_entry_info_dict(
-                entry_info_dict=entry_info_dict, format_number=entry_info_dict["format_id"]
-            )
-        except KeyError as exc:
-            if "format_id" in str(exc):
-                raise FormatNotFoundError(f"Could not find format_id in entry_info_dict")
-            raise exc
-
-        if "m3u8" in format_info_dict["url"]:
-            raise FormatNotFoundError("'m3u8' format not supported.")
-
+        # Get metadata
         media_filesize = format_info_dict.get("filesize") or format_info_dict.get(
             "filesize_approx", 0
         )
+        media_url = format_info_dict.get("url")
         released_at = datetime.datetime.strptime(entry_info_dict["upload_date"], "%Y%m%d").replace(
             tzinfo=datetime.timezone.utc
         )
+
         return {
             "title": entry_info_dict["title"],
             "uploader": entry_info_dict["uploader"],
@@ -342,43 +350,11 @@ class YoutubeHandler(ServiceHandler):
             "description": entry_info_dict["description"],
             "duration": entry_info_dict["duration"],
             "url": entry_info_dict["webpage_url"],
-            "media_url": format_info_dict["url"],
+            "media_url": media_url,
             "media_filesize": media_filesize,
             "thumbnail": entry_info_dict["thumbnail"],
             "released_at": released_at,
         }
-
-    def _get_format_info_dict_from_entry_info_dict(
-        self, entry_info_dict: dict[str, Any], format_number: int | str
-    ) -> dict[str, Any]:
-        """
-        Returns the dictionary from entry_info_dict['formats'] that has a 'format_id' value
-        matching format_number.
-
-        Args:
-            entry_info_dict: The entity dictionary returned by youtube_dl.YoutubeDL.extract_info.
-            format_number: The 'format_id' value to search for in entry_info_dict['formats'].
-
-        Returns:
-            The dictionary from entry_info_dict['formats'] that has a 'format_id'
-                value matching format_number.
-
-        Raises:
-            ValueError: If no dictionary in entry_info_dict['formats'] has a 'format_id'
-                value matching format_number.
-        """
-        try:
-            return next(
-                (
-                    format_dict
-                    for format_dict in entry_info_dict["formats"]
-                    if format_dict["format_id"] == str(format_number)
-                )
-            )
-        except StopIteration as exc:
-            raise ValueError(
-                f"Format '{str(format_number)}' was not found in the entry_info_dict['formats']."
-            ) from exc
 
     def get_ordered_by(self, url: str) -> str:
         if "/playlist" in url:
