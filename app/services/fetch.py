@@ -316,8 +316,8 @@ async def fetch_video(video_id: str, db: Session) -> Video:
     ) as e:
         await handle_unavailable_video(db=db, video_id=video_id, error_message=str(e))
 
-        # If the video was released more than 36 hours ago, raise an error
-        if db_video.released_at < datetime.utcnow() - timedelta(hours=36):
+        # If the video was created more than 36 hours ago, raise an error
+        if db_video.created_at < datetime.utcnow() - timedelta(hours=36):
             await log_and_notify(message=f"FetchVideoError: \n{e=} \n{db_video=}")
             raise FetchVideoError(e) from e
 
