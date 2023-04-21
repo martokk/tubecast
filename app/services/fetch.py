@@ -33,6 +33,7 @@ from app.services.ytdlp import (
     IsDeletedVideoError,
     IsPrivateVideoError,
     VideoUnavailableError,
+    IsLiveEventError,
 )
 
 fetch_logger = _logger.bind(name="fetch_logger")
@@ -305,7 +306,13 @@ async def fetch_video(video_id: str, db: Session) -> Video:
         await log_and_notify(message=f"Database error: Video not found: \n{db_video=}")
         raise e
 
-    except (VideoUnavailableError, Http410Error, IsPrivateVideoError, IsDeletedVideoError) as e:
+    except (
+        VideoUnavailableError,
+        Http410Error,
+        IsPrivateVideoError,
+        IsDeletedVideoError,
+        IsLiveEventError,
+    ) as e:
         await handle_unavailable_video(db=db, video_id=video_id, error_message=str(e))
 
         # If the video was released more than 36 hours ago, raise an error
