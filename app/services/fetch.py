@@ -31,9 +31,9 @@ from app.services.ytdlp import (
     AccountNotFoundError,
     Http410Error,
     IsDeletedVideoError,
+    IsLiveEventError,
     IsPrivateVideoError,
     VideoUnavailableError,
-    IsLiveEventError,
 )
 
 fetch_logger = _logger.bind(name="fetch_logger")

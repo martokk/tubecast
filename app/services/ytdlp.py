@@ -210,6 +210,8 @@ async def ydl_extract_info(
             raise IsDeletedVideoError("This video is a deleted video.") from e
         if "Requested format is not available." in str(e):
             raise FormatNotFoundError(e) from e
+        if "Internal Server Error" in str(e):
+            raise VideoUnavailableError(e) from e
         if e.__class__.__name__ == "DownloadError":
             if "HTTP Error 410" in str(e):
                 raise Http410Error from e
