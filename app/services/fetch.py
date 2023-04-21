@@ -312,6 +312,7 @@ async def fetch_video(video_id: str, db: Session) -> Video:
         IsPrivateVideoError,
         IsDeletedVideoError,
         IsLiveEventError,
+        YoutubeDLError,
     ) as e:
         await handle_unavailable_video(db=db, video_id=video_id, error_message=str(e))
 
