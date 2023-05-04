@@ -334,9 +334,15 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
             duration = int_or_none(video.get("duration"))
 
             if live_status == "was_live":
-                # Assume placeholders
+                # Handle Rumble placeholder videos for live streams
+                # Rumble requires a maximum of 120 seconds for a placeholder video
+                # This replaces duration and formats with null values so it will get tried on the next fetch
                 dt_diff = datetime.utcnow() - datetime.fromtimestamp(timestamp)
-                if dt_diff.days <= 1 and duration <= 61 and video.get("livestream_has_dvr") is True:
+                if (
+                    dt_diff.days <= 1
+                    and duration <= 121
+                    and video.get("livestream_has_dvr") is True
+                ):
                     duration = None
                     formats = []
 
