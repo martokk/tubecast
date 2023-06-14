@@ -491,7 +491,13 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             f"{url}?page=1", note="Downloading webpage", video_id=playlist_id
         )
 
-        thumbnail_match = re.search(r"class=listing-header--thumb src=([^\s>]+)", webpage)
+        thumbnail_match = re.search(
+            r"channel-header--thumb[^}]*?background-image:\s*url\((https?:\/\/.*?)\)", webpage
+        )
+        if not thumbnail_match:
+            thumbnail_match = re.search(
+                r"listing-header--thumb[^}]*?background-image:\s*url\((https?:\/\/.*?)\)", webpage
+            )
         thumbnail = thumbnail_match.group(1) if thumbnail_match else None
 
         channel_match = re.search(r"class=ellipsis-1>([^>]+)<", webpage)
