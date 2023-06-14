@@ -155,7 +155,7 @@ async def test_fetch_video_unavailable_error(db: Session, source_1_w_videos: Sou
         db=db, id=video2.id, obj_in=VideoUpdate(released_at=datetime.utcnow() - timedelta(hours=37))
     )
     with patch("app.services.fetch.get_video_info_dict", side_effect=IsPrivateVideoError):
-        with pytest.raises(FetchVideoError):
+        with pytest.raises(FetchCanceledError):
             await fetch_video(db=db, video_id=video2.id)
 
 
@@ -178,7 +178,7 @@ async def test_fetch_video_Exception(db: Session, source_1_w_videos: Source) -> 
         db=db, id=video2.id, obj_in=VideoUpdate(released_at=datetime.utcnow() - timedelta(hours=37))
     )
     with patch("app.services.fetch.get_video_info_dict", side_effect=IsPrivateVideoError):
-        with pytest.raises(FetchVideoError):
+        with pytest.raises(FetchCanceledError):
             await fetch_video(db=db, video_id=video2.id)
 
 
@@ -198,7 +198,7 @@ async def test_fetch_video_youtubedl_error(db: Session, source_1_w_videos: Sourc
     """
     video1: Video = source_1_w_videos.videos[0]
     with patch("app.services.fetch.get_video_info_dict", side_effect=YoutubeDLError):
-        with pytest.raises(YoutubeDLError):
+        with pytest.raises(FetchCanceledError):
             await fetch_video(db=db, video_id=video1.id)
 
 

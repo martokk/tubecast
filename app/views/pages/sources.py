@@ -4,7 +4,7 @@ from sqlmodel import Session
 
 from app import crud, logger, models
 from app.core.notify import notify
-from app.handlers.exceptions import HandlerNotFoundError
+from app.handlers.exceptions import HandlerNotFoundError, InvalidSourceUrl
 from app.services.feed import build_rss_file, get_rss_file
 from app.services.fetch import FetchCanceledError, fetch_all_sources, fetch_source
 from app.services.ytdlp import NoUploadsError, PlaylistNotFoundError
@@ -167,7 +167,12 @@ async def handle_create_source(
     alerts = models.Alerts()
     try:
         source = await crud.source.create_source_from_url(url=url, user_id=current_user.id, db=db)
-    except (crud.RecordAlreadyExistsError, NoUploadsError, HandlerNotFoundError) as exc:
+    except (
+        crud.RecordAlreadyExistsError,
+        NoUploadsError,
+        HandlerNotFoundError,
+        InvalidSourceUrl,
+    ) as exc:
         alerts.danger.append(str(exc))
         response = RedirectResponse("/sources", status_code=status.HTTP_302_FOUND)
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
