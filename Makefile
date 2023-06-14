@@ -14,11 +14,11 @@ PYINSTALLER_ENTRY := $(PROJECT)/__main__.py
 #-----------------------------------------------------------------------------------------
 .PHONY: install-poetry
 install-poetry: ## Download and install Poetry
-	curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | $(PYTHON) -
+	curl -sSL https://install.python-poetry.org | $(PYTHON) -
 
 .PHONY: uninstall-poetry
 uninstall-poetry: ## Uninstall Poetry
-	curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | $(PYTHON) - --uninstall
+	curl -sSL https://install.python-poetry.org | $(PYTHON) - --uninstall
 
 .PHONY: install-pre-commit-hooks
 install-pre-commit-hooks: ## Install Pre-Commit Git Hooks
