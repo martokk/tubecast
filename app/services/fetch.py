@@ -33,6 +33,7 @@ from app.services.ytdlp import (
     IsDeletedVideoError,
     IsLiveEventError,
     IsPrivateVideoError,
+    NoUploadsError,
     PlaylistNotFoundError,
     VideoUnavailableError,
 )
@@ -151,6 +152,8 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
     except PlaylistNotFoundError as e:
         await log_and_notify(message=f"AccountNotFoundError: \n{e=} \n{db_source=}")
         await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
+        raise FetchCanceledError from e
+    except (NoUploadsError, Exception) as e:
         raise FetchCanceledError from e
 
     # Update source in database
