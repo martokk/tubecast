@@ -4,10 +4,11 @@ from loguru import logger as _logger
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
-from app import crud, handlers, models
+from app import crud, handlers, models, paths
 from app.crud.base import BaseCRUD
 from app.models.criteria import CriteriaField, CriteriaOperator, CriteriaUnitOfMeasure
 from app.services.feed import delete_rss_file
+from app.services.logo import create_logo_from_text
 from app.services.source import get_source_from_source_info_dict, get_source_info_dict
 
 logger = _logger.bind(name="logger")
@@ -105,6 +106,12 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             # Save the source to the database
             db_source = await self.create(obj_in=_source, db=db)
             logger.success(f"Created source {_source.id} from url {url}")
+
+        # Check if source needs a logo
+        if db_source.logo and "static/logos" in db_source.logo:
+            logo_path = paths.LOGOS_PATH / f"{db_source.id}.png"
+            if not logo_path.exists():
+                create_logo_from_text(text=db_source.name, file_path=logo_path)
 
         # Add the Source to the user's Sources
         await crud.user.add_source(db=db, user_id=user_id, source=db_source)
