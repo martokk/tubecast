@@ -22,6 +22,7 @@ from app.services.ytdlp import (
     FormatNotFoundError,
     IsLiveEventError,
     IsPrivateVideoError,
+    PlaylistNotFoundError,
     VideoUnavailableError,
 )
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_2, MOCKED_YOUTUBE_SOURCE_1
@@ -112,6 +113,17 @@ async def test_fetch_source_account_not_found_error(db: Session, source_1: Sourc
     """
     with patch("app.services.fetch.get_source_info_dict") as mocked_get_source_info_dict:
         mocked_get_source_info_dict.side_effect = AccountNotFoundError
+
+        with pytest.raises(FetchCanceledError):
+            await fetch_source(db=db, id=source_1.id)
+
+
+async def test_fetch_source_playlist_not_found_error(db: Session, source_1: Source) -> None:
+    """
+    Test fetch_source when PlaylistNotFound is raised.
+    """
+    with patch("app.services.fetch.get_source_info_dict") as mocked_get_source_info_dict:
+        mocked_get_source_info_dict.side_effect = PlaylistNotFoundError
 
         with pytest.raises(FetchCanceledError):
             await fetch_source(db=db, id=source_1.id)
