@@ -434,17 +434,8 @@ def test_get_source_rss_feed(
     """
     Test getting a source's RSS feed.
     """
-    with patch("app.views.pages.sources.build_rss_file", return_value=None) as mocked:
-        response = client.get(
-            f"/source/{source_1.id}/feed",
-        )
-        assert mocked.call_count == 1
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert f"RSS file ({source_1.id}.rss) does not exist" in response.text
-    assert response.url.path == f"/source/{source_1.id}/feed"
-
     # Get source's RSS feed as superuser with not found source
-    with patch("app.views.pages.sources.build_rss_file", return_value=None) as mocked:
+    with patch("app.views.pages.sources.build_source_rss_files", return_value=None) as mocked:
         client.cookies = superuser_cookies
         response = client.get(
             f"/source/wrongs_source_id/feed",

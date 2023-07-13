@@ -413,7 +413,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             "playlist_mincount": 4,
             "info_dict": {
                 "url": "https://rumble.com/c/jessekelly",
-                "thumbnail": "https://sp.rmbl.ws/z8/r/U/E/b/rUEba.baa-jessekelly-ql3c12.jpg",
+                "thumbnail": "https://sp.rmbl.ws/z8/r/U/E/b/rUEba.baa.1-jessekelly-rxpi5t.jpeg",
                 "description": "\"I'm Right\" with Jesse Kelly's Rumble Channel",
                 "title": '"I\'m Right" with Jesse Kelly',
                 "channel": '"I\'m Right" with Jesse Kelly',

@@ -14,6 +14,7 @@ from app.handlers.extractors.rumble import (
 )
 from app.models.settings import Settings as _Settings
 from app.paths import LOG_FILE as _LOG_FILE
+from app.services.logo import is_invalid_image
 from app.services.ytdlp import YDL_OPTS_BASE, AwaitingTranscodingError, FormatNotFoundError
 
 from .base import ServiceHandler
@@ -170,7 +171,7 @@ class RumbleHandler(ServiceHandler):
             A Source object.
         """
         logo = source_info_dict.get("thumbnail")
-        if not logo:
+        if not logo or is_invalid_image(image_url=logo):
             source_id = generate_uuid_from_url(url=source_info_dict["url"])
             logo = f"/static/logos/{source_id}.png"
         return {
