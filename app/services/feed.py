@@ -199,3 +199,9 @@ async def build_rss_file(source: Source | None = None, filter: Filter | None = N
     feed = SourceFeedGenerator(source=source, filter=filter)
     rss_file = await feed.save()
     return rss_file
+
+
+async def build_source_rss_files(source: Source) -> None:
+    await build_rss_file(source=source)
+    for filter in source.filters:
+        await build_rss_file(filter=filter)

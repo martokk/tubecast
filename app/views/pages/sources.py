@@ -5,7 +5,7 @@ from sqlmodel import Session
 from app import crud, logger, models
 from app.core.notify import notify
 from app.handlers.exceptions import HandlerNotFoundError, InvalidSourceUrl
-from app.services.feed import build_rss_file, get_rss_file
+from app.services.feed import build_source_rss_files, get_rss_file
 from app.services.fetch import FetchCanceledError, fetch_all_sources, fetch_source
 from app.services.ytdlp import NoUploadsError, PlaylistNotFoundError
 from app.views import deps, templates
@@ -442,7 +442,7 @@ async def get_source_rss_feed(source_id: str, db: Session = Depends(deps.get_db)
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_msg) from exc
 
         # Build and get rss file
-        await build_rss_file(source=source)
+        await build_source_rss_files(source=source)
         try:
             rss_file = await get_rss_file(id=source_id)
         except FileNotFoundError as exc:

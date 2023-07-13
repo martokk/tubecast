@@ -4,12 +4,16 @@ from loguru import logger as _logger
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
 
-from app import crud, handlers, models, paths
+from app import crud, handlers, models
 from app.crud.base import BaseCRUD
 from app.models.criteria import CriteriaField, CriteriaOperator, CriteriaUnitOfMeasure
-from app.services.feed import delete_rss_file
-from app.services.logo import create_logo_from_text
-from app.services.source import get_source_from_source_info_dict, get_source_info_dict
+from app.services.feed import build_source_rss_files, delete_rss_file
+from app.services.source import (
+    create_source_logo,
+    get_source_from_source_info_dict,
+    get_source_info_dict,
+    source_needs_logo,
+)
 
 logger = _logger.bind(name="logger")
 
@@ -46,7 +50,14 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         if obj_in.reverse_import_order:
             await self.delete_all_videos(db=db, source_id=kwargs["id"])
 
-        return await super().update(
+        # Check if source needs a logo
+        if obj_in.logo:
+            if await source_needs_logo(source_logo_url=obj_in.logo):
+                obj_in.logo = await create_source_logo(
+                    source_id=kwargs["id"], source_name=obj_in.name
+                )
+
+        db_source = await super().update(
             db,
             *args,
             obj_in=obj_in,
@@ -54,6 +65,10 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             exclude_unset=exclude_unset,
             **kwargs,
         )
+
+        await build_source_rss_files(source=db_source)
+
+        return db_source
 
     async def remove(self, db: Session, *args: BinaryExpression[Any], **kwargs: Any) -> None:
         if source_id := kwargs.get("id"):
@@ -103,15 +118,15 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
                 source_info_dict=source_info_dict, created_by_user_id=user_id
             )
 
+            # Check if source needs a logo
+            if await source_needs_logo(source_logo_url=_source.logo):
+                _source.logo = await create_source_logo(
+                    source_id=_source.id, source_name=_source.name
+                )
+
             # Save the source to the database
             db_source = await self.create(obj_in=_source, db=db)
             logger.success(f"Created source {_source.id} from url {url}")
-
-        # Check if source needs a logo
-        if db_source.logo and "static/logos" in db_source.logo:
-            logo_path = paths.LOGOS_PATH / f"{db_source.id}.png"
-            if not logo_path.exists():
-                create_logo_from_text(text=db_source.name, file_path=logo_path)
 
         # Add the Source to the user's Sources
         await crud.user.add_source(db=db, user_id=user_id, source=db_source)
@@ -122,6 +137,8 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         # After adding source to user, handle if already exists
         if source_already_exists:
             raise crud.RecordAlreadyExistsError(f"Source '{db_source.name}' already exists")
+
+        await build_source_rss_files(source=db_source)
 
         return db_source
 

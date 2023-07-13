@@ -15,7 +15,7 @@ from app import crud, logger, paths
 from app.core.notify import notify
 from app.handlers import get_handler_from_string
 from app.models import FetchResults, Source, SourceUpdate, Video, VideoUpdate
-from app.services.feed import build_rss_file
+from app.services.feed import build_source_rss_files
 from app.services.logo import create_logo_from_text
 from app.services.source import (
     add_new_source_info_dict_videos_to_source,
@@ -191,9 +191,7 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
             create_logo_from_text(text=db_source.name, file_path=logo_path)
 
     # Build RSS Files
-    await build_rss_file(source=db_source)
-    for filter in db_source.filters:
-        await build_rss_file(filter=filter)
+    await build_source_rss_files(source=db_source)
 
     success_message = (
         f"Completed fetching Source(id='{db_source.id}', name='{db_source.name}'). "

@@ -2,9 +2,10 @@ from typing import Any
 
 from sqlmodel import Session
 
-from app import crud
+from app import crud, paths
 from app.handlers import get_handler_from_url
 from app.models import Source, SourceCreate, Video, VideoCreate
+from app.services.logo import create_logo_from_text, is_invalid_image
 from app.services.ytdlp import get_info_dict
 
 
@@ -198,3 +199,42 @@ async def delete_orphaned_source_videos(
             await crud.video.remove(id=db_video.id, db=db)
 
     return deleted_videos
+
+
+async def source_needs_logo(source_logo_url: str | None) -> bool:
+    """
+    Checks if a logo needs to be generated.
+    Will return TRUE if:
+        - No logo url exists
+        - URL returns a 1x1px image (ie. Rumble)
+
+    Args:
+        source_logo_url: The source logo url
+
+    Returns:
+        Boolean True/False
+    """
+
+    if not source_logo_url:
+        return True
+
+    # If is static logo url
+    if "static/logos" in source_logo_url:
+        return True
+
+    if is_invalid_image(image_url=source_logo_url):
+        return True
+
+    return False
+
+
+async def create_source_logo(source_id: str, source_name: str) -> str:
+    """
+    Generates a static logo from Source Name text
+
+    Returns:
+        str: logo path
+    """
+    logo_path = paths.LOGOS_PATH / f"{source_id}.png"
+    create_logo_from_text(text=source_name, file_path=logo_path)
+    return f"/static/logos/{source_id}.png"

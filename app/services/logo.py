@@ -2,6 +2,7 @@ import random
 import textwrap
 from pathlib import Path
 
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 from app.paths import FONTS_PATH
@@ -23,6 +24,36 @@ dark_colors = [
     (17, 17, 0),
     (0, 0, 17),
 ]
+
+
+def is_invalid_image(image_url: str | None) -> bool:
+    """
+    Checks if the image url returns a invalid image (ie. 1x1px image)
+
+    Args:
+        image_url: url of image
+
+    Returns:
+        Boolean True/False
+    """
+    if not image_url:
+        return True
+
+    # Get Image from URL
+    response = requests.get(image_url, stream=True)
+    content_type = response.headers.get("Content-Type")
+    if not content_type or not content_type.startswith("image/"):
+        raise ValueError(f"The provided Image URL does not point to an image. ({image_url})")
+
+    # Check Image Size
+    image = Image.open(response.raw)
+    image_width, image_height = image.size
+
+    # Check for 1x1px image size
+    if image_width == 1 and image_height == 1:
+        return True
+
+    return False
 
 
 def create_logo_from_text(text: str, file_path: Path) -> Path:

@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from app import crud, models
 from app.models.source_video_link import SourceOrderBy
+from app.services.logo import is_invalid_image
 from tests.mock_objects import MOCKED_RUMBLE_SOURCE_1
 
 
@@ -39,7 +40,7 @@ async def test_get_item(db: Session, source_1: models.Source) -> None:
     assert db_source.description == source_1.description
 
 
-async def test_update_item(db: Session, source_1: models.Source) -> None:
+async def test_update_item(db: Session, source_1: models.Source, mocker: MagicMock) -> None:
     """
     Test updating an item.
     """

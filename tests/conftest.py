@@ -62,7 +62,9 @@ def do_begin(conn: Any) -> None:
 def fixture_init(mocker: MagicMock, tmp_path: Path) -> None:  # pylint: disable=unused-argument
     mocker.patch("app.paths.FEEDS_PATH", return_value=tmp_path)
     mocker.patch("app.paths.LOG_FILE", return_value=tmp_path / "test.log")
-    mocker.patch("app.services.feed.build_rss_file", None)
+    mocker.patch("app.services.feed.build_source_rss_files", None)
+    mocker.patch("app.services.source.is_invalid_image", return_value=False)
+    mocker.patch("app.handlers.rumble.is_invalid_image", return_value=False)
 
 
 @pytest.fixture(name="db")
