@@ -227,8 +227,8 @@ async def test_get_tokens_from_invalid_refresh_token(
     ):
         client.cookies = normal_user_cookies
         response = client.get("/account")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.url.path == "/account/"  # type: ignore
+        assert response.status_code == status.HTTP_200_OK
+        assert response.url.path == "/login"  # type: ignore
 
     # Test invalid refresh token
     with (
@@ -243,8 +243,8 @@ async def test_get_tokens_from_invalid_refresh_token(
     ):
         client.cookies = normal_user_cookies
         response = client.get("/account")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.url.path == "/account/"  # type: ignore
+        assert response.status_code == status.HTTP_200_OK
+        assert response.url.path == "/login"  # type: ignore
 
     # Test invalid refresh token
     with patch(
@@ -253,5 +253,5 @@ async def test_get_tokens_from_invalid_refresh_token(
     ):
         client.cookies.clear()
         response = client.get("/account")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert response.url.path == "/account/"
+        assert response.status_code == status.HTTP_200_OK
+        assert response.url.path == "/login"

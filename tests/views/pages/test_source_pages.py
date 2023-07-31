@@ -137,7 +137,8 @@ def test_get_source_forbidden(
     response = client.get(
         f"/source/{source_1.id}",  # type: ignore
     )
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.status_code == status.HTTP_200_OK
+    assert response.url.path == "/login"
 
 
 def test_normal_user_get_all_sources(
