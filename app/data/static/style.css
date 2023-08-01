@@ -1,3 +1,20 @@
+/* Theme Colors */
+.bg-user {
+    background-color: rgb(0, 109, 128) !important;
+}
+
+.bg-user-dev {
+    background-color: rgb(0, 111, 20) !important;
+}
+
+.bg-admin {
+    background-color: rgb(73, 0, 128) !important;
+}
+
+.bg-admin-dev {
+    background-color: rgb(58, 0, 0) !important;
+}
+
 /* Default styles */
 .container-fluid {
     max-width: 768px;
@@ -64,20 +81,4 @@ body {
 
 .btn {
     font-size: 0.9rem !important;
-}
-
-.bg-user {
-    background-color: rgb(0, 109, 128) !important;
-}
-
-.bg-user-dev {
-    background-color: rgb(0, 111, 20) !important;
-}
-
-.bg-admin {
-    background-color: rgb(73, 0, 128) !important;
-}
-
-.bg-admin-dev {
-    background-color: rgb(58, 0, 0) !important;
 }

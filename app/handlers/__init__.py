@@ -11,11 +11,12 @@ registered_handlers = [YoutubeHandler(), RumbleHandler()]
 
 def get_handler_from_url(url: str | ParseResult) -> ServiceHandler:
     url = url if isinstance(url, ParseResult) else urlparse(url=url)
-    domain_name = ".".join(url.netloc.split(".")[-2:])
+    subdomain = url.netloc.split(":")[0]
+    domain_name = ".".join(subdomain.split(".")[-2:])
 
-    if domain_name in YoutubeHandler.DOMAINS:
+    if domain_name in YoutubeHandler.DOMAINS or subdomain in YoutubeHandler.DOMAINS:
         return YoutubeHandler()
-    if domain_name in RumbleHandler.DOMAINS:
+    if domain_name in RumbleHandler.DOMAINS or subdomain in RumbleHandler.DOMAINS:
         return RumbleHandler()
     raise HandlerNotFoundError(f"A handler could not be found for url: `{str(url)}`.")
 
