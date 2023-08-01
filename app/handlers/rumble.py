@@ -67,7 +67,7 @@ class RumbleHandler(ServiceHandler):
         elif "/user/" in url:
             url = self.get_channel_url_from_user_url(url=url)
         else:
-            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid Rumble source URL ({str(url)})")
         return url.lower()
 
     def get_channel_url_from_c_url(self, url: str) -> str:
@@ -82,7 +82,7 @@ class RumbleHandler(ServiceHandler):
         """
         match = re.search(r"(?<=\/c\/)[\w-]+", url)
         if not match:
-            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid Rumble source URL ({str(url)})")
         return "https://www.rumble.com/c/" + match.group()
 
     def get_channel_url_from_user_url(self, url: str) -> str:
