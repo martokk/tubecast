@@ -69,7 +69,7 @@ class YoutubeHandler(ServiceHandler):
         elif "/playlist" in url:
             url = self.get_playlist_url_from_playlist_url(url=url)
         else:
-            raise InvalidSourceUrl(f"Invalid YouTube video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid YouTube source URL ({str(url)})")
         return url
 
     def get_channel_url_from_channel_name_id_url(self, url: str) -> str:
@@ -84,7 +84,7 @@ class YoutubeHandler(ServiceHandler):
         """
         match = re.search(r"(?<=\/@)[\w-]+", url)
         if not match:
-            raise InvalidSourceUrl(f"Invalid YouTube video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid YouTube source URL ({str(url)})")
 
         ydl_opts = {
             **YDL_OPTS_BASE,
@@ -111,7 +111,7 @@ class YoutubeHandler(ServiceHandler):
         """
         match = re.search(r"(?<=channel\/)[\w-]+", url)
         if not match:
-            raise InvalidSourceUrl(f"Invalid YouTube video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid YouTube source URL ({str(url)})")
         return "https://www.youtube.com/channel/" + match.group()
 
     def get_playlist_url_from_playlist_url(self, url: str) -> str:
@@ -126,7 +126,7 @@ class YoutubeHandler(ServiceHandler):
         """
         match = re.search(r"(?<=\/playlist\?list=)[\w-]+", url)
         if not match:
-            raise InvalidSourceUrl(f"Invalid YouTube video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid YouTube playlist URL ({str(url)})")
         return "https://www.youtube.com/playlist?list=" + match.group()
 
     def sanitize_video_url(self, url: str) -> str:

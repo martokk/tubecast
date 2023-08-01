@@ -86,9 +86,9 @@ async def get_source_from_source_info_dict(
     Returns:
         SourceCreate: The `SourceCreate` object.
     """
-    handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
+    source_handler = get_handler_from_url(url=source_info_dict["metadata"]["url"])
     source_videos = get_source_videos_from_source_info_dict(source_info_dict=source_info_dict)
-    handler_source_dict = handler.map_source_info_dict_to_source_dict(
+    handler_source_dict = source_handler.map_source_info_dict_to_source_dict(
         source_info_dict=source_info_dict, source_videos=source_videos
     )
     handler_source_dict["name"] = source_name or handler_source_dict["name"]

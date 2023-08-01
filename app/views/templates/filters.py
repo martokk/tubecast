@@ -129,4 +129,6 @@ def filter_service_badge_color(service_name: str) -> str:
         return "bg-rumble"
     if service_name == "Youtube":
         return "bg-youtube"
+    if service_name == "TubeSubs":
+        return "bg-tubesubs"
     return "bg-light"

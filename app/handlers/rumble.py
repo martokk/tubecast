@@ -30,7 +30,7 @@ class RumbleHandler(ServiceHandler):
     SERVICE_NAME = "Rumble"
     COLOR = "#85c742"
     USE_PROXY = False
-    REFRESH_UPDATE_INTERVAL_HOURS = 24 * 30
+    REFRESH_UPDATE_INTERVAL_HOURS = 24 * 60
     REFRESH_RELEASED_RECENT_DAYS = 90
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
@@ -67,7 +67,7 @@ class RumbleHandler(ServiceHandler):
         elif "/user/" in url:
             url = self.get_channel_url_from_user_url(url=url)
         else:
-            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid Rumble source URL ({str(url)})")
         return url.lower()
 
     def get_channel_url_from_c_url(self, url: str) -> str:
@@ -82,7 +82,7 @@ class RumbleHandler(ServiceHandler):
         """
         match = re.search(r"(?<=\/c\/)[\w-]+", url)
         if not match:
-            raise InvalidSourceUrl(f"Invalid Rumble video URL ({str(url)})")
+            raise InvalidSourceUrl(f"Invalid Rumble source URL ({str(url)})")
         return "https://www.rumble.com/c/" + match.group()
 
     def get_channel_url_from_user_url(self, url: str) -> str:

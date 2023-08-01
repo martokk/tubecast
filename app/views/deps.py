@@ -9,6 +9,11 @@ from app.core import security
 from app.db.session import SessionLocal
 
 
+class RedirectException(HTTPException):
+    def __init__(self, url: str, status_code: int = 307):
+        super().__init__(status_code=status_code, headers={"Location": url})
+
+
 def get_db() -> Generator[Session, None, None]:
     """
     A generator function that creates a new database session.
@@ -127,7 +132,7 @@ async def get_current_user_or_raise(
         HTTPException: If the user is not found.
     """
     if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise RedirectException(url="/login")
     return current_user
 
 
@@ -147,9 +152,7 @@ async def get_current_active_user(
         HTTPException: If the user is inactive.
     """
     if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )  # pragma: no cover
+        raise RedirectException(url="/login")
     if not crud.user.is_active(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
@@ -173,9 +176,7 @@ async def get_current_active_superuser(
         HTTPException: If the user is not a superuser.
     """
     if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-        )  # pragma: no cover
+        raise RedirectException(url="/login")
     if not crud.user.is_superuser(user_=current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="The user doesn't have enough privileges"
