@@ -57,5 +57,20 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
         )
 
     if handler.USE_PROXY:
-        return await reverse_proxy(url=video.media_url, request=request)
+        try:
+            return await reverse_proxy(url=video.media_url, request=request)
+        except HTTPException as e:
+            # If forbidden 403, try re-fetching again
+            if e.status_code == status.HTTP_403_FORBIDDEN:
+                fetched_video = await fetch_video(video_id=video.id, db=db)
+                if fetched_video.media_url is None:
+                    msg = f"The server has not able to fetch a media_url from yt-dlp. {video_id=}"
+                    logger.error(msg)
+                    raise HTTPException(
+                        status_code=status.HTTP_202_ACCEPTED,
+                        detail=msg,
+                    )
+                return await reverse_proxy(url=fetched_video.media_url, request=request)
+
+            raise e
     return RedirectResponse(url=video.media_url)
