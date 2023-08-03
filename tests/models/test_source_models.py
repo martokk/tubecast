@@ -12,6 +12,11 @@ async def test_source_videos_sorted(db: Session, source_1_w_videos: models.Sourc
     """
     Test Source.videos_sorted() if ordered_by is RELEASED_AT.
     """
+    # move last video to first so they are sorted
+    last_video = source_1_w_videos.videos.pop(0)
+    last_video.released_at = last_video.released_at + timedelta(days=365)
+    source_1_w_videos.videos.insert(0, last_video)
+
     ordered_by = SourceOrderBy.RELEASED_AT.value
 
     # Assert videos are already sorted.

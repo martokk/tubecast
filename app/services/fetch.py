@@ -179,10 +179,11 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
     # )
 
     # Refresh existing videos in database
-    refreshed_videos = await refresh_videos(
-        videos=db_source.videos,
-        db=db,
-    )
+    refreshed_videos: list[Video] = []
+    # refreshed_videos = await refresh_videos(
+    #     videos=db_source.videos,
+    #     db=db,
+    # )
 
     # Check if source needs a logo
     if db_source.logo and "static/logos" in db_source.logo:
