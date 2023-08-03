@@ -439,7 +439,7 @@ def test_criteria_is_within_duration_longer_than_value() -> None:
 
 def test_criteria_matches_contains_must_contain(source_1_w_videos: Source) -> None:
     video = source_1_w_videos.videos[0]
-    keyword = str(video.title)
+    keyword = str(video.title).split(" ")[0]
     c = Criteria(
         id="test-id",
         field=CriteriaField.KEYWORD.value,
