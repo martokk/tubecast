@@ -45,7 +45,7 @@ class Filter(FilterBase, table=True):
         must_contain_videos = list(set(must_contain_videos))
 
         filtered_videos = must_contain_videos if must_contain_criteria else self.source.videos
-        filtered_videos = [video for video in filtered_videos if video.released_at]
+        # filtered_videos = [video for video in filtered_videos if video.released_at]
         for criteria in self.criterias:
             if (
                 criteria.field == CriteriaField.KEYWORD.value
@@ -56,8 +56,10 @@ class Filter(FilterBase, table=True):
                 filtered_videos = criteria.filter_videos(videos=filtered_videos)
 
         if self.ordered_by:
-            filtered_videos.sort(key=operator.attrgetter(self.ordered_by), reverse=True)
-
+            try:
+                filtered_videos.sort(key=operator.attrgetter(self.ordered_by), reverse=True)
+            except TypeError:
+                filtered_videos.sort(key=operator.attrgetter("created_at"), reverse=True)
         return filtered_videos
 
     @property

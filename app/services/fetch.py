@@ -139,6 +139,7 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
     fetch_logger.info(info_message)
 
     # Fetch source information from yt-dlp and create the source object
+    logger.debug("Getting source_info_dict from yt-dlp")
     try:
         source_info_dict = await get_source_info_dict(
             source_id=id,
@@ -157,6 +158,7 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
         raise FetchCanceledError from e
 
     # Update source in database
+    logger.debug("Updating db from source_info_dict")
     _source = await get_source_from_source_info_dict(
         source_info_dict=source_info_dict,
         created_by_user_id=db_source.created_by,
@@ -166,6 +168,7 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
     db_source = await crud.source.update(obj_in=SourceUpdate(**_source.dict()), id=id, db=db)
 
     # Use source_info_dict to add new videos to the Source
+    logger.debug("Adding new videos to db")
     new_videos = await add_new_source_info_dict_videos_to_source(
         db=db, source_info_dict=source_info_dict, db_source=db_source
     )
@@ -180,6 +183,7 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
 
     # Refresh existing videos in database
     refreshed_videos: list[Video] = []
+    # logger.debug("Refreshing existing videos for source in database")
     # refreshed_videos = await refresh_videos(
     #     videos=db_source.videos,
     #     db=db,
@@ -187,11 +191,13 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
 
     # Check if source needs a logo
     if db_source.logo and "static/logos" in db_source.logo:
+        logger.info("Building Logo for Source")
         logo_path = paths.LOGOS_PATH / f"{db_source.id}.png"
         if not logo_path.exists():
             create_logo_from_text(text=db_source.name, file_path=logo_path)
 
     # Build RSS Files
+    logger.debug("Building RSS Files for Source")
     await build_source_rss_files(source=db_source)
 
     success_message = (
