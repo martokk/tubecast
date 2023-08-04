@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi_utils.tasks import repeat_every
@@ -10,8 +12,7 @@ from app.core import notify
 from app.db.backup import backup_database
 from app.db.init_db import init_initial_data
 from app.paths import FEEDS_PATH, STATIC_PATH
-from app.services.fetch import fetch_all_sources, refresh_all_videos
-from app.services.import_export import export_sources, import_sources
+from app.services.fetch import fetch_all_sources
 from app.views.router import views_router
 
 # Initialize FastAPI App
@@ -64,10 +65,25 @@ async def repeating_fetch_all_sources() -> None:  # pragma: no cover
     """
     Fetches all Sources from yt-dlp.
     """
-    logger.debug("Repeating fetch of All Sources...")
-    db: Session = next(deps.get_db())
-    fetch_results = await fetch_all_sources(db=db)
-    logger.success(f"Completed refreshing {fetch_results.sources} Sources from yt-dlp.")
+    # Get time
+    utcnow = datetime.datetime.utcnow()
+    central_time_diff = datetime.timedelta(hours=-5)
+    central_time = utcnow + central_time_diff
+    current_time = central_time.time()
+
+    # Define the start and end times for the night
+    night_start = datetime.time(22, 0)  # 10 PM
+    night_end = datetime.time(6, 0)  # 6 AM
+
+    # Check if the current time is between night_start and night_end
+    if night_start <= current_time or current_time < night_end:
+        print("Current Time (UTC-5) is:", current_time)
+        print(f"repeating_fetch_all_sources() is paused from {night_start} to {night_end}.")
+    else:
+        logger.debug("Repeating fetch of All Sources...")
+        db: Session = next(deps.get_db())
+        fetch_results = await fetch_all_sources(db=db)
+        logger.success(f"Completed refreshing {fetch_results.sources} Sources from yt-dlp.")
 
 
 # @app.on_event("startup")  # type: ignore
