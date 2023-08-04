@@ -117,7 +117,7 @@ class SourceFeedGenerator(FeedGenerator):
             post.description(video.description or " ")
             post.enclosure(
                 url=f"{settings.BASE_URL}{video.feed_media_url}",
-                length=str(video.media_filesize),
+                length=str(video.media_filesize or 1),
                 type="video/mp4",
             )  # TODO: Handle non-mp4 files as well
             post.published(published_at.replace(tzinfo=datetime.timezone.utc))
