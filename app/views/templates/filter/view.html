@@ -235,8 +235,9 @@
                     <img src="{{ video.thumbnail }}" class="cropped-image" alt="" height="90" width="125">
                 </div>
                 <div class="col">
-                    <div class="col-12 small text-muted fw-bold">{{ video.released_at.strftime('%d %b %Y') | upper }}
-                        <small><em>({{ video.released_at | humanize }})</em></small>
+                    {% set dt = video.released_at if video.released_at else video.created_at %}
+                    <div class="col-12 small text-muted fw-bold">{{ dt.strftime('%d %b %Y') | upper }}
+                        <small><em>({{ dt | humanize }})</em></small>
                     </div>
                     <h5 class="mb-0"><a href="/source/{{ filter.source.id }}/video/{{ video.id }}"
                             class="text-decoration-none text-muted">{{ video.title }}</a></h5>
