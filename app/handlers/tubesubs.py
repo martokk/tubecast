@@ -163,7 +163,7 @@ class TubeSubsHandler(ServiceHandler):
             "added_at": datetime.datetime.now(tz=datetime.timezone.utc),
             "title": entry_info_dict["title"],
             "description": entry_info_dict["description"],
-            "duration": None,
+            "duration": entry_info_dict["duration"],
             "thumbnail": None,
             "released_at": released_at,
             "media_url": None,
