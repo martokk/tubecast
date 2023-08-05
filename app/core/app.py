@@ -72,14 +72,23 @@ async def repeating_fetch_all_sources() -> None:  # pragma: no cover
     current_time = central_time.time()
 
     # Define the start and end times for the night
-    night_start = datetime.time(22, 0)  # 10 PM
-    night_end = datetime.time(6, 0)  # 6 AM
+    start_night = datetime.time(22, 0)  # 10 PM
+    start_morning = datetime.time(7, 0)  # 7 AM
 
     # Check if the current time is between night_start and night_end
-    if night_start <= current_time or current_time < night_end:
+    if start_night <= current_time or current_time < start_morning:
         print("Current Time (UTC-5) is:", current_time)
-        print(f"repeating_fetch_all_sources() is paused from {night_start} to {night_end}.")
+        print(f"repeating_fetch_all_sources() is paused from {start_night} to {start_morning}.")
     else:
+        if (
+            (datetime.time(8, 0) <= current_time and current_time <= datetime.time(9, 0))
+            or (datetime.time(10, 0) <= current_time and current_time <= datetime.time(12, 0))
+            or (datetime.time(13, 0) <= current_time and current_time <= datetime.time(14, 0))
+            or (datetime.time(15, 0) <= current_time and current_time <= datetime.time(16, 0))
+        ):
+            print("Current Time (UTC-5) is:", current_time)
+            print("repeating_fetch_all_sources() is paused from 8-9am, 10-12pm, 1-2pm, 3-4pm")
+
         logger.debug("Repeating fetch of All Sources...")
         db: Session = next(deps.get_db())
         fetch_results = await fetch_all_sources(db=db)
