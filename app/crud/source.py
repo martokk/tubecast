@@ -51,11 +51,13 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
             await self.delete_all_videos(db=db, source_id=kwargs["id"])
 
         # Check if source needs a logo
-        if obj_in.logo:
+        if obj_in.logo and obj_in.name:
             if await source_needs_logo(source_logo_url=obj_in.logo):
-                obj_in.logo = await create_source_logo(
-                    source_id=kwargs["id"], source_name=obj_in.name
-                )
+                db_obj = await self.get(db=db, id=kwargs["id"])
+                if obj_in.name != db_obj.name:
+                    obj_in.logo = await create_source_logo(
+                        source_id=kwargs["id"], source_name=obj_in.name
+                    )
 
         db_source = await super().update(
             db,
