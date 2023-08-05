@@ -171,6 +171,7 @@ async def add_new_source_info_dict_videos_to_source(
                     db_video = await crud.video.get(db=db, id=new_video.id)  # pragma: no cover
 
             db_source.videos.append(db_video)
+            db.commit()
 
     return new_videos
 
