@@ -310,14 +310,18 @@ async def get_filter_rss_feed(filter_id: str, db: Session = Depends(deps.get_db)
         HTTPException: If the rss file is not found.
     """
     try:
-        rss_file = await get_rss_file(id=filter_id)
+        filter_ = await crud.filter.get(id=id, db=db)
+    except crud.RecordNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=exc.args) from exc
+
+    try:
+        rss_file = await get_rss_file(id=filter_.id)
     except FileNotFoundError as exc:
-        filter = await crud.filter.get(id=filter_id, db=db)
-        await build_rss_file(filter=filter)
+        await build_rss_file(filter=filter_)
         try:
-            rss_file = await get_rss_file(id=filter_id)
+            rss_file = await get_rss_file(id=filter_.id)
         except FileNotFoundError as exc:  # pragma: no cover
-            err_msg = f"RSS file ({filter.id}.rss) does not exist for filter '{filter.id=}' ({filter.source.name} - [{filter.name}]).)"
+            err_msg = f"RSS file ({filter_.id}.rss) does not exist for filter '{filter_.id=}' ({filter_.source.name} - [{filter_.name}]).)"
             logger.critical(err_msg)
             await notify(telegram=True, email=False, text=err_msg)
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_msg) from exc
