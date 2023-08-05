@@ -191,9 +191,9 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
 
     # Check if source needs a logo
     if db_source.logo and "static/logos" in db_source.logo:
-        logger.info("Building Logo for Source")
         logo_path = paths.LOGOS_PATH / f"{db_source.id}.png"
         if not logo_path.exists():
+            logger.debug(f"Creating Logo for Source: {logo_path=}")
             create_logo_from_text(text=db_source.name, file_path=logo_path)
 
     # Build RSS Files
