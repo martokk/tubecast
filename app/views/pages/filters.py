@@ -310,7 +310,7 @@ async def get_filter_rss_feed(filter_id: str, db: Session = Depends(deps.get_db)
         HTTPException: If the rss file is not found.
     """
     try:
-        filter_ = await crud.filter.get(id=id, db=db)
+        filter_ = await crud.filter.get(id=filter_id, db=db)
     except crud.RecordNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_410_GONE, detail=exc.args) from exc
 
