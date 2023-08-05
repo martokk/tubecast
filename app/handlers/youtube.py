@@ -284,14 +284,20 @@ class YoutubeHandler(ServiceHandler):
             if entry_info_dict.get("upload_date")
             else None
         )
+
         url = entry_info_dict.get("webpage_url", entry_info_dict["url"])
+
+        duration = entry_info_dict.get("duration")
+        if not duration and "shorts" in url:
+            duration = 30
+
         return {
             "source_id": source_id,
             "url": url,
             "added_at": datetime.datetime.now(tz=datetime.timezone.utc),
             "title": entry_info_dict["title"],
             "description": entry_info_dict["description"],
-            "duration": entry_info_dict["duration"],
+            "duration": duration,
             "thumbnail": entry_info_dict.get("thumbnail"),
             "released_at": released_at,
             "media_url": None,
