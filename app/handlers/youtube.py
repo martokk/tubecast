@@ -322,7 +322,7 @@ class YoutubeHandler(ServiceHandler):
             format_info_dict = self._get_format_info_dict_from_entry_info_dict(
                 entry_info_dict=entry_info_dict
             )
-        except (FormatNotFoundError, AwaitingTranscodingError):
+        except FormatNotFoundError:
             format_info_dict = {}
 
         # Handle Private/Deleted videos

@@ -29,6 +29,7 @@ from app.services.video import (
 )
 from app.services.ytdlp import (
     AccountNotFoundError,
+    AwaitingTranscodingError,
     Http410Error,
     IsDeletedVideoError,
     IsLiveEventError,
@@ -340,7 +341,11 @@ async def fetch_video(video_id: str, db: Session) -> Video:
         await log_and_notify(message=f"Error fetching video: \n{e=} \n{db_video=}")
         raise e
 
-    _video = get_video_from_video_info_dict(video_info_dict=video_info_dict)
+    try:
+        _video = get_video_from_video_info_dict(video_info_dict=video_info_dict)
+    except AwaitingTranscodingError as e:
+        await log_and_notify(message=f"Error fetching video: \n{e=} \n{db_video=}")
+        raise AwaitingTranscodingError(e) from e
 
     # Update the video in the database and return it
     return await crud.video.update(obj_in=VideoUpdate(**_video.dict()), id=_video.id, db=db)
