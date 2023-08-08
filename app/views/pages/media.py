@@ -8,7 +8,8 @@ from app import crud, logger
 from app.api.deps import get_db
 from app.core.proxy import reverse_proxy
 from app.handlers import get_handler_from_string
-from app.services.fetch import fetch_video
+from app.services.fetch import FetchCanceledError, fetch_video
+from app.services.ytdlp import AwaitingTranscodingError
 
 router = APIRouter()
 
@@ -46,7 +47,14 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
         hours=handler.REFRESH_UPDATE_INTERVAL_HOURS
     )
     if not video.media_url or video.updated_at < refresh_interval_age_threshold:
-        video = await fetch_video(video_id=video.id, db=db)
+        try:
+            video = await fetch_video(video_id=video.id, db=db)
+        except (FetchCanceledError, AwaitingTranscodingError) as e:
+            logger.error(e)
+            raise HTTPException(
+                status_code=status.HTTP_202_ACCEPTED,
+                detail=f"Tubecast Fetch was canceled. {e.args[0]}",
+            ) from e
 
     if video.media_url is None:
         msg = f"The server has not able to fetch a media_url from yt-dlp. {video_id=}"

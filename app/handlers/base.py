@@ -187,6 +187,6 @@ class ServiceHandler:
             ) from exc
 
         if "m3u8" in format_info_dict["url"]:
-            raise AwaitingTranscodingError("'m3u8' format not supported.")
+            raise AwaitingTranscodingError("Awaiting transcoding. 'm3u8' format not supported.")
 
         return format_info_dict
