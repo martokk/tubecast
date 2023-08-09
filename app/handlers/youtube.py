@@ -28,7 +28,7 @@ class YoutubeHandler(ServiceHandler):
     SERVICE_NAME = "Youtube"
     COLOR = "#CC0000"
     USE_PROXY = True
-    REFRESH_UPDATE_INTERVAL_HOURS = 4
+    REFRESH_UPDATE_INTERVAL_HOURS = 3
     REFRESH_RELEASED_RECENT_DAYS = 14
     DOMAINS = ["youtube.com"]
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
