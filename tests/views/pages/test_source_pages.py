@@ -180,7 +180,8 @@ def test_edit_source_page(
     response = client.get(
         f"/source/{source_1.id}/edit",  # type: ignore
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_200_OK
+    assert response.url.path == "/sources"
 
     # Test that superuser CAN edit source
     client.cookies = superuser_cookies

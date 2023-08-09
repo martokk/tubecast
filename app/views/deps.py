@@ -50,7 +50,7 @@ async def get_tokens_from_cookie(
     return models.Tokens(access_token=access_token_value, refresh_token=refresh_token_value)
 
 
-async def get_tokens_from_refresh_token(refresh_token: str) -> models.Tokens:
+async def get_tokens_from_refresh_token(refresh_token: str) -> models.Tokens | None:
     """
     Gets new tokens from a refresh token. Sets the new tokens in the cookie.
 
@@ -63,7 +63,7 @@ async def get_tokens_from_refresh_token(refresh_token: str) -> models.Tokens:
     try:
         new_tokens = await security.get_tokens_from_refresh_token(refresh_token=refresh_token)
     except HTTPException:
-        return models.Tokens()
+        return None
 
     # Set the tokens in the cookie
     response = RedirectResponse("/", status_code=status.HTTP_302_FOUND)
@@ -75,6 +75,40 @@ async def get_tokens_from_refresh_token(refresh_token: str) -> models.Tokens:
     )
 
     return new_tokens
+
+
+async def get_current_tokens(
+    tokens: models.Tokens = Depends(get_tokens_from_cookie), db: Session = Depends(get_db)
+) -> models.Tokens | None:
+    """
+    Gets the current tokens. If the access token is
+    invalid or not found in cookie, returns None.
+
+    Args:
+        tokens (models.Tokens): The tokens.
+        db (Session): The database session.
+
+    Returns:
+        models.Tokens | None: The current tokens.
+    """
+    try:
+        # Try to decode the access token
+        security.decode_token(token=str(tokens.access_token), key=settings.JWT_ACCESS_SECRET_KEY)
+    except HTTPException:
+        # If the access token is invalid, regenerate new tokens from refresh token
+        if not tokens.refresh_token:
+            return None
+        try:
+            new_tokens = await get_tokens_from_refresh_token(refresh_token=tokens.refresh_token)
+            if new_tokens:
+                return new_tokens
+            else:
+                return None
+
+        except HTTPException:  # pragma: no cover
+            return None
+
+    return tokens
 
 
 async def get_current_user(
@@ -91,27 +125,13 @@ async def get_current_user(
     Returns:
         models.User | None: The current user.
     """
+    # Get the user_id from the new access token
     try:
-        # Try to get the user from the access token
         user_id = security.decode_token(
             token=str(tokens.access_token), key=settings.JWT_ACCESS_SECRET_KEY
         )
     except HTTPException:
-        # If the access token is invalid, try to get the user from the refresh token
-        if not tokens.refresh_token:
-            return None
-        try:
-            new_tokens = await get_tokens_from_refresh_token(refresh_token=tokens.refresh_token)
-        except HTTPException:  # pragma: no cover
-            return None
-
-        # Get the user_id from the new access token
-        try:
-            user_id = security.decode_token(
-                token=str(new_tokens.access_token), key=settings.JWT_ACCESS_SECRET_KEY
-            )
-        except HTTPException:
-            return None
+        return None
 
     return await crud.user.get(db=db, id=user_id)
 
@@ -154,9 +174,8 @@ async def get_current_active_user(
     if not current_user:
         raise RedirectException(url="/login")
     if not crud.user.is_active(current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
-        )  # pragma: no cover
+        raise RedirectException(url="/login")
+
     return current_user
 
 
@@ -178,7 +197,5 @@ async def get_current_active_superuser(
     if not current_user:
         raise RedirectException(url="/login")
     if not crud.user.is_superuser(user_=current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="The user doesn't have enough privileges"
-        )  # pragma: no cover
+        raise RedirectException(url="/login")
     return current_user
