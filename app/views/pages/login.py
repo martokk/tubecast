@@ -6,25 +6,43 @@ from pydantic import EmailStr
 from sqlmodel import Session
 
 from app import logger, models, settings
-from app.api.deps import get_db
 from app.core import security
-from app.views import templates
+from app.views import deps, templates
 
 router = APIRouter()
 
 
 @router.get("/login", response_class=HTMLResponse)
-async def login(request: Request) -> Response:
+async def login(
+    request: Request, tokens: models.Tokens | None = Depends(deps.get_current_tokens)
+) -> Response:
     """
     Login Page.
 
     Args:
         request(Request): The request object
+        tokens(models.Tokens | None): The refreshed tokens
 
     Returns:
         Response: Login page
 
     """
+
+    # If tokens are valid, set new tokens as cookies and redirect response
+    if tokens:
+        # Extract the original URL from the query parameters
+        original_url = request.query_params.get("original_url") or "/"
+        # Set the cookie
+        response = RedirectResponse(original_url, status_code=status.HTTP_302_FOUND)
+        response.set_cookie(
+            key="access_token", value=f"Bearer {tokens.access_token}", httponly=True
+        )
+        response.set_cookie(
+            key="refresh_token", value=f"Bearer {tokens.refresh_token}", httponly=True
+        )
+        return response
+
+    # No valid tokens, return login page
     alerts = models.Alerts().from_cookies(request.cookies)
     return templates.TemplateResponse("login/login.html", {"request": request, "alerts": alerts})
 
@@ -33,7 +51,7 @@ async def login(request: Request) -> Response:
 async def handle_login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    db: Session = Depends(deps.get_db),
 ) -> Response:
     """
     Handle login.
