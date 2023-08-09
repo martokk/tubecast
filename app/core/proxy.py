@@ -40,24 +40,24 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
             logger.error(e)
             raise e
 
-    if (
-        rp_response.status_code != status.HTTP_200_OK
-        and rp_response.status_code != status.HTTP_302_FOUND
-    ):
-        """"""
-        pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
-        try:
-            ip_from_url = pattern.findall(str(url))[0]
-        except (TypeError, IndexError):
-            ip_from_url = None
-        logger.error(
-            f"Reverse proxy request failed for url ('{url}') with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
-        )
-        raise HTTPException(status_code=rp_response.status_code)
+        if (
+            rp_response.status_code != status.HTTP_200_OK
+            and rp_response.status_code != status.HTTP_302_FOUND
+        ):
+            """"""
+            pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
+            try:
+                ip_from_url = pattern.findall(str(url))[0]
+            except (TypeError, IndexError):
+                ip_from_url = None
+            logger.error(
+                f"Reverse proxy request failed for url ('{url}') with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
+            )
+            raise HTTPException(status_code=rp_response.status_code)
 
-    return StreamingResponse(
-        rp_response.aiter_raw(),
-        status_code=rp_response.status_code,
-        headers=rp_response.headers,
-        background=BackgroundTask(rp_response.aclose),
-    )
+        return StreamingResponse(
+            rp_response.aiter_raw(),
+            status_code=rp_response.status_code,
+            headers=rp_response.headers,
+            background=BackgroundTask(rp_response.aclose),
+        )
