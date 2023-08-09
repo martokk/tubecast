@@ -41,10 +41,22 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
         logger.error(e)
         raise e
 
-    if (
-        rp_response.status_code != status.HTTP_200_OK
-        and rp_response.status_code != status.HTTP_302_FOUND
-    ):
+    if rp_response.status_code == status.HTTP_302_FOUND:
+        if not rp_response.next_request:
+            raise ValueError("Could not find redirect URL")
+        rp_request = client.build_request(method=request.method, url=rp_response.next_request.url)
+        await rp_response.aclose()
+
+        # Copy headers from original request to reverse proxy request
+        try:
+            rp_response = await client.send(rp_request, stream=True)
+        except httpx.ConnectError as e:
+            raise ValueError("Invalid URL") from e
+        except httpx.PoolTimeout as e:
+            logger.error(e)
+            raise e
+
+    if rp_response.status_code != status.HTTP_200_OK:
         """"""
         pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
         try:
