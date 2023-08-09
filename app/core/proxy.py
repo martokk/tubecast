@@ -10,8 +10,6 @@ from starlette.background import BackgroundTask
 
 from app import logger, settings
 
-client = httpx.AsyncClient()
-
 
 async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     """
@@ -30,13 +28,17 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     """
     url = httpx.URL(url=url)  # type: ignore
 
-    rp_request = client.build_request(method=request.method, url=url)
+    async with httpx.AsyncClient() as client:
+        rp_request = client.build_request(method=request.method, url=url)
 
-    # Copy headers from original request to reverse proxy request
-    try:
-        rp_response = await client.send(rp_request, stream=True)
-    except httpx.ConnectError as e:
-        raise ValueError("Invalid URL") from e
+        # Copy headers from original request to reverse proxy request
+        try:
+            rp_response = await client.send(rp_request, stream=True)
+        except httpx.ConnectError as e:
+            raise ValueError("Invalid URL") from e
+        except httpx.PoolTimeout as e:
+            logger.error(e)
+            raise e
 
     if (
         rp_response.status_code != status.HTTP_200_OK
