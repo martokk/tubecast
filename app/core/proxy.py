@@ -10,6 +10,8 @@ from starlette.background import BackgroundTask
 
 from app import logger, settings
 
+client = httpx.AsyncClient(limits=httpx.Limits(max_connections=100), timeout=httpx.Timeout(30.0))
+
 
 async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     """
@@ -28,36 +30,35 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     """
     url = httpx.URL(url=url)  # type: ignore
 
-    async with httpx.AsyncClient() as client:
-        rp_request = client.build_request(method=request.method, url=url)
+    rp_request = client.build_request(method=request.method, url=url)
 
-        # Copy headers from original request to reverse proxy request
+    # Copy headers from original request to reverse proxy request
+    try:
+        rp_response = await client.send(rp_request, stream=True)
+    except httpx.ConnectError as e:
+        raise ValueError("Invalid URL") from e
+    except httpx.PoolTimeout as e:
+        logger.error(e)
+        raise e
+
+    if (
+        rp_response.status_code != status.HTTP_200_OK
+        and rp_response.status_code != status.HTTP_302_FOUND
+    ):
+        """"""
+        pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
         try:
-            rp_response = await client.send(rp_request, stream=True)
-        except httpx.ConnectError as e:
-            raise ValueError("Invalid URL") from e
-        except httpx.PoolTimeout as e:
-            logger.error(e)
-            raise e
-
-        if (
-            rp_response.status_code != status.HTTP_200_OK
-            and rp_response.status_code != status.HTTP_302_FOUND
-        ):
-            """"""
-            pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
-            try:
-                ip_from_url = pattern.findall(str(url))[0]
-            except (TypeError, IndexError):
-                ip_from_url = None
-            logger.error(
-                f"Reverse proxy request failed for url ('{url}') with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
-            )
-            raise HTTPException(status_code=rp_response.status_code)
-
-        return StreamingResponse(
-            rp_response.aiter_raw(),
-            status_code=rp_response.status_code,
-            headers=rp_response.headers,
-            background=BackgroundTask(rp_response.aclose),
+            ip_from_url = pattern.findall(str(url))[0]
+        except (TypeError, IndexError):
+            ip_from_url = None
+        logger.error(
+            f"Reverse proxy request failed for url ('{url}') with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
         )
+        raise HTTPException(status_code=rp_response.status_code)
+
+    return StreamingResponse(
+        rp_response.aiter_raw(),
+        status_code=rp_response.status_code,
+        headers=rp_response.headers,
+        background=BackgroundTask(rp_response.aclose),
+    )

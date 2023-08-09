@@ -24,7 +24,7 @@ async def test_reverse_proxy_non_200_status_code(test_request: Request) -> None:
     url = "https://someurl.com/api"
     request = Request(scope={"type": "http", "method": "GET", "path": url})
 
-    with patch("app.core.proxy.httpx.AsyncClient.send") as mock:
+    with patch("app.core.proxy.client.send") as mock:
         mock.return_value = AsyncMock(
             status_code=410,
             headers={"Content-Type": "application/json"},
