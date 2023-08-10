@@ -30,9 +30,9 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     """
     url = httpx.URL(url=url)  # type: ignore
 
+    # Copy headers from original request to reverse proxy request
     rp_request = client.build_request(method=request.method, url=url)
 
-    # Copy headers from original request to reverse proxy request
     try:
         rp_response = await client.send(rp_request, stream=True)
     except httpx.ConnectError as e:
@@ -43,11 +43,15 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
 
     if rp_response.status_code == status.HTTP_302_FOUND:
         if not rp_response.next_request:
+            # If redirect URL is missing, close response and raise error
+            await rp_response.aclose()
             raise ValueError("Could not find redirect URL")
-        rp_request = client.build_request(method=request.method, url=rp_response.next_request.url)
-        await rp_response.aclose()
 
-        # Copy headers from original request to reverse proxy request
+        # Build a new reverse proxy request for the redirect URL
+        rp_request = client.build_request(method=request.method, url=rp_response.next_request.url)
+        await rp_response.aclose()  # Close the current response
+
+        # Send the reverse proxy request for the redirect and receive the response
         try:
             rp_response = await client.send(rp_request, stream=True)
         except httpx.ConnectError as e:
@@ -57,17 +61,21 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
             raise e
 
     if rp_response.status_code != status.HTTP_200_OK:
-        """"""
+        # Extract IP from URL for logging purposes
         pattern = re.compile(r"([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})")
         try:
             ip_from_url = pattern.findall(str(url))[0]
         except (TypeError, IndexError):
             ip_from_url = None
+
+        # Log error and raise HTTPException
         logger.error(
             f"Reverse proxy request failed for url ('{url}') with status code {rp_response.status_code}. {ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
         )
+        await rp_response.aclose()  # Close the response
         raise HTTPException(status_code=rp_response.status_code)
 
+    # Return StreamingResponse with the reverse proxy response
     return StreamingResponse(
         rp_response.aiter_raw(),
         status_code=rp_response.status_code,
