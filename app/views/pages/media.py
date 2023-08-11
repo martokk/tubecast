@@ -1,17 +1,17 @@
-from datetime import datetime, timedelta
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import Response
 from sqlmodel import Session
 
 from app import crud, logger
 from app.api.deps import get_db
-from app.core.proxy import reverse_proxy
-from app.handlers import get_handler_from_string
-from app.services.fetch import FetchCanceledError, fetch_video
-from app.services.ytdlp import AwaitingTranscodingError
+from app.core.proxy import Http403ForbiddenError
+from app.services.media import get_media_response
 
 router = APIRouter()
+
+MAX_RETRIES = 3
 
 
 @router.get("/{video_id}")
@@ -41,48 +41,21 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
             detail=f"The video_id '{video_id}' was not found.",
         ) from e
 
-    # Handle if the media_url is expired or missing
-    handler = get_handler_from_string(handler_string=video.handler)
-    refresh_interval_age_threshold = datetime.utcnow() - timedelta(
-        hours=handler.REFRESH_UPDATE_INTERVAL_HOURS
-    )
-    if not video.media_url or video.updated_at < refresh_interval_age_threshold:
+    # Get Media Response. Retry on Http403ForbiddenError
+    retries = 0
+    while True:
         try:
-            video = await fetch_video(video_id=video.id, db=db)
-        except (FetchCanceledError, AwaitingTranscodingError) as e:
-            logger.error(e)
+            return await get_media_response(db=db, video=video, request=request)
+        except Http403ForbiddenError as e:
+            retries += 1
+            logger.error(f"Retrying ({retries}/{MAX_RETRIES})")
+
+            if retries < MAX_RETRIES:
+                time.sleep(1)
+                continue
+
+            logger.error("Max retries reached for Http403ForbiddenError.")
             raise HTTPException(
-                status_code=status.HTTP_202_ACCEPTED,
-                detail=f"Tubecast Fetch was canceled. {e.args[0]}",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Max retries reached for Http403ForbiddenError.",
             ) from e
-
-    if video.media_url is None:
-        msg = f"The server has not able to fetch a media_url from yt-dlp. {video_id=}"
-        logger.error(msg)
-        raise HTTPException(
-            status_code=status.HTTP_202_ACCEPTED,
-            detail=msg,
-        )
-
-    if handler.USE_PROXY:
-        try:
-            return await reverse_proxy(url=video.media_url, request=request)
-        except HTTPException as e:
-            # If forbidden 403, try re-fetching again
-            if e.status_code == status.HTTP_403_FORBIDDEN:
-                logger.error("403 Forbidden. Re-fetching media_url...")
-
-                fetched_video = await fetch_video(video_id=video.id, db=db)
-
-                if fetched_video.media_url is None:
-                    msg = f"The server has not able to fetch a media_url from yt-dlp. {video_id=}"
-                    logger.error(msg)
-                    raise HTTPException(
-                        status_code=status.HTTP_202_ACCEPTED,
-                        detail=msg,
-                    )
-
-                return await reverse_proxy(url=fetched_video.media_url, request=request)
-
-            raise e
-    return RedirectResponse(url=video.media_url)
