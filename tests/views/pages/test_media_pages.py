@@ -35,7 +35,7 @@ async def test_handle_redirect_media(
 
     # Handle media
     source_video_0_url = source_videos[0]["feed_media_url"]
-    with patch("app.views.pages.media.RedirectResponse") as mock_redirect:
+    with patch("app.services.media.RedirectResponse") as mock_redirect:
         mock_redirect.return_value = RedirectResponse(url="http://example.com")
         response = client.get(source_video_0_url)
         assert response.status_code == 200
@@ -62,7 +62,7 @@ async def test_handle_reverse_proxy_media(
 
     # Handle media
     source_video_0_url = source_videos[0]["feed_media_url"]
-    with patch("app.views.pages.media.reverse_proxy") as mock_reverse_proxy:
+    with patch("app.services.media.reverse_proxy") as mock_reverse_proxy:
         mock_reverse_proxy.return_value = Response(content=None, status_code=200)
         response = client.get(source_video_0_url)
         assert response.status_code == 200
@@ -100,7 +100,7 @@ async def test_handle_media_video_no_media_url(
     with patch("app.crud.video.get") as mock_get:
         mock_get.return_value = test_video
 
-        with patch("app.views.pages.media.fetch_video") as mock_fetch_video:
+        with patch("app.services.media.fetch_video") as mock_fetch_video:
             mock_fetch_video.return_value = test_video
 
             response = client.get(f"/media/{test_video.id}")

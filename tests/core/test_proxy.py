@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, patch
 
+import httpx
 import pytest
 from fastapi import HTTPException, Request
 
@@ -16,8 +17,11 @@ async def test_reverse_proxy_non_existing_url(test_request: Request) -> None:
     url = "https://www.nonexisting-example.com"
     try:
         await reverse_proxy(url, test_request)
-    except ValueError as e:
-        assert str(e) == "Invalid URL"
+    except httpx.ConnectError as e:
+        assert (
+            str(e)
+            == "Could not connect to https://www.nonexisting-example.com. Invalid URL. e=ConnectError('[Errno -2] Name or service not known')"
+        )
 
 
 async def test_reverse_proxy_non_200_status_code(test_request: Request) -> None:
