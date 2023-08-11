@@ -1,5 +1,3 @@
-from typing import Any
-
 import re
 
 import httpx
@@ -9,8 +7,6 @@ from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
 
 from app import logger, settings
-
-client = httpx.AsyncClient(limits=httpx.Limits(max_connections=100), timeout=httpx.Timeout(30.0))
 
 
 class Http403ForbiddenError(Exception):
@@ -31,8 +27,12 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     Raises:
         HTTPException: If reverse proxy request fails.
     """
-    rp_request = await build_reverse_proxy_request(url=url, method=request.method)
-    rp_response = await send_reverse_proxy_request(rp_request=rp_request)
+    client = httpx.AsyncClient(
+        limits=httpx.Limits(max_connections=100), timeout=httpx.Timeout(30.0)
+    )
+
+    rp_request = await build_reverse_proxy_request(client=client, url=url, method=request.method)
+    rp_response = await send_reverse_proxy_request(client=client, rp_request=rp_request)
 
     # Handle 403 Forbidden status
     if rp_response.status_code == status.HTTP_403_FORBIDDEN:
@@ -58,7 +58,9 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
     )
 
 
-async def build_reverse_proxy_request(url: str | httpx.URL, method: str) -> httpx.Request:
+async def build_reverse_proxy_request(
+    client: httpx.AsyncClient, url: str | httpx.URL, method: str
+) -> httpx.Request:
     """
     Build a reverse proxy request.
 
@@ -73,7 +75,9 @@ async def build_reverse_proxy_request(url: str | httpx.URL, method: str) -> http
     return client.build_request(method=method, url=_url)
 
 
-async def send_reverse_proxy_request(rp_request: httpx.Request) -> httpx.Response:
+async def send_reverse_proxy_request(
+    client: httpx.AsyncClient, rp_request: httpx.Request
+) -> httpx.Response:
     """
     Send a reverse proxy request and handle redirects.
 
@@ -95,12 +99,16 @@ async def send_reverse_proxy_request(rp_request: httpx.Request) -> httpx.Respons
 
     # Handle 302 Found re-directs to get to final response
     while rp_response.status_code == status.HTTP_302_FOUND:
-        rp_response = await follow_302_redirect(method=rp_request.method, rp_response=rp_response)
+        rp_response = await follow_302_redirect(
+            client=client, method=rp_request.method, rp_response=rp_response
+        )
 
     return rp_response
 
 
-async def follow_302_redirect(method: str, rp_response: httpx.Response) -> httpx.Response:
+async def follow_302_redirect(
+    client: httpx.AsyncClient, method: str, rp_response: httpx.Response
+) -> httpx.Response:
     """
     Follow a 302 redirect response to the final response.
 
@@ -121,8 +129,8 @@ async def follow_302_redirect(method: str, rp_response: httpx.Response) -> httpx
     await rp_response.aclose()
 
     # Generate new response
-    rp_request = await build_reverse_proxy_request(url=url, method=method)
-    rp_response = await send_reverse_proxy_request(rp_request)
+    rp_request = await build_reverse_proxy_request(client=client, url=url, method=method)
+    rp_response = await send_reverse_proxy_request(client=client, rp_request=rp_request)
     return rp_response
 
 
