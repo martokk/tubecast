@@ -11,8 +11,6 @@ from app.services.media import get_media_response
 
 router = APIRouter()
 
-MAX_RETRIES = 3
-
 
 @router.get("/{video_id}")
 @router.head("/{video_id}")
@@ -42,6 +40,7 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
         ) from e
 
     # Get Media Response. Retry on Http403ForbiddenError
+    MAX_RETRIES = 10
     retries = 0
     while True:
         try:
@@ -50,7 +49,12 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
             retries += 1
             logger.error(f"Retrying ({retries}/{MAX_RETRIES})")
 
+            # Sleep before retrying
             if retries < MAX_RETRIES:
+                # sleep an additional x seconds after multiple retires
+                if retries >= (MAX_RETRIES / 2):
+                    time.sleep(int(retries * 1.5))
+
                 time.sleep(1)
                 continue
 
