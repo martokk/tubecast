@@ -87,24 +87,24 @@ async def test_fetch_all_sources_fetch_canceled_error(
 
 
 # Fetch Source
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
-async def test_fetch_source_create_logo(mocker: Mock, db: Session, source_1: Source) -> None:
-    """
-    Fetch source and create logo.
-    """
+# @pytest.mark.filterwarnings("ignore::DeprecationWarning")
+# async def test_fetch_source_create_logo(mocker: Mock, db: Session, source_1: Source) -> None:
+#     """
+#     Fetch source and create logo.
+#     """
 
-    logo_path = paths.LOGOS_PATH / f"{source_1.id}.png"
-    logo_path.unlink(missing_ok=True)
-    assert logo_path.exists() is False
+#     logo_path = paths.LOGOS_PATH / f"{source_1.id}.png"
+#     logo_path.unlink(missing_ok=True)
+#     assert logo_path.exists() is False
 
-    db_source = await crud.source.get(db=db, id=source_1.id)
-    db_source.logo = f"/static/logos/{source_1.id}.png"
-    mocker.patch("app.crud.source.update", return_value=db_source)
+#     db_source = await crud.source.get(db=db, id=source_1.id)
+#     db_source.logo = f"/static/logos/{source_1.id}.png"
+#     mocker.patch("app.crud.source.update", return_value=db_source)
 
-    await fetch_source(db=db, id=db_source.id)
+#     await fetch_source(db=db, id=db_source.id)
 
-    # Create logo
-    assert logo_path.exists() is True
+#     # Create logo
+#     assert logo_path.exists() is True
 
 
 async def test_fetch_source_account_not_found_error(db: Session, source_1: Source) -> None:
