@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
+import re
+
 from pydantic import root_validator
 from sqlmodel import Field, Relationship, SQLModel, desc
 
@@ -29,6 +31,8 @@ class SourceBase(TimestampModel, SQLModel):
     name: str = Field(default=None)
     author: str = Field(default=None)
     logo: str = Field(default=None)
+    logo_background_color: str | None = Field(default=None, nullable=True)
+    logo_border_color: str | None = Field(default=None, nullable=True)
     description: str = Field(default=None)
     reverse_import_order: bool = Field(default=False)
     ordered_by: str = Field(default=None)
@@ -96,7 +100,21 @@ class SourceCreate(SourceBase):
 
 
 class SourceUpdate(SourceBase):
-    pass
+    @root_validator(pre=True)
+    @classmethod
+    def validate_logo_colors(cls, values: dict[str, Any]) -> dict[str, Any]:
+        logo_bg_color = values.get("logo_background_color")
+        logo_border_color = values.get("logo_border_color")
+
+        if logo_bg_color:
+            if not re.match(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", logo_bg_color):
+                raise ValueError("Invalid logo_background_color format")
+
+        if logo_border_color:
+            if not re.match(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$", logo_border_color):
+                raise ValueError("Invalid logo_border_color format")
+
+        return values
 
 
 class SourceRead(SourceBase):

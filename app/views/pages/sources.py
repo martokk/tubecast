@@ -235,6 +235,8 @@ async def handle_edit_source(
     name: str = Form(None),
     author: str = Form(None),
     logo: str = Form(None),
+    logo_background_color: str = Form(None),
+    logo_border_color: str = Form(None),
     description: str = Form(None),
     reverse_import_order: bool = Form(False),
     db: Session = Depends(deps.get_db),
@@ -278,10 +280,12 @@ async def handle_edit_source(
         logo=logo,
         description=description,
         reverse_import_order=reverse_import_order,
+        logo_background_color=logo_background_color,
+        logo_border_color=logo_border_color,
     )
 
     new_source = await crud.source.update(
-        db=db, obj_in=source_update, id=source_id, exclude_none=True, exclude_unset=True
+        db=db, obj_in=source_update, id=source_id, exclude_none=False, exclude_unset=True
     )
     alerts.success.append(f"Updated source '{new_source.name}'")
     redirect_url = f"/source/{new_source.id}"
