@@ -39,6 +39,22 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="logo_background_color">Logo Background Color:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control mb-3" id="logo_background_color" name="logo_background_color" value="{{ source.logo_background_color or '' }}">
+                        <button type="button" class="btn btn-outline-secondary" id="bgColorPickerBtn">Pick Color</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="logo_border_color">Logo Border Color:</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control mb-3" id="logo_border_color" name="logo_border_color" value="{{ source.logo_border_color or '' }}">
+                        <button type="button" class="btn btn-outline-secondary" id="borderColorPickerBtn">Pick Color</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label for="description">Description:</label>
                     <textarea class="form-control mb-3" id="description" rows="3"
                         name="description">{{ source.description }}</textarea>
@@ -82,4 +98,52 @@
     </div>
 </div>
 
+
+<!-- Color Picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.es5.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize color pickers
+        const bgColorPicker = createColorPicker("bgColorPickerBtn", "#logo_background_color");
+        const borderColorPicker = createColorPicker("borderColorPickerBtn", "#logo_border_color");
+
+        function createColorPicker(buttonId, inputSelector) {
+            const initialColor = document.querySelector(inputSelector).value;
+
+            // Initialize Pickr.js color picker
+            const colorPicker = Pickr.create({
+                el: `#${buttonId}`,
+                theme: "classic",
+                default: initialColor,
+                swatches: [ /* your swatches here */],
+                components: {
+                    preview: true,
+                    opacity: false,
+                    hue: true,
+                    interaction: {
+                        hex: true,
+                        rgba: false,
+                        hsla: false,
+                        hsva: false,
+                        cmyk: false,
+                        input: true,
+                        clear: true,
+                        save: true
+                    }
+                }
+            });
+
+            colorPicker.on('save', (color, instance) => {
+                const selectedColor = color.toHEXA().toString();
+                const colorInput = document.querySelector(inputSelector);
+
+                colorInput.value = selectedColor;
+                instance.hide();
+            });
+
+            return colorPicker;
+        }
+    });
+</script>
 {% endblock content %}

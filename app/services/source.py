@@ -229,7 +229,12 @@ async def source_needs_logo(source_logo_url: str | None) -> bool:
     return False
 
 
-async def create_source_logo(source_id: str, source_name: str) -> str:
+async def create_source_logo(
+    source_id: str,
+    source_name: str,
+    background_color: str | None = None,
+    border_color: str | None = None,
+) -> str:
     """
     Generates a static logo from Source Name text
 
@@ -237,5 +242,10 @@ async def create_source_logo(source_id: str, source_name: str) -> str:
         str: logo path
     """
     logo_path = paths.LOGOS_PATH / f"{source_id}.png"
-    create_logo_from_text(text=source_name, file_path=logo_path)
+    create_logo_from_text(
+        text=source_name,
+        file_path=logo_path,
+        background_color=background_color,
+        border_color=border_color,
+    )
     return f"/static/logos/{source_id}.png"

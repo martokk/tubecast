@@ -1,5 +1,7 @@
 from typing import Any
 
+import random
+
 from loguru import logger as _logger
 from sqlalchemy.sql.elements import BinaryExpression
 from sqlmodel import Session
@@ -8,6 +10,7 @@ from app import crud, handlers, models
 from app.crud.base import BaseCRUD
 from app.models.criteria import CriteriaField, CriteriaOperator, CriteriaUnitOfMeasure
 from app.services.feed import build_source_rss_files, delete_rss_file
+from app.services.logo import DARK_COLORS
 from app.services.source import (
     create_source_logo,
     get_source_from_source_info_dict,
@@ -54,9 +57,21 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         if obj_in.logo and obj_in.name:
             if await source_needs_logo(source_logo_url=obj_in.logo):
                 db_obj = await self.get(db=db, id=kwargs["id"])
-                if obj_in.name != db_obj.name:
+
+                # Check for change
+                if (
+                    obj_in.name != db_obj.name
+                    or obj_in.logo_background_color != db_obj.logo_background_color
+                    or obj_in.logo_border_color != db_obj.logo_border_color
+                ):
+                    if not obj_in.logo_background_color:
+                        obj_in.logo_background_color = random.choice(DARK_COLORS)
+
                     obj_in.logo = await create_source_logo(
-                        source_id=kwargs["id"], source_name=obj_in.name
+                        source_id=kwargs["id"],
+                        source_name=obj_in.name,
+                        background_color=obj_in.logo_background_color,
+                        border_color=obj_in.logo_border_color,
                     )
 
         db_source = await super().update(
