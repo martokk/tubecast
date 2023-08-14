@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -53,9 +54,9 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
             if retries < MAX_RETRIES:
                 # sleep an additional x seconds after multiple retires
                 if retries >= (MAX_RETRIES / 2):
-                    time.sleep(int(retries * 1.5))
+                    await asyncio.sleep(int(retries * 1.5))
 
-                time.sleep(1)
+                await asyncio.sleep(1)
                 continue
 
             logger.error("Max retries reached for Http403ForbiddenError.")
