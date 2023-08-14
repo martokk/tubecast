@@ -1,3 +1,5 @@
+import random
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlmodel import Session
@@ -7,6 +9,8 @@ from app.core.notify import notify
 from app.handlers.exceptions import HandlerNotFoundError, InvalidSourceUrl
 from app.services.feed import build_source_rss_files, get_rss_file
 from app.services.fetch import FetchCanceledError, fetch_all_sources, fetch_source
+from app.services.logo import DARK_COLORS
+from app.services.source import create_source_logo, source_needs_logo
 from app.services.ytdlp import NoUploadsError, PlaylistNotFoundError
 from app.views import deps, templates
 
@@ -178,6 +182,20 @@ async def handle_create_source(
         response.set_cookie(key="alerts", value=alerts.json(), httponly=True, max_age=5)
         return response
 
+    # Check if source needs a logo
+    if source.logo and source.name:
+        if await source_needs_logo(source_logo_url=source.logo):
+            # Check for change
+            if not source.logo_background_color:
+                source.logo_background_color = random.choice(DARK_COLORS)
+
+            source.logo = await create_source_logo(
+                source_id=source.id,
+                source_name=source.name,
+                background_color=source.logo_background_color,
+                border_color=source.logo_border_color,
+            )
+
     # Fetch the source videos in the background
     background_tasks.add_task(
         fetch_source,
@@ -283,6 +301,25 @@ async def handle_edit_source(
         logo_background_color=logo_background_color,
         logo_border_color=logo_border_color,
     )
+
+    # Check if source needs a logo
+    if source_update.logo and source_update.name:
+        if await source_needs_logo(source_logo_url=source_update.logo):
+            # Check for change
+            if (
+                source_update.name != db_source.name
+                or source_update.logo_background_color != db_source.logo_background_color
+                or source_update.logo_border_color != db_source.logo_border_color
+            ):
+                if not source_update.logo_background_color:
+                    source_update.logo_background_color = random.choice(DARK_COLORS)
+
+                source_update.logo = await create_source_logo(
+                    source_id=db_source.id,
+                    source_name=source_update.name,
+                    background_color=source_update.logo_background_color,
+                    border_color=source_update.logo_border_color,
+                )
 
     new_source = await crud.source.update(
         db=db, obj_in=source_update, id=source_id, exclude_none=False, exclude_unset=True

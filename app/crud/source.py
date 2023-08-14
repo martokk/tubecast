@@ -53,27 +53,6 @@ class SourceCRUD(BaseCRUD[models.Source, models.SourceCreate, models.SourceUpdat
         if obj_in.reverse_import_order:
             await self.delete_all_videos(db=db, source_id=kwargs["id"])
 
-        # Check if source needs a logo
-        if obj_in.logo and obj_in.name:
-            if await source_needs_logo(source_logo_url=obj_in.logo):
-                db_obj = await self.get(db=db, id=kwargs["id"])
-
-                # Check for change
-                if (
-                    obj_in.name != db_obj.name
-                    or obj_in.logo_background_color != db_obj.logo_background_color
-                    or obj_in.logo_border_color != db_obj.logo_border_color
-                ):
-                    if not obj_in.logo_background_color:
-                        obj_in.logo_background_color = random.choice(DARK_COLORS)
-
-                    obj_in.logo = await create_source_logo(
-                        source_id=kwargs["id"],
-                        source_name=obj_in.name,
-                        background_color=obj_in.logo_background_color,
-                        border_color=obj_in.logo_border_color,
-                    )
-
         db_source = await super().update(
             db,
             *args,
