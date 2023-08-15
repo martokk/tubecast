@@ -41,14 +41,14 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
         ) from e
 
     # Get Media Response. Retry on Http403ForbiddenError
-    MAX_RETRIES = 10
+    MAX_RETRIES = 6
     retries = 0
     while True:
         try:
             return await get_media_response(db=db, video=video, request=request)
         except Http403ForbiddenError as e:
             retries += 1
-            logger.error(f"Retrying ({retries}/{MAX_RETRIES})")
+            logger.error(f"Retrying ({retries}/{MAX_RETRIES}) ({video.title})")
 
             # Sleep before retrying
             if retries < MAX_RETRIES:
@@ -59,8 +59,8 @@ async def handle_media(video_id: str, request: Request, db: Session = Depends(ge
                 await asyncio.sleep(1)
                 continue
 
-            logger.error("Max retries reached for Http403ForbiddenError.")
+            logger.error("Http403ForbiddenError: Max retries reached for ({video.title})")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Max retries reached for Http403ForbiddenError.",
+                detail="Http403ForbiddenError: Max retries reached for ({video.title})",
             ) from e
