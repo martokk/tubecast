@@ -36,6 +36,12 @@ async def reverse_proxy(url: str, request: Request) -> StreamingResponse:
 
     # Handle 403 Forbidden status
     if rp_response.status_code == status.HTTP_403_FORBIDDEN:
+        ip_from_url = extract_ip_from_url(url=rp_response.url)
+        logger.error(
+            f"Reverse proxy request failed for url ('{rp_response.url}') with "
+            f"status code {rp_response.status_code}. "
+            f"{ip_from_url=} {settings.PROXY_HOST=} {rp_response=} {rp_request=}"
+        )
         raise Http403ForbiddenError()
 
     # Handle if not 200 OK status
