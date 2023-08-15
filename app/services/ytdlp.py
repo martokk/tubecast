@@ -17,7 +17,6 @@ YDL_OPTS_BASE: dict[str, Any] = {
     "format": "worst[ext=mp4]",
     "skip_download": True,
     "simulate": True,
-    "no_color": True,
     "ignore_no_formats_error": False,  # Ignore "No video formats" error. Extracts metadata if no formats are available.
     # "verbose": True,
 }
