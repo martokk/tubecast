@@ -60,7 +60,6 @@ def test_get_video_ydl_opts(handler: Handler) -> None:
         "skip_download": True,
         "simulate": True,
         "ignore_no_formats_error": False,
-        "no_color": True,
         "allowed_extractors": ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"],
     }
 
