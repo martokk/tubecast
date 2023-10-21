@@ -141,7 +141,7 @@ class Criteria(CriteriaBase, table=True):
             bool: True if video duration is within value, False otherwise
         """
         if not video_duration:  # if missing duration
-            return True
+            return False
 
         if unit_of_measure == CriteriaUnitOfMeasure.SECONDS.value:
             seconds = value
