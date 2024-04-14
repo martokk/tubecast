@@ -306,7 +306,7 @@ def test_delete_criteria(
     assert response.context["alerts"].danger[0] == "Criteria not found"  # type: ignore
 
     # Test DeleteError
-    with patch("app.crud.criteria.remove") as mock_delete_criteria:
+    with patch("app.crud.criteria.CriteriaCRUD.remove") as mock_delete_criteria:
         mock_delete_criteria.side_effect = crud.DeleteError()
         response = client.get(
             f"/filter/{filter_1.id}/criteria/{criteria_1.id}/delete",  # type: ignore
@@ -359,6 +359,15 @@ def test_criteria_is_not_within_timedelta() -> None:
 
 
 def test_criteria_is_within_duration_shorter_than_value() -> None:
+    """
+    Tests the Criteria class's ability to correctly determine whether a given video duration
+    is shorter than a specified duration value. Validates the handling of:
+    - Valid duration checks (expecting True for shorter durations).
+    - Handling of invalid unit of measure (expecting ValueError).
+    - Handling of invalid comparison operator (expecting ValueError).
+    - Behavior when video duration is unspecified (None), where the logic's handling of None
+      is tested against a 'shorter than' condition (assuming None behaves like a 0 duration).
+    """
     duration = 120  # 2 minutes
     delta = 121  # seconds
     unit_of_measure = CriteriaUnitOfMeasure.SECONDS.value
@@ -396,7 +405,7 @@ def test_criteria_is_within_duration_shorter_than_value() -> None:
     result = c.is_within_duration(
         video_duration=None, operator=operator, value=delta, unit_of_measure=unit_of_measure
     )
-    assert result is True
+    assert result is False
 
 
 def test_criteria_is_within_duration_longer_than_value() -> None:

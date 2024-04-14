@@ -265,7 +265,7 @@ def test_delete_filter_rss_feed(
     Test that a valid rss file is returned.
     """
     # Test DeleteError
-    with patch("app.crud.filter.remove", side_effect=crud.DeleteError):
+    with patch("app.crud.filter.FilterCRUD.remove", side_effect=crud.DeleteError):
         response = client.get(
             f"/filter/{filter_1.id}/delete",
         )

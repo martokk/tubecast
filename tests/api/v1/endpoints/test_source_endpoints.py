@@ -338,7 +338,7 @@ def test_fetch_source(client: TestClient, superuser_token_headers: dict[str, str
 
     # Fetch source, FetchCanceledError is raised
     # Fetch Source
-    with patch("app.crud.source.get") as mocked_get_source:
+    with patch("app.crud.source.SourceCRUD.get") as mocked_get_source:
         mocked_get_source.side_effect = FetchCanceledError
         response = client.put(
             f"{settings.API_V1_PREFIX}/source/{created_source['id']}/fetch",

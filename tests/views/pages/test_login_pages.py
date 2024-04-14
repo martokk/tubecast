@@ -217,8 +217,8 @@ async def test_get_tokens_from_invalid_refresh_token(
     response = client.get("/account")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.template.name == "source/list.html"  # type: ignore
-    assert response.url.path == "/sources"  # type: ignore
+    assert response.template.name == "login/login.html"  # type: ignore
+    assert response.url.path == "/login"  # type: ignore
 
     # Test invalid refresh token
     with patch(

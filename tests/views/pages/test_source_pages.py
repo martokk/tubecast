@@ -279,7 +279,7 @@ def test_delete_source(
     client.cookies = normal_user_cookies
 
     # Test DeleteError raised and handled
-    with patch("app.crud.source.remove", side_effect=crud.DeleteError):
+    with patch("app.crud.source.SourceCRUD.remove", side_effect=crud.DeleteError):
         response = client.get(
             f"/source/{source_1.id}/delete",
         )

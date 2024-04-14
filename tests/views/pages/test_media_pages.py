@@ -97,7 +97,7 @@ async def test_handle_media_video_no_media_url(
     test_video = source_1_w_videos.videos[0]
     test_video.media_url = None
 
-    with patch("app.crud.video.get") as mock_get:
+    with patch("app.crud.video.VideoCRUD.get") as mock_get:
         mock_get.return_value = test_video
 
         with patch("app.services.media.fetch_video") as mock_fetch_video:

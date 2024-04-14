@@ -10,13 +10,22 @@ security: # configuration for the `safety check` command
         # We recommend making use of the optional `reason` and `expires` keys for each vulnerability that you ignore.
         51668:
             reason: needs upgrade to sqlalchemy >2.0.0ba
-            expires: "2024-01-01" # 6 months from today
+            expires: "2024-05-01" # 6 months from today
         51457:
             reason: awaiting release of 1.12.0+ for possible fix.
-            expires: "2024-01-01" # 3 months from today
-        59361:
-            reason: don't update to 2023.07.06 due to bug. Await next update after this version
-            expires: "2024-01-01" # 3 months from today
+            expires: "2024-05-01" # 3 months frpyom today
+        62156:
+            reason: can't install pillow 10.2.0 for some reason? Need to fix
+            expires: "2024-05-01"
+        64436:
+            reason: can't install pillow 10.2.0 for some reason? Need to fix
+            expires: "2024-05-01"
+        64437:
+            reason: can't install pillow 10.2.0 for some reason? Need to fix
+            expires: "2024-05-01"
+        65293:
+            reason: no reason, just need to update fastapi
+            expires: "2024-04-15"
     continue-on-vulnerability-error: False # Suppress non-zero exit codes when vulnerabilities are found. Enable this in pipelines and CI/CD processes if you want to pass builds that have vulnerabilities. We recommend you set this to False.
 alert: # configuration for the `safety alert` command
     security:

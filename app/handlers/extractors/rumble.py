@@ -126,7 +126,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                         "ext": "mp4",
                         "format_id": "mp4-360p",
                         "height": 360,
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.baa.1.mp4",
+                        "url": "https://ak2.rmbl.ws/s8/2/5/M/z/1/5Mz1a.baa.1.mp4",
                         "tbr": 631,
                         "protocol": "https",
                         "video_ext": "mp4",
@@ -138,7 +138,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                         "ext": "webm",
                         "format_id": "webm-480p",
                         "height": 480,
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.daa.1.webm",
+                        "url": "https://ak2.rmbl.ws/s8/2/5/M/z/1/5Mz1a.daa.1.webm",
                         "tbr": 809,
                         "protocol": "https",
                         "video_ext": "webm",
@@ -150,7 +150,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                         "ext": "mp4",
                         "format_id": "mp4-480p",
                         "height": 480,
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.caa.2.mp4",
+                        "url": "https://ak2.rmbl.ws/s8/2/5/M/z/1/5Mz1a.caa.2.mp4",
                         "tbr": 810,
                         "protocol": "https",
                         "video_ext": "mp4",
@@ -162,7 +162,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                         "ext": "mp4",
                         "format_id": "mp4-720p",
                         "height": 720,
-                        "url": "https://sp.rmbl.ws/s8/2/5/M/z/1/5Mz1a.gaa.1.mp4",
+                        "url": "https://ak2.rmbl.ws/s8/2/5/M/z/1/5Mz1a.gaa.1.mp4",
                         "tbr": 1957,
                         "protocol": "https",
                         "video_ext": "mp4",
@@ -174,7 +174,7 @@ class CustomRumbleEmbedIE(RumbleEmbedIE):
                 "subtitles": {},
                 "thumbnails": [
                     {
-                        "url": "https://sp.rmbl.ws/s8/1/5/M/z/1/5Mz1a.qR4e-small-WMAR-2-News-Latest-Headline.jpg"
+                        "url": "https://ak2.rmbl.ws/s8/1/5/M/z/1/5Mz1a.qR4e-small-WMAR-2-News-Latest-Headline.jpg"
                     }
                 ],
                 "timestamp": 1571611968,
@@ -377,7 +377,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             "playlist_mincount": 1160,
             "info_dict": {
                 "url": "https://rumble.com/c/Styxhexenhammer666",
-                "thumbnail": "https://sp.rmbl.ws/z8/t/j/s/b/tjsba.baa.1-Styxhexenhammer666-qyv16v.png",
+                "thumbnail": "https://ak2.rmbl.ws/z8/t/j/s/b/tjsba.baa.1-Styxhexenhammer666-qyv16v.png",
                 "description": "Styxhexenhammer666's Rumble Channel",
                 "title": "Styxhexenhammer666",
                 "channel": "Styxhexenhammer666",
@@ -395,7 +395,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             "playlist_mincount": 4,
             "info_dict": {
                 "url": "https://rumble.com/user/ProjectVeritas",
-                "thumbnail": "https://sp.rmbl.ws/z0/N/U/W/w/NUWwb.asF.5-djhd3-rs1gno.jpeg",
+                "thumbnail": "https://ak2.rmbl.ws/z0/N/U/W/w/NUWwb.asF.5-djhd3-rs1gno.jpeg",
                 "description": "ProjectVeritas's Rumble Channel",
                 "title": "ProjectVeritas",
                 "channel": "ProjectVeritas",
@@ -413,7 +413,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             "playlist_mincount": 4,
             "info_dict": {
                 "url": "https://rumble.com/c/jessekelly",
-                "thumbnail": "https://sp.rmbl.ws/z8/r/U/E/b/rUEba.baa.1-jessekelly-rxpi5t.jpeg",
+                "thumbnail": "https://ak2.rmbl.ws/z8/r/U/E/b/rUEba.baa.1-jessekelly-rxpi5t.jpeg",
                 "description": "\"I'm Right\" with Jesse Kelly's Rumble Channel",
                 "title": '"I\'m Right" with Jesse Kelly',
                 "channel": '"I\'m Right" with Jesse Kelly',
@@ -428,79 +428,83 @@ class CustomRumbleChannelIE(RumbleChannelIE):
         },
     ]
 
-    def entries(self, url, playlist_id, webpage, **kwargs):  # pragma: no cover
-        try:
-            webpage = self._download_webpage(
-                f"{url}?page=1", playlist_id, note="Downloading page 1"
+    def entries(self, url, playlist_id, webpage, **kwargs):
+        pattern = (
+            r"videostream thumbnail__grid--item.*?videostream__data--item videostream__comments"
+        )
+        findall = re.findall(pattern, webpage, flags=re.DOTALL)
+        for video in findall:
+            video_id = self._search_regex(r'data-video-id="(\d+)"', video, "video id", default=None)
+            video_url = self._search_regex(
+                r'href="(/[^"]+\.html)"', video, "video URL", default=None
             )
-        except ExtractorError as e:
-            if isinstance(e.cause, compat_HTTPError) and e.cause.code == 404:
-                return
-            raise
+            thumbnail = self._search_regex(
+                r'<img[^>]+src="([^"]+)"', video, "thumbnail", default=None
+            )
+            timestamp = parse_iso8601(
+                self._search_regex(
+                    r'<time[^>]+datetime="([^"]+)"', video, "upload datetime", default=None
+                )
+            )
+            url = self._proto_relative_url(video_url, "https:")
 
-        for container in re.findall(
-            r'<li class="video-listing-entry">(.+?)</li>', webpage, flags=re.DOTALL
-        ):
-            # Handle if video is a LIVE video.
-            live_match = re.search(r'data-value="LIVE"', container)
-            upcoming_match = re.search(r'data-value="UPCOMING"', container)
-            if upcoming_match or live_match:
-                continue
+            # Duration extraction
+            duration_pattern = (
+                r'videostream__status videostream__status--duration"\n\t\t\t>\n\t\t\t\t(.*?)\t\t\t'
+            )
+            duration_search = re.search(duration_pattern, video, flags=re.DOTALL)
+            if duration_search:
+                duration_text = duration_search.group(1).strip()
+                duration = parse_duration(duration_text)
+            else:
+                duration = None
 
-            # Build Entry
-            yield self._build_entry(container=container, **kwargs)
+            # Title
+            title_pattern = r"<h3[^>]*>\s*(.*?)\s*<\/h3>"
+            title_search = re.search(title_pattern, video, flags=re.DOTALL)
+            if title_search:
+                title = title_search.group(1).strip()
+                title = title.replace("\n", "").replace("\t", "").strip()
+                title = title.replace("Channel: ", "")
+            else:
+                title = None
 
-    def _build_entry(self, container, **kwargs):  # pragma: no cover
-        # Scrape Remaining Data
-        video_id_match = re.search(r"\/(v[^-]*)-", container)
-        video_id = video_id_match.group(1) if video_id_match else None
+            # Description
+            description = title
 
-        video_url_match = re.search(r"class=video-item--a\s?href=([^>]+\.html)", container)
-        video_url = video_url_match.group(1) if video_url_match else None
-
-        # title = re.search(r'title="([^\"]+)"', container).group(1)'
-        title_match = re.search(r"class=video-item--title>([^\<]+)<\/h3>", container)
-        title = title_match.group(1) if title_match else None
-
-        # description = re.search(r'<p class="description"\s*>(.+?)</p>', container).group(1)
-
-        timestamp_match = re.search(r'datetime=([^\s">]+)', container)
-        timestamp = parse_iso8601(timestamp_match.group(1)) if timestamp_match else None
-
-        thumbnail_match = re.search(r"src=([^\s>]+)", container)
-        thumbnail = thumbnail_match.group(1) if thumbnail_match else None
-
-        duration_match = re.search(r"class=video-item--duration data-value=([^\">]+)>", container)
-        duration = parse_duration(duration_match.group(1)) if duration_match else None
-
-        return {
-            **kwargs,
-            **self.url_result(f"https://rumble.com{video_url}"),
-            "id": video_id,
-            "display_id": video_id,
-            "title": title,
-            "description": None,
-            "timestamp": timestamp,
-            "thumbnail": thumbnail,
-            "duration": duration,
-        }
+            yield {
+                **kwargs,
+                **self.url_result(f"https://rumble.com{video_url}"),
+                "_type": "url_transparent",
+                "id": video_id,
+                "display_id": video_id,
+                "url": f"https://rumble.com{video_url}",
+                "webpage_url": f"https://rumble.com{video_url}",
+                "title": title,
+                "description": description,
+                "thumbnail": thumbnail,
+                "duration": duration,
+                "timestamp": timestamp,
+                "ie_key": "Rumble",  # Assuming "Rumble" extractor is defined and handles individual video pages.
+            }
 
     def _real_extract(self, url):
-        url, playlist_id = self._match_valid_url(url).groups()
-        webpage = self._download_webpage(
-            f"{url}?page=1", note="Downloading webpage", video_id=playlist_id
-        )
+        playlist_id = self._match_id(url)
+        webpage = self._download_webpage(url, playlist_id)
 
+        #
         thumbnail_match = re.search(
-            r"channel-header--thumb[^}]*?background-image:\s*url\((https?:\/\/.*?)\)", webpage
+            r'<img\n\t\t\t\t\t\t\t\t\tclass="channel-header--img"\n\t\t\t\t\t\t\t\t\tsrc="(.*?)"\n',
+            webpage,
         )
         if not thumbnail_match:
             thumbnail_match = re.search(
-                r"listing-header--thumb[^}]*?background-image:\s*url\((https?:\/\/.*?)\)", webpage
+                r'class="channel-header--backsplash-img"\n\t\t\t\t\t\tsrc="(.*?)"\n', webpage
             )
         thumbnail = thumbnail_match.group(1) if thumbnail_match else None
 
-        channel_match = re.search(r"class=ellipsis-1>([^>]+)<", webpage)
+        #
+        channel_match = re.search(r'channel-header--title-wrapper"><h1>(.*?)<\/h1>', webpage)
         channel = channel_match.group(1) if channel_match else None
 
         channel_id_match = re.search(
@@ -509,6 +513,8 @@ class CustomRumbleChannelIE(RumbleChannelIE):
         channel_id = channel_id_match.group(4) if channel_id_match else None
 
         channel_url = f"https://rumble.com/c/{channel_id}"
+
+        #
         uploader = channel
         uploader_id = channel_id
         uploader_url = channel_url
@@ -524,6 +530,10 @@ class CustomRumbleChannelIE(RumbleChannelIE):
             "uploader_id": uploader_id,
             "uploader_url": uploader_url,
         }
+
         return self.playlist_result(
-            self.entries(url, playlist_id, webpage=webpage), playlist_id=playlist_id, **kwargs
+            self.entries(url, playlist_id, webpage),
+            playlist_id=playlist_id,
+            playlist_title=f"{channel}",
+            **kwargs,
         )
