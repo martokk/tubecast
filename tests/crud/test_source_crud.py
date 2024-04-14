@@ -105,6 +105,6 @@ async def test_delete_item_delete_error(db: Session, mocker: MagicMock) -> None:
     """
     Test deleting an item with a delete error.
     """
-    mocker.patch("app.crud.source.get", return_value=None)
+    mocker.patch("app.crud.source.SourceCRUD.get", return_value=None)
     with pytest.raises(crud.DeleteError):
         await crud.source.remove(db=db, id="00000001")
