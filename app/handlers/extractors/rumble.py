@@ -434,6 +434,12 @@ class CustomRumbleChannelIE(RumbleChannelIE):
         )
         findall = re.findall(pattern, webpage, flags=re.DOTALL)
         for video in findall:
+            # Handle if video is a LIVE video.
+            live_match = re.search(r"videostream__status--live", video)
+            upcoming_match = re.search(r"videostream__status--upcoming", video)
+            if upcoming_match or live_match:
+                continue
+
             video_id = self._search_regex(r'data-video-id="(\d+)"', video, "video id", default=None)
             video_url = self._search_regex(
                 r'href="(/[^"]+\.html)"', video, "video URL", default=None

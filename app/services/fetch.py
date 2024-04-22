@@ -30,6 +30,7 @@ from app.services.video import (
 from app.services.ytdlp import (
     AccountNotFoundError,
     AwaitingTranscodingError,
+    Http404Error,
     Http410Error,
     IsDeletedVideoError,
     IsLiveEventError,
@@ -147,12 +148,16 @@ async def fetch_source(db: Session, id: str, ignore_video_refresh: bool = False)
             url=db_source.url,
             reverse_import_order=db_source.reverse_import_order,
         )
+    except Http404Error as e:
+        await log_and_notify(message=f"Http404Error: \n{e=} \n{db_source=}")
+        await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
+        raise FetchCanceledError from e
     except AccountNotFoundError as e:
         await log_and_notify(message=f"AccountNotFoundError: \n{e=} \n{db_source=}")
         await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
         raise FetchCanceledError from e
     except PlaylistNotFoundError as e:
-        await log_and_notify(message=f"AccountNotFoundError: \n{e=} \n{db_source=}")
+        await log_and_notify(message=f"PlaylistNotFoundError: \n{e=} \n{db_source=}")
         await handle_source_is_deleted(db=db, source_id=id, error_message=str(e))
         raise FetchCanceledError from e
     except (NoUploadsError, Exception) as e:
@@ -322,6 +327,7 @@ async def fetch_video(video_id: str, db: Session) -> Video:
 
     except (
         VideoUnavailableError,
+        Http404Error,
         Http410Error,
         IsPrivateVideoError,
         IsDeletedVideoError,

@@ -28,6 +28,12 @@ class IsLiveEventError(YoutubeDLError):
     """
 
 
+class Http404Error(YoutubeDLError):
+    """
+    Raised after a HTTP 404 "NOT FOUND" error.
+    """
+
+
 class Http410Error(YoutubeDLError):
     """
     Raised after a HTTP 410 "GONE" error.
@@ -214,6 +220,8 @@ async def ydl_extract_info(
         if e.__class__.__name__ == "DownloadError":
             if "HTTP Error 410" in str(e):
                 raise Http410Error from e
+            if "HTTP Error 404" in str(e):
+                raise Http404Error from e
 
         err_msg = f"yt-dlp could not extract info for {url}. {e=}"
         logger.critical(err_msg)

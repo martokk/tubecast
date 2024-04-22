@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "tubecast"
-version = "0.0.110"
+version = "0.0.111"
 description = "Convert Youtube or Rumble channels to RSS Podcasts"
 readme = "README.md"
 authors = ["martokk <25113632+martokk@users.noreply.github.com>"]
@@ -54,7 +54,7 @@ platformdirs = "^3.0.0"
 setuptools = "^67.2.0"
 yt-dlp = "^2023.3.4" # update to "^2023.7.6" anytime after 7/6 when the "_allowed_colors" bug is fixed.
 types-pyyaml = "^6.0.12.8"
-pillow = "^9.5.0"
+pillow = "^10.1"
 types-requests = "^2.31.0.1"
 types-attrs = "^19.1.0"
 

@@ -131,11 +131,21 @@ def set_font_size(text: str, img: Image.Image) -> ImageFont.FreeTypeFont:
     """
     font_size = 1
     font_path = str(FONTS_PATH / "arial.ttf")
-    font = ImageFont.truetype(font_path, font_size)
+    font: ImageFont.FreeTypeFont = ImageFont.truetype(font_path, font_size)
     while True:
         font_size += 1
         font = ImageFont.truetype(font_path, font_size)
-        width, height = ImageDraw.Draw(img).textsize(text, font)
+
+        # Create a drawing context
+        draw = ImageDraw.Draw(img)
+
+        # Get the bounding box of the text
+        bbox = draw.textbbox((0, 0), text, font)
+
+        # Extract width and height from the bounding box
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+
         if width >= img.width - 30 or height >= img.height - 30:
             font_size -= 4
             font = ImageFont.truetype(font_path, font_size)
