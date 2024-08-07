@@ -1,4 +1,12 @@
 from pydantic import BaseSettings, EmailStr
+import requests
+
+
+def get_public_ip():
+    response = requests.get("https://api.ipify.org?format=json")
+    public_ip = response.json()["ip"]
+    print(public_ip)
+    return public_ip
 
 
 class Settings(BaseSettings):
@@ -17,7 +25,7 @@ class Settings(BaseSettings):
     SERVER_PORT: int = 5000
     BASE_DOMAIN: str = "localhost:5000"
     BASE_URL: str = "http://localhost:5000"
-    PROXY_HOST: str = "127.0.0.1"
+    PROXY_HOST: str = get_public_ip()
     UVICORN_RELOAD: bool = True
     UVICORN_ENTRYPOINT: str = "app.core.app:app"
     UVICORN_WORKERS: int = 1
