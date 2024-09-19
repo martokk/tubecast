@@ -35,6 +35,7 @@ class YoutubeHandler(ServiceHandler):
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = [".*"]
     YDL_OPT_PLAYLISTEND = 20
     YDL_OPT_DATEAFTER = "now-1y"
+    DISABLED = settings.DISABLE_YOUTUBE
 
     def sanitize_source_url(self, url: str) -> str:
         """

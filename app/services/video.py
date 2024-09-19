@@ -19,6 +19,10 @@ async def get_video_info_dict(
     """
     # Get info_dict from yt-dlp
     handler = get_handler_from_url(url=url)
+
+    if handler.DISABLED:
+        raise Exception("Source is DISABLED in settings.")
+
     ydl_opts = handler.get_video_ydl_opts()
     custom_extractors = handler.YTDLP_CUSTOM_EXTRACTORS
     info_dict = await get_info_dict(url=url, ydl_opts=ydl_opts, custom_extractors=custom_extractors)
