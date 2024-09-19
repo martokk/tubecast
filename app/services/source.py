@@ -37,6 +37,9 @@ async def get_source_info_dict(
     # Get info_dict from yt-dlp
     handler = get_handler_from_url(url=url)
 
+    if handler.DISABLED:
+        raise Exception("Source is DISABLED in settings.")
+
     # Get source_info_dict_kwargs from handler
     source_info_dict_kwargs = await handler.get_source_info_dict_kwargs(url=url)
 

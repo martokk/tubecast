@@ -386,6 +386,10 @@ def get_videos_needing_refresh(videos: list[Video]) -> list[Video]:
         if "private" in str(video.title).lower() or "deleted" in str(video.title).lower():
             continue
         handler = get_handler_from_string(handler_string=video.handler)
+
+        if handler.DISABLED:
+            continue
+
         updated_at_threshold = datetime.utcnow() - timedelta(
             hours=handler.REFRESH_UPDATE_INTERVAL_HOURS
         )

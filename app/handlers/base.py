@@ -21,6 +21,7 @@ class ServiceHandler:
     DOMAINS: list[str] = []
     YTDLP_CUSTOM_EXTRACTORS: list[Type[InfoExtractor]] = []
     YDL_OPT_ALLOWED_EXTRACTORS: list[str] = []
+    DISABLED = False
 
     @property
     def name(self) -> str:

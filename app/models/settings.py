@@ -77,3 +77,7 @@ class Settings(BaseSettings):
     # Build Feeds
     BUILD_FEED_RECENT_VIDEOS: int = 10
     BUILD_FEED_DATEAFTER: str = "now-2month"
+
+    # Disable Services
+    DISABLE_YOUTUBE: bool = False
+    DISABLE_RUMBLE: bool = False

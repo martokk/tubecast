@@ -35,6 +35,7 @@ class RumbleHandler(ServiceHandler):
     DOMAINS = ["rumble.com"]
     YTDLP_CUSTOM_EXTRACTORS = [CustomRumbleIE, CustomRumbleChannelIE, CustomRumbleEmbedIE]
     YDL_OPT_ALLOWED_EXTRACTORS = ["CustomRumbleIE", "CustomRumbleEmbed", "CustomRumbleChannel"]
+    DISABLED = settings.DISABLE_RUMBLE
 
     def sanitize_source_url(self, url: str) -> str:
         """
