@@ -78,9 +78,12 @@ def create_logo_from_text(
 
     Args:
         text(str): The text to create the logo from.
+        file_path(Path): The path where the logo will be saved.
+        background_color(str | None): Optional background color in HTML format.
+        border_color(str | None): Optional border color in HTML format.
 
     Returns:
-        Path: The path to the logo.
+        Path: The path to the saved logo image.
     """
     # Prepare canvas
     if not background_color:
@@ -96,23 +99,23 @@ def create_logo_from_text(
     text = wrap_text(text)
     font = set_font_size(text=text, img=img)
 
-    # Draw and center text
-    width, height = ImageDraw.Draw(img).textsize(text, font)  # type: ignore
+    # Use textbbox to get width and height of text
+    bbox = draw.textbbox((0, 0), text, font=font)
+    width, height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+    # Center the text
     x = (img.width - width) / 2
     y = (img.height - height) / 2
     draw.text((x, y), text, font=font, fill=foreground, align="center")
 
-    # Draw red border
+    # Draw border if border_color is specified
     if border_color:
         border_thickness = 5
         border_color_rgb = html_color_to_rgb(border_color)
-        border_box = [
-            (0, 0),
-            (img.width, img.height),
-        ]
-        draw.rectangle(border_box, outline=border_color_rgb, width=border_thickness)  # type: ignore
+        border_box = [(0, 0), (img.width, img.height)]
+        draw.rectangle(border_box, outline=border_color_rgb, width=border_thickness)
 
-    # Save image
+    # Save image to the specified file path
     file_path.parent.mkdir(parents=True, exist_ok=True)
     img.save(file_path)
     return file_path
