@@ -510,7 +510,10 @@ class CustomRumbleChannelIE(RumbleChannelIE):
         thumbnail = thumbnail_match.group(1) if thumbnail_match else None
 
         #
-        channel_match = re.search(r'channel-header--title-wrapper"><h1>(.*?)<\/h1>', webpage)
+        channel_match = re.search(
+            r'<div class="channel-header--title">.*?<h1>(.*?)<\/h1>', webpage, re.DOTALL
+        )
+
         channel = channel_match.group(1) if channel_match else None
 
         channel_id_match = re.search(
