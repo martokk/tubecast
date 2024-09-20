@@ -442,7 +442,7 @@ class CustomRumbleChannelIE(RumbleChannelIE):
 
             video_id = self._search_regex(r'data-video-id="(\d+)"', video, "video id", default=None)
             video_url = self._search_regex(
-                r'href="(/[^"]+\.html)"', video, "video URL", default=None
+                r'href="(/[^"]+\.html\?[^"]*)"', video, "video URL", default=None
             )
             thumbnail = self._search_regex(
                 r'<img[^>]+src="([^"]+)"', video, "thumbnail", default=None
